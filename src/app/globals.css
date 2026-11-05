@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f4f1ea;
+  --color-ink: #141414;
+  --color-banda: #d7132a;
+  --font-display: var(--font-display), "Impact", sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
