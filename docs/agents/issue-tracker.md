@@ -22,7 +22,7 @@ File issues only into the user's own repo. Never file into `mattpocock/skills` (
 
 Every issue goes on the GitHub Projects board **Gallinero Store** (`tomibern`, project number `1`): https://github.com/users/tomibern/projects/1
 
-- **Add on create**: `gh issue create --project "Gallinero Store" ...`. For an existing issue: `gh project item-add 1 --owner tomibern --url <issue-url>`.
+- **Add on create**: create the issue first, then `gh project item-add 1 --owner tomibern --url <issue-url>`. Don't use `gh issue create --project`: on `gh` 2.45 it queries the retired Projects (classic) API and fails.
 - **Status** field: `Todo` → `In Progress` → `Done`. New issues start in `Todo`; GitHub moves closed issues to `Done`.
 - Installed `gh` is 2.45: `--blocked-by`, `--add-blocked-by` and `--parent` don't exist yet, so use the `gh api` fallbacks described above for blocking edges and sub-issues.
 
