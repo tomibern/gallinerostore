@@ -1,5 +1,7 @@
 """Cliente S3 (RustFS/MinIO en local; R2 o Supabase Storage en producción)."""
 
+import json
+
 import boto3
 from botocore.config import Config
 from fastapi import Request
@@ -31,6 +33,22 @@ def ensure_bucket(s3: S3Client, bucket: str) -> bool:
         return False
     s3.create_bucket(Bucket=bucket)
     return True
+
+
+def allow_public_read(s3: S3Client, bucket: str) -> None:
+    """Lectura anónima de los archivos del bucket: las fotos del catálogo son públicas."""
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": ["*"]},
+                "Action": ["s3:GetObject"],
+                "Resource": [f"arn:aws:s3:::{bucket}/*"],
+            }
+        ],
+    }
+    s3.put_bucket_policy(Bucket=bucket, Policy=json.dumps(policy))
 
 
 def get_s3(request: Request) -> S3Client:
