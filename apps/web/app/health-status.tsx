@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 
 type State = "loading" | "ok" | "error";
 
+const VIEW: Record<State, { label: string; className: string }> = {
+  loading: { label: "API…", className: "text-muted" },
+  ok: { label: "API ok", className: "text-ok" },
+  error: { label: "API con problemas", className: "text-error" },
+};
+
 // Se pide desde el navegador a /api/health: prueba el reenvío de Next a la API.
 export function HealthStatus() {
   const [state, setState] = useState<State>("loading");
@@ -14,11 +20,10 @@ export function HealthStatus() {
       .catch(() => setState("error"));
   }, []);
 
-  const label = { loading: "API…", ok: "API ok", error: "API con problemas" }[state];
-  const color = { loading: "text-muted", ok: "text-ok", error: "text-error" }[state];
+  const { label, className } = VIEW[state];
 
   return (
-    <span data-testid="health" data-state={state} className={`font-medium ${color}`}>
+    <span data-testid="health" data-state={state} className={`font-medium ${className}`}>
       {label}
     </span>
   );
