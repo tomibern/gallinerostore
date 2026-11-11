@@ -1,0 +1,16 @@
+/* Marca Gallinero Store: pisa los tokens neutros del núcleo.
+   Paleta del discovery: gama de rojos con blanco; el negro no es color de base. */
+:root {
+  --color-bg: #fff7f7;
+  --color-surface: #ffffff;
+  --color-text: #6e1219;
+  --color-muted: #9b4a50;
+  --color-border: #f0c9cc;
+  --color-primary: #e3262f;
+  --color-primary-contrast: #ffffff;
+  --color-accent: #6e1219;
+  --color-ok: #1f7a3d;
+  --color-error: #e3262f;
+  --font-display: "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
