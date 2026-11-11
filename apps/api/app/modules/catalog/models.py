@@ -158,6 +158,50 @@ class ProductSize(Base):
     size: Mapped[Size] = relationship()
 
 
+class Tag(Base):
+    """Etiqueta libre (titular, alternativa, arquero…): filtros secundarios y colecciones."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    slug: Mapped[str] = mapped_column(String(100), unique=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ProductTag(Base):
+    __tablename__ = "product_tags"
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+
+class StoryItemKind(StrEnum):
+    """Tipo de ítem de la historia del producto."""
+
+    MILESTONE = "milestone"  # figurita: año, título y anécdota
+    STAT = "stat"  # cifra
+    FUN_FACT = "fun_fact"  # ¿Sabías que…?
+
+
+class ProductStoryItem(Base):
+    """Ítem de la historia del producto. Sin ítems, la sección no se muestra."""
+
+    __tablename__ = "product_story_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[StoryItemKind] = mapped_column(_enum(StoryItemKind, "story_item_kind"))
+    year: Mapped[int | None] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str | None] = mapped_column(Text)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class ProductImage(Base):
     __tablename__ = "product_images"
 
