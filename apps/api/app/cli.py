@@ -39,9 +39,9 @@ async def _seed(settings: Settings) -> None:
         ):
             storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
             await apply_seed(session, seed, settings.store_config, storage)
-            store_settings = load_settings_seed(settings.seed_path)
-            if store_settings is not None:
-                await apply_settings_seed(session, store_settings)
+            settings_seed = load_settings_seed(settings.seed_path)
+            if settings_seed is not None and not await apply_settings_seed(session, settings_seed):
+                print("Configuración de la tienda: ya existía, no se modificó")
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")

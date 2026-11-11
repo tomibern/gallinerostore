@@ -30,12 +30,16 @@ async def test_seed_creates_the_single_settings_row_without_duplicating(
     assert settings.message_templates["stock"].startswith("Hola! Me interesa {product}")
 
 
-async def test_seed_updates_the_settings_row_in_place(db_session: AsyncSession) -> None:
+async def test_seed_never_overwrites_settings_that_already_exist(
+    db_session: AsyncSession,
+) -> None:
+    # Una vez creada, la configuración la edita el admin: el seed no la pisa.
     seed = load_settings_seed(FIXTURES / "seed.toml")
     assert seed is not None
     await apply_settings_seed(db_session, seed)
 
     await apply_settings_seed(db_session, seed.model_copy(update={"on_order_notice": "Otra."}))
 
-    settings = await repository.get_store_settings(db_session)
-    assert settings is not None and settings.on_order_notice == "Otra."
+    store_settings = await repository.get_store_settings(db_session)
+    assert store_settings is not None
+    assert store_settings.on_order_notice == "Demora a confirmar."
