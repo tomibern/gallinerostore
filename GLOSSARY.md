@@ -60,8 +60,9 @@ _Evitar_: visible/invisible
 Identificador corto y permanente del producto (ej.: GS-014). Va en el mensaje prearmado y en el link del producto, así un link compartido sigue funcionando aunque cambie el nombre.
 _Evitar_: SKU
 
-**Historia de la camiseta**:
-Sección opcional del detalle con hitos (figuritas), cifras y un dato curioso.
+**Historia del producto**:
+Sección opcional del detalle con hitos, cifras y un dato curioso. En Gallinero se muestra como «historia de la camiseta», con los hitos como figuritas.
+_Evitar_: historia de la camiseta (en el núcleo)
 
 ## Consulta y métricas
 

@@ -311,7 +311,7 @@ El modelo refleja las decisiones de catálogo y es genérico para poder reutiliz
 | product_images | id, product_id, path_full, path_thumb, alt, width, height, sort_order | La primera por sort_order es la portada |
 | product_story_items | id, product_id, kind, year, title, body, sort_order | kind: milestone (figurita) / stat (cifra) / fun_fact (¿Sabías que…?). Sin filas, la sección no se muestra. Se apaga con features.productStory |
 | home_slides | id, block, path_full, alt, sort_order | Fotos de los carruseles de la home (block: por ejemplo lbdt). Máximo 4 por bloque, validado en la API |
-| events | id, type, product_id, channel, size_id, source, device, session_id, created_at | Sin datos personales. session_id es anónimo y se usa para no contar visitas repetidas |
+| events | id, type, product_id, channel, size_id, source, device, session_id, page, created_at | Sin datos personales. session_id es anónimo y se usa para no contar visitas repetidas. page es la página de las visitas a listados y de las consultas generales (ver «Métricas») |
 | settings | contact_channels, how_to_buy_md, faq_md, on_order_notice, message_templates | Una sola fila; lo editable desde el admin. Lo técnico va en config/store.toml |
 
 **Valores calculados (no se guardan):** la etiqueta «Sin stock» (producto de stock sin talles disponibles) sale de product_sizes. Una vista catalog_products lo devuelve ya calculado para el catálogo público.

@@ -83,3 +83,16 @@ sale_mode = "stock"
 status = "hidden"
 price = 1000000
 sizes = { S = true }
+
+[settings]
+on_order_notice = "Demora a confirmar."
+how_to_buy_md = "## Cómo comprar\n\nEscribinos."
+faq_md = "## Preguntas\n\n¿Envían? Sí."
+
+[settings.contact_channels]
+whatsapp = { number = "5491100000000" }
+instagram = { username = "tienda.de.prueba" }
+
+[settings.message_templates]
+stock = "Hola! Me interesa {product}, talle {size} (en stock). {link}"
+on_order = "Hola! Me interesa {product}, talle {size} (por encargue). {link}"

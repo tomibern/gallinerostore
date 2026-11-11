@@ -111,3 +111,44 @@ sale_mode = "on_order"
 status = "hidden"
 price = 7900000
 sizes = { M = true, L = true, XL = true }
+
+# Configuración editable de la tienda (la fila única de `settings`). El admin la
+# va a poder cambiar desde el panel; esto es el punto de partida.
+[settings]
+on_order_notice = "A pedido: demora y condiciones a confirmar por chat."
+how_to_buy_md = """
+## Cómo comprar
+
+1. Elegí el producto y el talle, y tocá **Consultar por WhatsApp** o **Consultar por Instagram**.
+2. Te confirmamos disponibilidad, precio y forma de entrega por chat.
+3. Pagás por transferencia o en efectivo.
+
+## Envíos y entregas
+
+- Envíos a todo el país por Correo Argentino o una empresa similar.
+- Entrega en persona si sos de La Plata.
+
+## Encargues
+
+Los productos por encargue se piden al proveedor después de tu consulta. Para confirmarlos se pide una seña del 50 %. La demora y las condiciones se acuerdan por chat.
+"""
+faq_md = """
+## Preguntas frecuentes
+
+**¿Qué calidad tienen los productos?** Productos de la mejor calidad importada.
+
+**¿Puedo personalizar la camiseta con nombre y número?** No, por ahora no hacemos personalizaciones.
+
+**¿Cómo pago?** Por transferencia o en efectivo, a coordinar por chat.
+"""
+
+[settings.contact_channels]
+whatsapp = { number = "5492920342004" }
+instagram = { username = "gallinerostore14" }
+
+# Mensajes prearmados. Variables: {product}, {code}, {size} y {link}.
+[settings.message_templates]
+stock = "Hola! Me interesa {product} ({code}), talle {size} (en stock). {link}"
+out_of_stock = "Hola! Me interesa {product} ({code}), talle {size} (sin stock, consulto disponibilidad). {link}"
+on_order = "Hola! Me interesa {product} ({code}), talle {size} (por encargue). {link}"
+general = "Hola! Busco algo que no está en el catálogo: "
