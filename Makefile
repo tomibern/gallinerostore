@@ -5,7 +5,7 @@ SHELL := /bin/bash
 -include .env
 export
 
-ENV_FREE_GOALS := help reset
+ENV_FREE_GOALS := help reset hooks
 ifneq (,$(filter-out $(ENV_FREE_GOALS),$(or $(MAKECMDGOALS),help)))
 ifeq (,$(wildcard .env))
 $(error Falta .env: corré `cp .env.example .env`)
@@ -14,10 +14,14 @@ endif
 
 API := apps/api
 
-.PHONY: help install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
+
+hooks: ## Instala los hooks de git (una vez por clon)
+	git config --unset-all core.hooksPath || true
+	uvx pre-commit@4.7.0 install --hook-type pre-commit --hook-type commit-msg
 
 install: ## Instala dependencias de Python y JS
 	cd $(API) && uv sync
@@ -58,8 +62,9 @@ web: ## Solo la web, con recarga automática
 test: migrate-test ## Corre todos los tests
 	cd $(API) && uv run pytest
 
-lint: ## Revisa estilo y tipos de la API y la web
+lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)
 	cd $(API) && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests alembic
+	npm run format:check
 	npm run lint -w @catalog/web
 	npm run typecheck -w @catalog/web
 
