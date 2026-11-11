@@ -36,7 +36,7 @@ storage: infra ## Crea el bucket de imágenes si no existe
 migrate: infra ## Aplica las migraciones a la base de desarrollo
 	cd $(API) && uv run alembic upgrade head
 
-seed: migrate ## Carga los datos iniciales de config/seed.toml (se puede repetir)
+seed: migrate storage ## Carga los datos iniciales de config/seed.toml (se puede repetir)
 	cd $(API) && uv run python -m app.cli seed
 
 gen-client: ## Regenera el cliente TypeScript desde el OpenAPI de la API
