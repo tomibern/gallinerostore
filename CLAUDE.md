@@ -22,7 +22,7 @@ Monorepo:
 - **Migraciones.** Nunca se edita una migración de Alembic ya commiteada; siempre se crea una nueva.
 - **Textos fuera de los componentes.** Los textos de UI salen del diccionario (es-AR por defecto).
 - **Tests primero** cuando se agrega comportamiento (`/tdd`): pytest + httpx en la API, Vitest + Playwright en la web.
-- **Sin atribución de Claude** en commits ni PRs: nada de `Co-Authored-By: Claude` ni "Generated with Claude Code". El hook `.githooks/commit-msg` lo quita si se cuela.
+- **Sin atribución de Claude** en commits ni PRs: nada de `Co-Authored-By: Claude` ni "Generated with Claude Code". El hook `commit-msg` de pre-commit (`scripts/strip-claude-attribution.sh`) lo quita si se cuela.
 
 ## Idioma
 
