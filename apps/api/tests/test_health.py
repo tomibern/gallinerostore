@@ -1,15 +1,12 @@
 import httpx
 
 from app.core.config import Settings
-from app.main import create_app
+from tests.support import client_for
 
 
 async def _get_health(settings: Settings) -> httpx.Response:
-    app = create_app(settings)
-    async with app.router.lifespan_context(app):
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
-            return await c.get("/health")
+    async with client_for(settings) as client:
+        return await client.get("/health")
 
 
 async def test_health_reports_database_and_storage_ok(client: httpx.AsyncClient) -> None:
