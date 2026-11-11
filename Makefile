@@ -1,15 +1,20 @@
 # Comandos del proyecto. `make help` lista todo.
 SHELL := /bin/bash
 
+# Las variables salen de .env. `help` y `reset` funcionan sin él.
+-include .env
+export
+
+ENV_FREE_GOALS := help reset
+ifneq (,$(filter-out $(ENV_FREE_GOALS),$(or $(MAKECMDGOALS),help)))
 ifeq (,$(wildcard .env))
 $(error Falta .env: corré `cp .env.example .env`)
 endif
-include .env
-export
+endif
 
 API := apps/api
 
-.PHONY: help install infra storage migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -27,11 +32,16 @@ storage: infra ## Crea el bucket de imágenes si no existe
 migrate: infra ## Aplica las migraciones a la base de desarrollo
 	cd $(API) && uv run alembic upgrade head
 
-migrate-test: infra ## Aplica las migraciones a la base de tests
+test-db: infra ## Crea la base de tests si no existe
+	@docker compose exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -tAc \
+		"SELECT 1 FROM pg_database WHERE datname = '$(POSTGRES_TEST_DB)'" | grep -q 1 \
+		|| docker compose exec -T db createdb -U $(POSTGRES_USER) $(POSTGRES_TEST_DB)
+
+migrate-test: test-db ## Aplica las migraciones a la base de tests
 	cd $(API) && uv run alembic -x database_url=$(TEST_DATABASE_URL) upgrade head
 
 dev: install migrate storage ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
-	@echo "Web: http://localhost:3000  ·  en la red: http://$$(hostname -I | awk '{print $$1}'):3000"
+	@echo "Web: http://localhost:3000  ·  en la red: http://$$(node -p "Object.values(require('os').networkInterfaces()).flat().find(n => n.family === 'IPv4' && !n.internal)?.address ?? 'localhost'"):3000"
 	@trap 'kill 0' INT TERM EXIT; \
 	$(MAKE) --no-print-directory api & \
 	$(MAKE) --no-print-directory web & \
