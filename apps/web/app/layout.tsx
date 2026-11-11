@@ -6,12 +6,8 @@ import "./globals.css";
 import "./brand.generated.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  try {
-    const store = await getStore();
-    return { title: store.name };
-  } catch {
-    return {};
-  }
+  const store = await getStore();
+  return store ? { title: store.name } : {};
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

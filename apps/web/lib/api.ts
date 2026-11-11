@@ -1,7 +1,7 @@
 // Acceso a la API desde el servidor de Next (SSR). El navegador usa /api/*.
 // En el ticket del catálogo esto se reemplaza por el cliente generado.
 
-const apiInternalUrl = process.env.API_INTERNAL_URL ?? "http://localhost:8000";
+import { apiInternalUrl } from "./env";
 
 export type PublicStore = {
   name: string;
@@ -11,10 +11,12 @@ export type PublicStore = {
   collection_label: string;
 };
 
-export async function getStore(): Promise<PublicStore> {
-  const response = await fetch(`${apiInternalUrl}/store`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`La API respondió ${response.status} en /store`);
+/** Datos públicos de la tienda, o null si la API no responde. */
+export async function getStore(): Promise<PublicStore | null> {
+  try {
+    const response = await fetch(`${apiInternalUrl()}/store`, { cache: "no-store" });
+    return response.ok ? ((await response.json()) as PublicStore) : null;
+  } catch {
+    return null;
   }
-  return response.json() as Promise<PublicStore>;
 }
