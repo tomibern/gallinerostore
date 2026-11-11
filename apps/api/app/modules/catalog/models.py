@@ -22,6 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base
+from app.modules.media.service import StoredImage
 
 
 class SaleMode(StrEnum):
@@ -173,6 +174,19 @@ class ProductImage(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
     product: Mapped[Product] = relationship(back_populates="images")
+
+    @classmethod
+    def from_stored(cls, product_id: int, stored: StoredImage, alt: str) -> "ProductImage":
+        """La fila para una imagen ya subida: rutas, medidas y posición salen de ``stored``."""
+        return cls(
+            product_id=product_id,
+            path_full=stored.path_full,
+            path_thumb=stored.path_thumb,
+            alt=alt,
+            width=stored.width,
+            height=stored.height,
+            sort_order=stored.position,
+        )
 
 
 # Secuencia de códigos: nunca reutiliza números aunque se borren productos.

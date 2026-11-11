@@ -245,22 +245,14 @@ async def _upsert_product(
         )
         for label, in_stock in seed.sizes.items()
     ]
-    if not await product.awaitable_attrs.images:
+    await repository.flush(session)
+    if not await repository.has_images(session, product.id):
         # Una foto de prueba solo si no tiene ninguna: repetir el seed no duplica.
         stored = store_product_image(
             storage, product.code, 0, placeholder_image(seed.name, product.code)
         )
-        product.images.append(
-            ProductImage(
-                path_full=stored.path_full,
-                path_thumb=stored.path_thumb,
-                alt=seed.name,
-                width=stored.width,
-                height=stored.height,
-                sort_order=0,
-            )
-        )
-    await repository.flush(session)
+        repository.add(session, ProductImage.from_stored(product.id, stored, alt=seed.name))
+        await repository.flush(session)
 
 
 async def _existing_product(session: AsyncSession, slug: str) -> Product | None:

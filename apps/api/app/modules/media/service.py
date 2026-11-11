@@ -20,6 +20,8 @@ WEBP_METHOD = 2
 
 @dataclass(frozen=True)
 class StoredImage:
+    # Posición entre las fotos del producto (0 = portada).
+    position: int
     path_full: str
     path_thumb: str
     width: int
@@ -47,4 +49,6 @@ def store_product_image(
     path_full, path_thumb = f"{base}-{FULL_SIZE}.webp", f"{base}-{THUMB_SIZE}.webp"
     storage.put(path_full, full, "image/webp")
     storage.put(path_thumb, thumb, "image/webp")
-    return StoredImage(path_full=path_full, path_thumb=path_thumb, width=width, height=height)
+    return StoredImage(
+        position=position, path_full=path_full, path_thumb=path_thumb, width=width, height=height
+    )

@@ -7,7 +7,9 @@ import unicodedata
 
 from PIL import Image, ImageDraw, ImageFont
 
-SIZE = 1600
+from app.modules.media.service import FULL_SIZE
+
+SIZE = FULL_SIZE
 
 
 def _ascii(text: str) -> str:

@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from sqlalchemy import select, text
+from sqlalchemy import exists, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,6 +12,7 @@ from app.modules.catalog.models import (
     Category,
     Collection,
     Product,
+    ProductImage,
     ProductSize,
     ProductStatus,
     Size,
@@ -56,6 +57,11 @@ async def products_with_slug(session: AsyncSession, slug: str) -> Sequence[Produ
     """Todos los productos con ese slug (no es único: puede haber más de uno)."""
     stmt = select(Product).where(Product.slug == slug).options(selectinload(Product.sizes))
     return (await session.scalars(stmt)).all()
+
+
+async def has_images(session: AsyncSession, product_id: int) -> bool:
+    stmt = select(exists().where(ProductImage.product_id == product_id))
+    return bool(await session.scalar(stmt))
 
 
 def add(session: AsyncSession, instance: Base) -> None:

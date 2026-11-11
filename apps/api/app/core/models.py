@@ -1,7 +1,6 @@
 """Base declarativa de SQLAlchemy. Los modelos de cada módulo heredan de ``Base``."""
 
 from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
 
 # Nombres de constraints estables: Alembic genera migraciones reproducibles.
@@ -14,7 +13,5 @@ NAMING_CONVENTION = {
 }
 
 
-class Base(AsyncAttrs, DeclarativeBase):
-    """Con AsyncAttrs, una relación se puede leer con ``await obj.awaitable_attrs.x``."""
-
+class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
