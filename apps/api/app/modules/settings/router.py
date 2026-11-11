@@ -6,7 +6,7 @@ from app.core.config import StoreConfig, get_store_config
 from app.modules.settings import service
 from app.modules.settings.schemas import PublicStore
 
-router = APIRouter(tags=["store"])
+router = APIRouter(tags=["settings"])
 
 
 @router.get("/store", response_model=PublicStore)

@@ -10,7 +10,7 @@ from app.core.config import Settings
 from app.core.db import create_engine
 from app.core.storage import create_s3_client
 from app.health.router import router as health_router
-from app.modules.settings.router import router as store_router
+from app.modules.settings.router import router as settings_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -28,5 +28,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title=f"{settings.store_config.store.name} API", lifespan=lifespan)
     app.include_router(health_router)
-    app.include_router(store_router)
+    app.include_router(settings_router)
     return app

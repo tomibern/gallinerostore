@@ -7,6 +7,9 @@ Cada módulo sigue la misma forma y los routers no tienen lógica:
 - ``service``: reglas de negocio.
 - ``repository``: acceso a datos con SQLAlchemy.
 
+``catalog`` tiene los cuatro archivos vacíos como plantilla; el resto de los
+módulos los suma cuando tenga comportamiento.
+
 En el núcleo no aparece nada de un cliente concreto: lo específico sale de
 ``config/store.toml``, de ``brand/`` o de la base de datos.
 """
