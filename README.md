@@ -30,6 +30,14 @@ En `apps/` no aparece nada específico del cliente (ADR 0001).
 ## Primer arranque
 
 ```bash
+git clone git@github.com:tomibern/gallinerostore.git
+```
+
+```bash
+cd gallinerostore
+```
+
+```bash
 git config core.hooksPath .githooks
 ```
 
@@ -41,7 +49,7 @@ cp .env.example .env
 make dev
 ```
 
-`make dev` instala dependencias, levanta Postgres y el almacenamiento, espera a que estén sanos, aplica las migraciones y arranca la API y la web con recarga automática. `Ctrl+C` corta todo.
+`make dev` instala dependencias, levanta Postgres y el almacenamiento, espera a que estén sanos, aplica las migraciones, crea el bucket de imágenes y arranca la API y la web con recarga automática. `Ctrl+C` corta todo. `make test` crea la base de tests si hace falta.
 
 - Web: <http://localhost:3000>
 - Desde el celular (misma wifi): `http://<ip-de-la-compu>:3000` (`make dev` la imprime al arrancar)

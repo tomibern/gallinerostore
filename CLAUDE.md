@@ -26,7 +26,12 @@ Monorepo:
 
 ## Idioma
 
-Documentación, issues y textos de UI en español rioplatense. Código, nombres de tablas y commits en inglés con Conventional Commits (`feat:`, `fix:`, `chore:`).
+Documentación, issues, textos de UI, comentarios y docstrings en español rioplatense. Identificadores (variables, funciones, tablas, endpoints) y mensajes de commit en inglés con Conventional Commits (`feat:`, `fix:`, `chore:`).
+
+## Commits y PRs
+
+- Un commit por funcionalidad o corrección: infraestructura, cada feature de la API, cada feature de la web, docs y cada fix van separados. El lockfile va en el mismo commit que el cambio de dependencias que lo generó.
+- Una rama y una PR por ticket (`feat/<n>-<slug>`), con `Closes #<n>` en la descripción. Nunca un push gigante de un solo commit.
 
 ## Agent skills
 
