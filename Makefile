@@ -59,8 +59,9 @@ api: ## Solo la API, con recarga automática
 web: ## Solo la web, con recarga automática
 	npm run dev -w @catalog/web
 
-test: migrate-test ## Corre todos los tests
+test: migrate-test ## Corre todos los tests de la API y la web
 	cd $(API) && uv run pytest
+	npm test -w @catalog/web
 
 lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)
 	cd $(API) && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests alembic
