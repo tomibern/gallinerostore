@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import type { NextConfig } from "next";
 
-import { apiInternalUrl } from "./lib/env";
+import { apiInternalUrl, mediaInternalUrl } from "./lib/env";
 
 // En desarrollo las variables viven en el .env de la raíz del monorepo.
 try {
@@ -23,9 +23,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: lanAddresses,
   // El cliente generado se publica como TypeScript dentro del monorepo.
   transpilePackages: ["@catalog/api-client"],
-  // El navegador solo habla con Next; la API va detrás (ADR 0003).
+  // El navegador solo habla con Next; la API y las fotos van detrás (ADR 0003).
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${apiInternalUrl()}/:path*` }];
+    return [
+      { source: "/api/:path*", destination: `${apiInternalUrl()}/:path*` },
+      { source: "/media/:path*", destination: `${mediaInternalUrl()}/:path*` },
+    ];
   },
 };
 

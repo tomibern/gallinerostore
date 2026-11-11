@@ -123,6 +123,41 @@
         ],
         "title": "HealthChecks"
       },
+      "ImageOut": {
+        "properties": {
+          "full": {
+            "type": "string",
+            "title": "Full",
+            "description": "Ruta de la imagen completa (lado mayor 1600 px), bajo /media."
+          },
+          "thumb": {
+            "type": "string",
+            "title": "Thumb",
+            "description": "Ruta de la miniatura (400 px), bajo /media."
+          },
+          "alt": {
+            "type": "string",
+            "title": "Alt"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full",
+          "thumb",
+          "alt",
+          "width",
+          "height"
+        ],
+        "title": "ImageOut"
+      },
       "ProductListItem": {
         "properties": {
           "code": {
@@ -162,6 +197,17 @@
             "type": "array",
             "title": "Sizes",
             "description": "En el orden de su grupo de talles."
+          },
+          "cover": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La primera imagen del producto, si tiene."
           }
         },
         "type": "object",
@@ -173,7 +219,8 @@
           "currency",
           "sale_mode",
           "out_of_stock",
-          "sizes"
+          "sizes",
+          "cover"
         ],
         "title": "ProductListItem"
       },

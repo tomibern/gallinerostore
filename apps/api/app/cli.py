@@ -1,6 +1,6 @@
 """Tareas de mantenimiento: ``uv run python -m app.cli <comando>``.
 
-- ``ensure-bucket``: crea el bucket de imágenes si no existe.
+- ``ensure-bucket``: crea el bucket de imágenes si no existe y le da lectura pública.
 - ``seed``: carga los datos iniciales del cliente (idempotente).
 - ``openapi``: imprime el OpenAPI de la API (lo usa ``make gen-client``).
 """
@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.db import create_engine
-from app.core.storage import create_s3_client, ensure_bucket
+from app.core.storage import ObjectStorage, allow_public_read, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
 
@@ -21,8 +21,11 @@ USAGE = "Uso: python -m app.cli [ensure-bucket | seed | openapi]"
 
 
 def _ensure_bucket(settings: Settings) -> None:
-    created = ensure_bucket(create_s3_client(settings), settings.s3_bucket)
-    print(f"Bucket '{settings.s3_bucket}': {'creado' if created else 'ya existía'}")
+    s3 = create_s3_client(settings)
+    created = ensure_bucket(s3, settings.s3_bucket)
+    allow_public_read(s3, settings.s3_bucket)
+    state = "creado" if created else "ya existía"
+    print(f"Bucket '{settings.s3_bucket}': {state}, con lectura pública")
 
 
 async def _seed(settings: Settings) -> None:
@@ -33,7 +36,8 @@ async def _seed(settings: Settings) -> None:
             engine.begin() as conn,
             AsyncSession(bind=conn, expire_on_commit=False) as session,
         ):
-            await apply_seed(session, seed, settings.store_config)
+            storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+            await apply_seed(session, seed, settings.store_config, storage)
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")

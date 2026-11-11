@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { getProducts, getStore, type ProductListItem, type PublicStore } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 
@@ -61,6 +63,19 @@ function ProductCard({ product, store }: { product: ProductListItem; store: Publ
       className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4"
       data-code={product.code}
     >
+      {product.cover && (
+        // Las fotos ya llegan redimensionadas y en WebP desde la API: no hace
+        // falta el optimizador de Next.
+        <Image
+          src={product.cover.thumb}
+          alt={product.cover.alt}
+          width={product.cover.width}
+          height={product.cover.height}
+          sizes="(min-width: 640px) 50vw, 100vw"
+          unoptimized
+          className="aspect-square w-full rounded-md object-cover"
+        />
+      )}
       <div className="flex items-start justify-between gap-2">
         <h2 className="font-medium">{product.name}</h2>
         <span className="shrink-0 text-xs text-muted">{product.code}</span>

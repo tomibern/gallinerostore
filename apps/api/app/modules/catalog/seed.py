@@ -14,17 +14,21 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
+from app.core.storage import ObjectStorage
 from app.modules.catalog import repository, service
 from app.modules.catalog.models import (
     Category,
     Collection,
     Product,
+    ProductImage,
     ProductSize,
     ProductStatus,
     SaleMode,
     Size,
     Version,
 )
+from app.modules.media.placeholder import placeholder_image
+from app.modules.media.service import store_product_image
 
 
 class SeedError(ValueError):
@@ -95,8 +99,13 @@ def load_seed(path: Path) -> CatalogSeed:
         return CatalogSeed.model_validate(tomllib.load(f))
 
 
-async def apply_seed(session: AsyncSession, seed: CatalogSeed, store: StoreConfig) -> None:
-    """Carga el seed en la sesión (flush, sin commit: decide quien llama)."""
+async def apply_seed(
+    session: AsyncSession, seed: CatalogSeed, store: StoreConfig, storage: ObjectStorage
+) -> None:
+    """Carga el seed en la sesión (flush, sin commit: decide quien llama).
+
+    Cada producto sin fotos recibe una imagen de prueba, subida al almacenamiento.
+    """
     _check_categories(seed.categories)
     _check_single_default_collection(seed.collections)
 
@@ -119,7 +128,7 @@ async def apply_seed(session: AsyncSession, seed: CatalogSeed, store: StoreConfi
     await repository.flush(session)
 
     for position, product in enumerate(seed.products):
-        await _upsert_product(session, product, position, store, lookups)
+        await _upsert_product(session, product, position, store, lookups, storage)
     await repository.flush(session)
 
 
@@ -201,6 +210,7 @@ async def _upsert_product(
     position: int,
     store: StoreConfig,
     lookups: SeedLookups,
+    storage: ObjectStorage,
 ) -> None:
     category = _resolve(lookups.categories, seed.category, kind="categoría", product_slug=seed.slug)
     collection = _resolve(
@@ -236,6 +246,13 @@ async def _upsert_product(
         for label, in_stock in seed.sizes.items()
     ]
     await repository.flush(session)
+    if not await repository.has_images(session, product.id):
+        # Una foto de prueba solo si no tiene ninguna: repetir el seed no duplica.
+        stored = store_product_image(
+            storage, product.code, 0, placeholder_image(seed.name, product.code)
+        )
+        repository.add(session, ProductImage.from_stored(product.id, stored, alt=seed.name))
+        await repository.flush(session)
 
 
 async def _existing_product(session: AsyncSession, slug: str) -> Product | None:

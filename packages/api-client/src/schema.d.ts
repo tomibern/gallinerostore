@@ -84,6 +84,25 @@ export interface components {
              */
             storage: "ok" | "error";
         };
+        /** ImageOut */
+        ImageOut: {
+            /**
+             * Full
+             * @description Ruta de la imagen completa (lado mayor 1600 px), bajo /media.
+             */
+            full: string;
+            /**
+             * Thumb
+             * @description Ruta de la miniatura (400 px), bajo /media.
+             */
+            thumb: string;
+            /** Alt */
+            alt: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+        };
         /** ProductListItem */
         ProductListItem: {
             /**
@@ -113,6 +132,8 @@ export interface components {
              * @description En el orden de su grupo de talles.
              */
             sizes: components["schemas"]["ProductSizeOut"][];
+            /** @description La primera imagen del producto, si tiene. */
+            cover: components["schemas"]["ImageOut"] | null;
         };
         /** ProductSizeOut */
         ProductSizeOut: {

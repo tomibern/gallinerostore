@@ -9,14 +9,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.core.storage import ObjectStorage
 from app.modules.catalog.models import Collection, Product
 from app.modules.catalog.seed import SeedError, apply_seed, load_seed
 from tests.conftest import FIXTURES
-
-
-@pytest.fixture
-async def seeded(settings: Settings, db_session: AsyncSession) -> None:
-    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
 
 
 def _by_slug(products: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -74,11 +70,15 @@ async def test_stock_product_without_available_sizes_is_out_of_stock(
 
 
 async def test_seeding_twice_does_not_duplicate_products(
-    client: httpx.AsyncClient, settings: Settings, db_session: AsyncSession, seeded: None
+    client: httpx.AsyncClient,
+    settings: Settings,
+    db_session: AsyncSession,
+    storage: ObjectStorage,
+    seeded: None,
 ) -> None:
     first = _by_slug((await client.get("/products")).json())
 
-    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
+    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config, storage)
     second = _by_slug((await client.get("/products")).json())
 
     assert second.keys() == first.keys()
@@ -86,21 +86,28 @@ async def test_seeding_twice_does_not_duplicate_products(
 
 
 async def test_a_discarded_product_code_is_never_reused(
-    client: httpx.AsyncClient, settings: Settings, db_session: AsyncSession, seeded: None
+    client: httpx.AsyncClient,
+    settings: Settings,
+    db_session: AsyncSession,
+    storage: ObjectStorage,
+    seeded: None,
 ) -> None:
     seed = load_seed(FIXTURES / "seed.toml")
     extra = seed.products[0].model_copy(update={"slug": "remera-descartada"})
     # Se crea y se descarta (rollback): el número de código igual queda usado.
     async with db_session.begin_nested() as nested:
         await apply_seed(
-            db_session, seed.model_copy(update={"products": [extra]}), settings.store_config
+            db_session,
+            seed.model_copy(update={"products": [extra]}),
+            settings.store_config,
+            storage,
         )
         discarded = _by_slug((await client.get("/products")).json())["remera-descartada"]["code"]
         await nested.rollback()
 
     again = seed.products[0].model_copy(update={"slug": "remera-nueva"})
     await apply_seed(
-        db_session, seed.model_copy(update={"products": [again]}), settings.store_config
+        db_session, seed.model_copy(update={"products": [again]}), settings.store_config, storage
     )
     new_code = _by_slug((await client.get("/products")).json())["remera-nueva"]["code"]
 
@@ -109,7 +116,7 @@ async def test_a_discarded_product_code_is_never_reused(
 
 
 async def test_categories_reject_a_third_level(
-    settings: Settings, db_session: AsyncSession
+    settings: Settings, db_session: AsyncSession, storage: ObjectStorage
 ) -> None:
     seed = load_seed(FIXTURES / "seed.toml")
     nested = seed.categories[1].model_copy(deep=True)
@@ -117,12 +124,15 @@ async def test_categories_reject_a_third_level(
 
     with pytest.raises(SeedError, match="dos niveles"):
         await apply_seed(
-            db_session, seed.model_copy(update={"categories": [nested]}), settings.store_config
+            db_session,
+            seed.model_copy(update={"categories": [nested]}),
+            settings.store_config,
+            storage,
         )
 
 
 async def test_seed_refuses_to_guess_between_products_sharing_a_slug(
-    settings: Settings, db_session: AsyncSession, seeded: None
+    settings: Settings, db_session: AsyncSession, storage: ObjectStorage, seeded: None
 ) -> None:
     # Dos productos con el mismo slug (el slug no es único: lo puede repetir el admin).
     other = await db_session.scalar(select(Product).where(Product.slug == "buzo-a-pedido"))
@@ -131,18 +141,23 @@ async def test_seed_refuses_to_guess_between_products_sharing_a_slug(
     await db_session.flush()
 
     with pytest.raises(SeedError, match="no puede saber cuál actualizar"):
-        await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
+        await apply_seed(
+            db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config, storage
+        )
 
 
 async def test_seed_rejects_more_than_one_default_collection(
-    settings: Settings, db_session: AsyncSession
+    settings: Settings, db_session: AsyncSession, storage: ObjectStorage
 ) -> None:
     seed = load_seed(FIXTURES / "seed.toml")
     both_default = [c.model_copy(update={"default": True}) for c in seed.collections]
 
     with pytest.raises(SeedError, match="Solo una colección"):
         await apply_seed(
-            db_session, seed.model_copy(update={"collections": both_default}), settings.store_config
+            db_session,
+            seed.model_copy(update={"collections": both_default}),
+            settings.store_config,
+            storage,
         )
 
 

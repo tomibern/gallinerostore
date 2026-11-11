@@ -22,6 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base
+from app.modules.media.service import StoredImage
 
 
 class SaleMode(StrEnum):
@@ -135,6 +136,12 @@ class Product(Base):
     sizes: Mapped[list["ProductSize"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )
+    # En orden: la primera es la portada.
+    images: Mapped[list["ProductImage"]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductImage.sort_order",
+    )
 
 
 class ProductSize(Base):
@@ -149,6 +156,37 @@ class ProductSize(Base):
 
     product: Mapped[Product] = relationship(back_populates="sizes")
     size: Mapped[Size] = relationship()
+
+
+class ProductImage(Base):
+    __tablename__ = "product_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
+    # Claves dentro del bucket, nunca URLs: el dominio de las fotos puede cambiar.
+    path_full: Mapped[str] = mapped_column(String(300))
+    path_thumb: Mapped[str] = mapped_column(String(300))
+    alt: Mapped[str] = mapped_column(String(300))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    product: Mapped[Product] = relationship(back_populates="images")
+
+    @classmethod
+    def from_stored(cls, product_id: int, stored: StoredImage, alt: str) -> "ProductImage":
+        """La fila para una imagen ya subida: rutas, medidas y posición salen de ``stored``."""
+        return cls(
+            product_id=product_id,
+            path_full=stored.path_full,
+            path_thumb=stored.path_thumb,
+            alt=alt,
+            width=stored.width,
+            height=stored.height,
+            sort_order=stored.position,
+        )
 
 
 # Secuencia de códigos: nunca reutiliza números aunque se borren productos.

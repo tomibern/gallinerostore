@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import StoreConfig, get_store_config
+from app.core.config import Settings, StoreConfig, get_settings, get_store_config
 from app.core.db import get_session
 from app.modules.catalog import service
 from app.modules.catalog.schemas import ProductListItem
@@ -17,6 +17,7 @@ router = APIRouter(tags=["catalog"])
 async def list_products(
     session: Annotated[AsyncSession, Depends(get_session)],
     store: Annotated[StoreConfig, Depends(get_store_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> list[ProductListItem]:
     """Productos publicados del catálogo."""
-    return await service.list_published(session, store)
+    return await service.list_published(session, store, settings.media_base_url)

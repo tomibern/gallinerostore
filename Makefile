@@ -14,7 +14,7 @@ endif
 
 API := apps/api
 
-.PHONY: help hooks install infra storage seed gen-client test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks e2e install infra storage seed gen-client test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -36,7 +36,7 @@ storage: infra ## Crea el bucket de imágenes si no existe
 migrate: infra ## Aplica las migraciones a la base de desarrollo
 	cd $(API) && uv run alembic upgrade head
 
-seed: migrate ## Carga los datos iniciales de config/seed.toml (se puede repetir)
+seed: migrate storage ## Carga los datos iniciales de config/seed.toml (se puede repetir)
 	cd $(API) && uv run python -m app.cli seed
 
 gen-client: ## Regenera el cliente TypeScript desde el OpenAPI de la API
@@ -69,6 +69,9 @@ web: ## Solo la web, con recarga automática
 test: migrate-test ## Corre todos los tests de la API y la web
 	cd $(API) && uv run pytest
 	npm test -w @catalog/web
+
+e2e: ## Test de punta a punta con Playwright (con `make dev` y `make seed` corriendo)
+	npm run test:e2e -w @catalog/web
 
 lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)
 	cd $(API) && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests alembic
