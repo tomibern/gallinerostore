@@ -11,7 +11,9 @@ class ProductSizeOut(BaseModel):
 
 
 class ProductListItem(BaseModel):
-    code: str = Field(description="Código permanente del producto, por ejemplo GS-014.")
+    code: str = Field(
+        description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
+    )
     name: str
     slug: str
     price: int = Field(description="Precio en la unidad menor de la moneda (centavos).")

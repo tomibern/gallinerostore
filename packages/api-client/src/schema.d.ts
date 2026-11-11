@@ -88,7 +88,7 @@ export interface components {
         ProductListItem: {
             /**
              * Code
-             * @description Código permanente del producto, por ejemplo GS-014.
+             * @description Código permanente del producto: prefijo de la tienda y número (ABC-014).
              */
             code: string;
             /** Name */

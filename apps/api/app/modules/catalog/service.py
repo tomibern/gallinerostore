@@ -8,7 +8,7 @@ from app.modules.catalog.schemas import ProductListItem, ProductSizeOut
 
 
 async def new_product_code(session: AsyncSession, prefix: str) -> str:
-    """Código permanente con el prefijo de la tienda: GS-001, GS-002… GS-1000."""
+    """Código permanente con el prefijo de la tienda: ABC-001, ABC-002… ABC-1000."""
     return f"{prefix}-{await repository.next_code_number(session):03d}"
 
 

@@ -95,7 +95,8 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Código permanente (GS-014): lo asigna el service al crear el producto.
+    # Código permanente (ABC-014, con el prefijo de config/store.toml): lo asigna el
+    # service al crear el producto.
     code: Mapped[str] = mapped_column(String(20), unique=True)
     name: Mapped[str] = mapped_column(String(200))
     # No es único: el producto se identifica por código (renombrar no rompe links).
