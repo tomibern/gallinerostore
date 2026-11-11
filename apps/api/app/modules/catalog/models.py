@@ -10,12 +10,14 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Table,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -74,6 +76,15 @@ class Category(Base):
 
 class Collection(Base):
     __tablename__ = "collections"
+    __table_args__ = (
+        # Una sola colección por defecto: índice único sobre las filas con is_default.
+        Index(
+            "uq_collections_single_default",
+            "is_default",
+            unique=True,
+            postgresql_where=text("is_default"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(80))

@@ -5,10 +5,11 @@ from typing import Any
 import httpx
 import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.modules.catalog.models import Product
+from app.modules.catalog.models import Collection, Product
 from app.modules.catalog.seed import SeedError, apply_seed, load_seed
 from tests.conftest import FIXTURES
 
@@ -143,3 +144,13 @@ async def test_seed_rejects_more_than_one_default_collection(
         await apply_seed(
             db_session, seed.model_copy(update={"collections": both_default}), settings.store_config
         )
+
+
+async def test_database_allows_a_single_default_collection(
+    db_session: AsyncSession, seeded: None
+) -> None:
+    # La regla vale aunque alguien escriba sin pasar por el seed (por ejemplo, el admin).
+    db_session.add(Collection(name="Otra", slug="otra", is_default=True, sort_order=9))
+
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
