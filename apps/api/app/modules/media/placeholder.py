@@ -3,10 +3,18 @@
 import hashlib
 import io
 import textwrap
+import unicodedata
 
 from PIL import Image, ImageDraw, ImageFont
 
 SIZE = 1600
+
+
+def _ascii(text: str) -> str:
+    """La fuente que trae Pillow solo dibuja ASCII: sin tildes, eñes ni rayas."""
+    text = text.replace("—", "-").replace("–", "-").replace("¿", "").replace("¡", "")
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in decomposed if c.isascii())
 
 
 def placeholder_image(title: str, code: str) -> bytes:
@@ -18,12 +26,12 @@ def placeholder_image(title: str, code: str) -> bytes:
 
     title_font = ImageFont.load_default(size=110)
     code_font = ImageFont.load_default(size=80)
-    lines = textwrap.wrap(title, width=18)
+    lines = textwrap.wrap(_ascii(title), width=18)
     y = SIZE // 2 - 70 * len(lines)
     for line in lines:
         draw.text((SIZE // 2, y), line, font=title_font, fill="white", anchor="mm")
         y += 140
-    draw.text((SIZE // 2, y + 60), code, font=code_font, fill="white", anchor="mm")
+    draw.text((SIZE // 2, y + 60), _ascii(code), font=code_font, fill="white", anchor="mm")
 
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
