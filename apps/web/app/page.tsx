@@ -37,14 +37,24 @@ export default async function Home() {
   );
 }
 
+// Disponibilidad que ve el cliente: encargue, stock o sin stock. La van a
+// reusar los filtros y la sección de cada producto en la fase 3.
+type Availability = "on_order" | "in_stock" | "out_of_stock";
+
+const AVAILABILITY_LABEL: Record<Availability, string> = {
+  on_order: "Por encargue",
+  in_stock: "En stock",
+  out_of_stock: "Sin stock",
+};
+
+function availability(product: ProductListItem): Availability {
+  if (product.sale_mode === "on_order") return "on_order";
+  return product.out_of_stock ? "out_of_stock" : "in_stock";
+}
+
 function ProductCard({ product, store }: { product: ProductListItem; store: PublicStore }) {
   const price = formatPrice(product.price, product.currency, store.locale, store.price_decimals);
-  const badge =
-    product.sale_mode === "on_order"
-      ? "Por encargue"
-      : product.out_of_stock
-        ? "Sin stock"
-        : "En stock";
+  const badge = AVAILABILITY_LABEL[availability(product)];
 
   return (
     <li
