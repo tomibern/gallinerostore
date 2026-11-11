@@ -1,0 +1,96 @@
+# Calidad en cada push a main y en cada PR: estilo, tipos, tests y build.
+# No despliega nada (el deploy llega en la fase 5).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: catalog
+          POSTGRES_PASSWORD: catalog
+          POSTGRES_DB: catalog_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U catalog -d catalog_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+      storage:
+        image: rustfs/rustfs:1.0.4
+        env:
+          RUSTFS_ACCESS_KEY: catalog
+          RUSTFS_SECRET_KEY: catalog-secret
+        ports: ["9000:9000"]
+        options: >-
+          --health-cmd "curl -fs http://localhost:9000/health || exit 1"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql+asyncpg://catalog:catalog@localhost:5432/catalog_test
+      TEST_DATABASE_URL: postgresql+asyncpg://catalog:catalog@localhost:5432/catalog_test
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ACCESS_KEY: catalog
+      S3_SECRET_KEY: catalog-secret
+      S3_REGION: us-east-1
+      S3_BUCKET: media
+    steps:
+      - uses: actions/checkout@v7
+      # setup-uv no publica tags de versión mayor (v10): va la versión completa.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.11.7"
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Formato
+        run: uv run ruff format --check .
+      - name: Tipos
+        run: uv run mypy app tests alembic
+      - name: Migraciones
+        run: uv run alembic -x database_url="$TEST_DATABASE_URL" upgrade head
+      - name: Tests
+        run: uv run pytest
+
+  api-image:
+    name: API (imagen Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build de la imagen de producción
+        run: docker build -f apps/api/Dockerfile --target prod -t catalog-api .
+
+  web:
+    name: Web (prettier, eslint, tsc, vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Formato
+        run: npm run format:check
+      - name: Lint
+        run: npm run lint -w @catalog/web
+      - name: Tipos
+        run: npm run typecheck -w @catalog/web
+      - name: Tests
+        run: npm test -w @catalog/web

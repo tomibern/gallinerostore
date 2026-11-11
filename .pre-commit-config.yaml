@@ -1,0 +1,50 @@
+# Hooks de git del proyecto. Instalación (una vez por clon): `make hooks`.
+# Todos son locales: usan las versiones de ruff, mypy, prettier y eslint que
+# fija el proyecto (uv.lock y package-lock.json), igual que la CI.
+minimum_pre_commit_version: "4.7.0"
+# Los hooks de código corren solo antes del commit; el de mensaje, en commit-msg.
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff (lint de la API)
+        entry: uv run --project apps/api ruff check --fix --config apps/api/pyproject.toml
+        language: system
+        types: [python]
+        files: ^apps/api/
+
+      - id: ruff-format
+        name: ruff (formato de la API)
+        entry: uv run --project apps/api ruff format --config apps/api/pyproject.toml
+        language: system
+        types: [python]
+        files: ^apps/api/
+
+      - id: mypy
+        name: mypy (tipos de la API)
+        entry: bash -c 'cd apps/api && uv run mypy app tests alembic'
+        language: system
+        types: [python]
+        files: ^apps/api/
+        pass_filenames: false
+
+      - id: prettier
+        name: prettier (formato JS/TS/CSS/JSON)
+        entry: npx prettier --write --ignore-unknown
+        language: system
+        files: \.(js|mjs|ts|tsx|css|json)$
+
+      - id: eslint
+        name: eslint (web)
+        entry: npm run --silent lint -w @catalog/web
+        language: system
+        files: ^apps/web/.*\.(js|mjs|ts|tsx)$
+        pass_filenames: false
+
+      - id: strip-claude-attribution
+        name: quitar atribución de Claude del mensaje
+        entry: scripts/strip-claude-attribution.sh
+        language: script
+        stages: [commit-msg]

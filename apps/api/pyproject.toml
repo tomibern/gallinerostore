@@ -31,6 +31,12 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM"]
 
+[tool.ruff.lint.isort]
+# Explícito para que el orden sea el mismo corriendo desde apps/api o desde la
+# raíz (hooks): la carpeta alembic/ no es código propio, la librería sí.
+known-first-party = ["app", "tests"]
+known-third-party = ["alembic"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true

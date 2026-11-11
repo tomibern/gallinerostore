@@ -5,7 +5,7 @@ SHELL := /bin/bash
 -include .env
 export
 
-ENV_FREE_GOALS := help reset
+ENV_FREE_GOALS := help reset hooks
 ifneq (,$(filter-out $(ENV_FREE_GOALS),$(or $(MAKECMDGOALS),help)))
 ifeq (,$(wildcard .env))
 $(error Falta .env: corré `cp .env.example .env`)
@@ -14,10 +14,14 @@ endif
 
 API := apps/api
 
-.PHONY: help install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
+
+hooks: ## Instala los hooks de git (una vez por clon)
+	git config --unset-all core.hooksPath || true
+	uvx pre-commit@4.7.0 install --hook-type pre-commit --hook-type commit-msg
 
 install: ## Instala dependencias de Python y JS
 	cd $(API) && uv sync
@@ -42,7 +46,9 @@ migrate-test: test-db ## Aplica las migraciones a la base de tests
 
 dev: install migrate storage ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
 	@echo "Web: http://localhost:3000  ·  en la red: http://$$(node -p "Object.values(require('os').networkInterfaces()).flat().find(n => n.family === 'IPv4' && !n.internal)?.address ?? 'localhost'"):3000"
-	@trap 'kill 0' INT TERM EXIT; \
+	@# Al cortar: se desactivan los traps y la shell ignora TERM antes de
+	@# avisarle al grupo, así la señal no vuelve a disparar el trap en bucle.
+	@trap 'trap - INT EXIT; trap "" TERM; kill 0 2>/dev/null; wait; exit 0' INT TERM EXIT; \
 	$(MAKE) --no-print-directory api & \
 	$(MAKE) --no-print-directory web & \
 	wait
@@ -53,11 +59,13 @@ api: ## Solo la API, con recarga automática
 web: ## Solo la web, con recarga automática
 	npm run dev -w @catalog/web
 
-test: migrate-test ## Corre todos los tests
+test: migrate-test ## Corre todos los tests de la API y la web
 	cd $(API) && uv run pytest
+	npm test -w @catalog/web
 
-lint: ## Revisa estilo y tipos de la API y la web
+lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)
 	cd $(API) && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests alembic
+	npm run format:check
 	npm run lint -w @catalog/web
 	npm run typecheck -w @catalog/web
 

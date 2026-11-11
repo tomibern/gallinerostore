@@ -38,7 +38,7 @@ cd gallinerostore
 ```
 
 ```bash
-git config core.hooksPath .githooks
+make hooks
 ```
 
 ```bash
@@ -58,6 +58,11 @@ make dev
 
 Postgres se publica en el puerto 5433 para no chocar con un Postgres instalado en la máquina.
 
+## Calidad
+
+- **Hooks de git** (`make hooks`, una vez por clon): antes de cada commit corren ruff, mypy, Prettier y ESLint sobre los archivos cambiados; si algo falla, el commit no se crea. En el mensaje se quita cualquier atribución de Claude.
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`): en cada push a `main` y en cada PR corre lint, tipos y tests de la API contra Postgres y RustFS, el build de la imagen de la API, y formato, lint, tipos y tests de la web. `make lint` y `make test` corren lo mismo en local.
+
 ## Comandos
 
 | Comando | Qué hace |
@@ -67,4 +72,5 @@ Postgres se publica en el puerto 5433 para no chocar con un Postgres instalado e
 | `make lint` | Estilo y tipos de la API y la web |
 | `make reset` | Borra los datos de Postgres y del almacenamiento |
 | `make docker-api` | Construye la imagen de producción de la API |
+| `make hooks` | Instala los hooks de git |
 | `make help` | Lista todos los comandos |

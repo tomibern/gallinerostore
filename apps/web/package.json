@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
-    "typecheck": "npm run sync-brand && next typegen && tsc --noEmit"
+    "typecheck": "npm run sync-brand && next typegen && tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "^16.4.6",
@@ -26,6 +27,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4.3.5",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0"
   }
 }
