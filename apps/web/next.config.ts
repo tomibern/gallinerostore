@@ -21,6 +21,8 @@ const lanAddresses = Object.values(networkInterfaces())
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: lanAddresses,
+  // El cliente generado se publica como TypeScript dentro del monorepo.
+  transpilePackages: ["@catalog/api-client"],
   // El navegador solo habla con Next; la API va detrás (ADR 0003).
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiInternalUrl()}/:path*` }];
