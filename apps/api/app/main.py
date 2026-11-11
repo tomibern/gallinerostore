@@ -27,7 +27,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await engine.dispose()
 
-    app = FastAPI(title=f"{settings.store_config.store.name} API", lifespan=lifespan)
+    # Título genérico: el OpenAPI (y el cliente generado) es del núcleo, no del cliente.
+    app = FastAPI(title="Catalog API", lifespan=lifespan)
     app.include_router(health_router)
     app.include_router(settings_router)
     app.include_router(catalog_router)

@@ -8,3 +8,5 @@ apps/api
 apps/web/app/brand.generated.css
 apps/web/next-env.d.ts
 .claude
+packages/api-client/openapi.json
+packages/api-client/src/schema.d.ts

@@ -2,9 +2,11 @@
 
 - ``ensure-bucket``: crea el bucket de imágenes si no existe.
 - ``seed``: carga los datos iniciales del cliente (idempotente).
+- ``openapi``: imprime el OpenAPI de la API (lo usa ``make gen-client``).
 """
 
 import asyncio
+import json
 import sys
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.db import create_engine
 from app.core.storage import create_s3_client, ensure_bucket
+from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
 
-USAGE = "Uso: python -m app.cli [ensure-bucket | seed]"
+USAGE = "Uso: python -m app.cli [ensure-bucket | seed | openapi]"
 
 
 def _ensure_bucket(settings: Settings) -> None:
@@ -43,6 +46,8 @@ def main(argv: list[str]) -> int:
             _ensure_bucket(settings)
         case ["seed"]:
             asyncio.run(_seed(settings))
+        case ["openapi"]:
+            print(json.dumps(create_app(settings).openapi(), indent=2, ensure_ascii=False))
         case _:
             print(USAGE, file=sys.stderr)
             return 2
