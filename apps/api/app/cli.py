@@ -16,6 +16,7 @@ from app.core.db import create_engine
 from app.core.storage import ObjectStorage, allow_public_read, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
+from app.modules.settings.seed import apply_settings_seed, load_settings_seed
 
 USAGE = "Uso: python -m app.cli [ensure-bucket | seed | openapi]"
 
@@ -38,6 +39,9 @@ async def _seed(settings: Settings) -> None:
         ):
             storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
             await apply_seed(session, seed, settings.store_config, storage)
+            store_settings = load_settings_seed(settings.seed_path)
+            if store_settings is not None:
+                await apply_settings_seed(session, store_settings)
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")
