@@ -6,6 +6,21 @@ from app.core.config import StoreConfig
 from app.modules.catalog import repository
 from app.modules.catalog.schemas import ProductListItem, ProductSizeOut
 
+MAX_CATEGORY_DEPTH = 2
+
+
+class CategoryTooDeepError(ValueError):
+    """Las categorías admiten como máximo dos niveles."""
+
+
+def check_category_depth(slug: str, depth: int) -> None:
+    """Valida el nivel de una categoría (1 = raíz). El admin la va a reusar al crear categorías."""
+    if depth > MAX_CATEGORY_DEPTH:
+        raise CategoryTooDeepError(
+            f"La categoría «{slug}» quedaría en el nivel {depth}: "
+            f"las categorías admiten como máximo dos niveles."
+        )
+
 
 async def new_product_code(session: AsyncSession, prefix: str) -> str:
     """Código permanente con el prefijo de la tienda: ABC-001, ABC-002… ABC-1000."""

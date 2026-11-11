@@ -2,18 +2,19 @@
 
 El núcleo no trae datos: cada cliente tiene su ``config/seed.toml``. La carga
 es idempotente: se puede correr varias veces sin duplicar nada (busca por slug
-o por grupo y etiqueta, y actualiza lo que ya existe).
+o por grupo y etiqueta, y actualiza lo que ya existe). Las reglas de negocio
+salen del service y el acceso a datos, del repository.
 """
 
 import tomllib
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import BaseModel
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
-from app.modules.catalog import service
+from app.modules.catalog import repository, service
 from app.modules.catalog.models import (
     Category,
     Collection,
@@ -24,8 +25,6 @@ from app.modules.catalog.models import (
     Size,
     Version,
 )
-
-MAX_CATEGORY_DEPTH = 2
 
 
 class SeedError(ValueError):
@@ -56,6 +55,7 @@ class VersionSeed(BaseModel):
 
 
 class ProductSeed(BaseModel):
+    # En el seed el slug identifica al producto (todavía no tiene código).
     slug: str
     name: str
     category: str
@@ -80,6 +80,16 @@ class CatalogSeed(BaseModel):
     products: list[ProductSeed] = []
 
 
+@dataclass
+class SeedLookups:
+    """Lo ya cargado, por clave del seed, para resolver las referencias de los productos."""
+
+    sizes: dict[tuple[str, str], Size] = field(default_factory=dict)
+    categories: dict[str, Category] = field(default_factory=dict)
+    collections: dict[str, Collection] = field(default_factory=dict)
+    versions: dict[str, Version] = field(default_factory=dict)
+
+
 def load_seed(path: Path) -> CatalogSeed:
     with path.open("rb") as f:
         return CatalogSeed.model_validate(tomllib.load(f))
@@ -87,54 +97,62 @@ def load_seed(path: Path) -> CatalogSeed:
 
 async def apply_seed(session: AsyncSession, seed: CatalogSeed, store: StoreConfig) -> None:
     """Carga el seed en la sesión (flush, sin commit: decide quien llama)."""
-    _check_category_depth(seed.categories)
+    _check_categories(seed.categories)
+    _check_single_default_collection(seed.collections)
 
-    sizes = await _upsert_sizes(session, seed.sizes)
-    categories: dict[str, Category] = {}
+    lookups = SeedLookups(sizes=await _upsert_sizes(session, seed.sizes))
     for position, category in enumerate(seed.categories):
-        await _upsert_category(session, category, None, None, position, categories)
-    collections = {
-        c.slug: await _upsert_by_slug(
-            session, Collection, c.slug, name=c.name, is_default=c.default, sort_order=i
+        lookups.categories |= await _upsert_category(session, category, None, None, position)
+    for position, collection in enumerate(seed.collections):
+        lookups.collections[collection.slug] = await _upsert_by_slug(
+            session,
+            Collection,
+            collection.slug,
+            name=collection.name,
+            is_default=collection.default,
+            sort_order=position,
         )
-        for i, c in enumerate(seed.collections)
-    }
-    versions = {
-        v.slug: await _upsert_by_slug(session, Version, v.slug, name=v.name, sort_order=i)
-        for i, v in enumerate(seed.versions)
-    }
-    await session.flush()
+    for position, version in enumerate(seed.versions):
+        lookups.versions[version.slug] = await _upsert_by_slug(
+            session, Version, version.slug, name=version.name, sort_order=position
+        )
+    await repository.flush(session)
 
     for position, product in enumerate(seed.products):
-        await _upsert_product(
-            session, product, position, store, sizes, categories, collections, versions
-        )
-    await session.flush()
+        await _upsert_product(session, product, position, store, lookups)
+    await repository.flush(session)
 
 
-def _check_category_depth(categories: list[CategorySeed], depth: int = 1) -> None:
+def _check_categories(categories: list[CategorySeed], depth: int = 1) -> None:
     for category in categories:
-        if category.children and depth >= MAX_CATEGORY_DEPTH:
-            raise SeedError(
-                f"La categoría «{category.slug}» tiene subcategorías: "
-                f"las categorías admiten como máximo dos niveles."
-            )
-        _check_category_depth(category.children, depth + 1)
+        try:
+            service.check_category_depth(category.slug, depth)
+        except service.CategoryTooDeepError as error:
+            raise SeedError(str(error)) from error
+        _check_categories(category.children, depth + 1)
+
+
+def _check_single_default_collection(collections: list[CollectionSeed]) -> None:
+    defaults = [c.slug for c in collections if c.default]
+    if len(defaults) > 1:
+        raise SeedError(
+            f"Solo una colección puede ser la por defecto; hay {len(defaults)}: {defaults}."
+        )
 
 
 async def _upsert_sizes(
     session: AsyncSession, groups: list[SizeGroupSeed]
 ) -> dict[tuple[str, str], Size]:
-    existing = {(s.size_group, s.label): s for s in (await session.scalars(select(Size))).all()}
+    sizes = {(s.size_group, s.label): s for s in await repository.all_sizes(session)}
     for group in groups:
         for position, label in enumerate(group.labels):
-            size = existing.get((group.group, label))
+            size = sizes.get((group.group, label))
             if size is None:
                 size = Size(label=label, size_group=group.group)
-                session.add(size)
-                existing[(group.group, label)] = size
+                repository.add(session, size)
+                sizes[(group.group, label)] = size
             size.sort_order = position
-    return existing
+    return sizes
 
 
 async def _upsert_category(
@@ -143,28 +161,35 @@ async def _upsert_category(
     parent: Category | None,
     inherited_group: str | None,
     position: int,
-    out: dict[str, Category],
-) -> None:
+) -> dict[str, Category]:
+    """Crea o actualiza la categoría y sus hijas. Devuelve todas por slug."""
     size_group = seed.size_group or inherited_group
     if size_group is None:
         raise SeedError(f"La categoría «{seed.slug}» no tiene grupo de talles.")
     category = await _upsert_by_slug(
-        session, Category, seed.slug, name=seed.name, size_group=size_group, sort_order=position
+        session,
+        Category,
+        seed.slug,
+        name=seed.name,
+        size_group=size_group,
+        sort_order=position,
+        parent_id=parent.id if parent else None,
     )
-    category.parent_id = parent.id if parent else None
-    await session.flush()
-    out[seed.slug] = category
+    await repository.flush(session)
+
+    loaded = {seed.slug: category}
     for child_position, child in enumerate(seed.children):
-        await _upsert_category(session, child, category, size_group, child_position, out)
+        loaded |= await _upsert_category(session, child, category, size_group, child_position)
+    return loaded
 
 
 async def _upsert_by_slug[T: (Category, Collection, Version)](
     session: AsyncSession, model: type[T], slug: str, **fields: object
 ) -> T:
-    instance = await session.scalar(select(model).where(model.slug == slug))
+    instance = await repository.find_by_slug(session, model, slug)
     if instance is None:
         instance = model(slug=slug)
-        session.add(instance)
+        repository.add(session, instance)
     for name, value in fields.items():
         setattr(instance, name, value)
     return instance
@@ -175,19 +200,22 @@ async def _upsert_product(
     seed: ProductSeed,
     position: int,
     store: StoreConfig,
-    sizes: dict[tuple[str, str], Size],
-    categories: dict[str, Category],
-    collections: dict[str, Collection],
-    versions: dict[str, Version],
+    lookups: SeedLookups,
 ) -> None:
-    category = _lookup(categories, seed.category, "categoría", seed.slug)
-    collection = _lookup(collections, seed.collection, "colección", seed.slug)
-    version = _lookup(versions, seed.version, "versión", seed.slug) if seed.version else None
+    category = _resolve(lookups.categories, seed.category, kind="categoría", product_slug=seed.slug)
+    collection = _resolve(
+        lookups.collections, seed.collection, kind="colección", product_slug=seed.slug
+    )
+    version = (
+        _resolve(lookups.versions, seed.version, kind="versión", product_slug=seed.slug)
+        if seed.version
+        else None
+    )
 
-    product = await session.scalar(select(Product).where(Product.slug == seed.slug).limit(1))
+    product = await _existing_product(session, seed.slug)
     if product is None:
         product = Product(code=await service.new_product_code(session, store.store.code_prefix))
-        session.add(product)
+        repository.add(session, product)
 
     product.slug = seed.slug
     product.name = seed.name
@@ -201,22 +229,40 @@ async def _upsert_product(
     product.price = seed.price
     product.featured = seed.featured
     product.sort_order = position
-    await session.flush()
-
-    await session.refresh(product, ["sizes"])
-    product.sizes.clear()
-    await session.flush()
-    for label, in_stock in seed.sizes.items():
-        size = sizes.get((category.size_group, label))
-        if size is None:
-            raise SeedError(
-                f"El producto «{seed.slug}» usa el talle «{label}», que no existe en el "
-                f"grupo «{category.size_group}» de su categoría."
-            )
-        product.sizes.append(ProductSize(size_id=size.id, in_stock=in_stock))
+    product.sizes = [
+        ProductSize(
+            size_id=_resolve_size(lookups, category, label, seed.slug).id, in_stock=in_stock
+        )
+        for label, in_stock in seed.sizes.items()
+    ]
+    await repository.flush(session)
 
 
-def _lookup[T](items: dict[str, T], slug: str, what: str, product: str) -> T:
+async def _existing_product(session: AsyncSession, slug: str) -> Product | None:
+    """El producto del seed con ese slug. Si hay más de uno, no adivina cuál pisar."""
+    matches = await repository.products_with_slug(session, slug)
+    if len(matches) > 1:
+        codes = ", ".join(p.code for p in matches)
+        raise SeedError(
+            f"Hay {len(matches)} productos con el slug «{slug}» ({codes}): "
+            f"el seed no puede saber cuál actualizar. Cambiá el slug en el seed."
+        )
+    return matches[0] if matches else None
+
+
+def _resolve_size(lookups: SeedLookups, category: Category, label: str, product_slug: str) -> Size:
+    size = lookups.sizes.get((category.size_group, label))
+    if size is None:
+        raise SeedError(
+            f"El producto «{product_slug}» usa el talle «{label}», que no existe en el "
+            f"grupo «{category.size_group}» de su categoría."
+        )
+    return size
+
+
+def _resolve[T](items: dict[str, T], slug: str, *, kind: str, product_slug: str) -> T:
     if slug not in items:
-        raise SeedError(f"El producto «{product}» usa la {what} «{slug}», que no está en el seed.")
+        raise SeedError(
+            f"El producto «{product_slug}» usa la {kind} «{slug}», que no está en el seed."
+        )
     return items[slug]

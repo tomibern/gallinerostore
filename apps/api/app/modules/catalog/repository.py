@@ -6,11 +6,16 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.models import Base
 from app.modules.catalog.models import (
     PRODUCT_CODE_SEQUENCE,
+    Category,
+    Collection,
     Product,
     ProductSize,
     ProductStatus,
+    Size,
+    Version,
     catalog_products,
 )
 
@@ -32,3 +37,27 @@ async def published_with_stock_flag(session: AsyncSession) -> Sequence[tuple[Pro
     )
     result = await session.execute(stmt)
     return [(product, bool(out_of_stock)) for product, out_of_stock in result.all()]
+
+
+async def all_sizes(session: AsyncSession) -> Sequence[Size]:
+    return (await session.scalars(select(Size))).all()
+
+
+async def find_by_slug[T: (Category, Collection, Version)](
+    session: AsyncSession, model: type[T], slug: str
+) -> T | None:
+    return await session.scalar(select(model).where(model.slug == slug))
+
+
+async def products_with_slug(session: AsyncSession, slug: str) -> Sequence[Product]:
+    """Todos los productos con ese slug (no es único: puede haber más de uno)."""
+    stmt = select(Product).where(Product.slug == slug).options(selectinload(Product.sizes))
+    return (await session.scalars(stmt)).all()
+
+
+def add(session: AsyncSession, instance: Base) -> None:
+    session.add(instance)
+
+
+async def flush(session: AsyncSession) -> None:
+    await session.flush()
