@@ -35,7 +35,11 @@ Documentación, issues, textos de UI, comentarios y docstrings en español riopl
 
 ## Agent skills
 
-Skills de [mattpocock/skills](https://github.com/mattpocock/skills) copiadas en `.claude/skills/` (ver `docs/agents/skills.md`).
+Skills de [mattpocock/skills](https://github.com/mattpocock/skills) copiadas en `.claude/skills/`. Flujo completo en `docs/agents/skills.md`; en corto:
+
+- **Pensar, una vez por funcionalidad y en una sola sesión**: `/research` si hace falta → `/grill-with-docs` → `/prototype` si hace falta → `/to-spec` → `/to-tickets`. El ticket es el plan.
+- **Construir, un ticket por sesión nueva**: `/implement #N` (rama propia, `/tdd`, `/code-review`, lint y tests, PR con `/pr`).
+- **Cerrar la funcionalidad**: `/retro`.
 
 ### Issue tracker
 
