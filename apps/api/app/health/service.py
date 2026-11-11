@@ -27,8 +27,9 @@ async def _check_database(engine: AsyncEngine) -> Status:
 
 
 async def _check_storage(s3: S3Client, bucket: str) -> Status:
+    """El almacenamiento está sano si responde y existe el bucket configurado."""
     try:
-        await anyio.to_thread.run_sync(s3.list_buckets)
+        await anyio.to_thread.run_sync(lambda: s3.head_bucket(Bucket=bucket))
     except Exception:
         return "error"
     return "ok"

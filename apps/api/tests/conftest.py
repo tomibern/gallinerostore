@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.db import get_session
+from app.core.storage import create_s3_client, ensure_bucket
 from app.main import create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -35,10 +36,13 @@ _load_dotenv()
 @pytest.fixture(scope="session")
 def settings() -> Settings:
     """Configuración de tests: misma que desarrollo, pero contra la base de tests."""
-    return Settings(  # el resto sale del entorno
+    test_settings = Settings(  # el resto sale del entorno
         database_url=os.environ["TEST_DATABASE_URL"],
+        s3_bucket="test-media",
         store_config_path=Path(__file__).parent / "fixtures" / "store.toml",
     )
+    ensure_bucket(create_s3_client(test_settings), test_settings.s3_bucket)
+    return test_settings
 
 
 @pytest.fixture

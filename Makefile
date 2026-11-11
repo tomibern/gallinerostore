@@ -9,7 +9,7 @@ export
 
 API := apps/api
 
-.PHONY: help install infra migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help install infra storage migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -21,13 +21,16 @@ install: ## Instala dependencias de Python y JS
 infra: ## Levanta Postgres y el almacenamiento S3 y espera a que estén sanos
 	docker compose up -d --wait
 
+storage: infra ## Crea el bucket de imágenes si no existe
+	cd $(API) && uv run python -m app.cli ensure-bucket
+
 migrate: infra ## Aplica las migraciones a la base de desarrollo
 	cd $(API) && uv run alembic upgrade head
 
 migrate-test: infra ## Aplica las migraciones a la base de tests
 	cd $(API) && uv run alembic -x database_url=$(TEST_DATABASE_URL) upgrade head
 
-dev: install migrate ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
+dev: install migrate storage ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
 	@echo "Web: http://localhost:3000  ·  en la red: http://$$(hostname -I | awk '{print $$1}'):3000"
 	@trap 'kill 0' INT TERM EXIT; \
 	$(MAKE) --no-print-directory api & \

@@ -46,3 +46,15 @@ async def test_health_fails_clearly_when_storage_is_unreachable(settings: Settin
         "status": "error",
         "checks": {"database": "ok", "storage": "error"},
     }
+
+
+async def test_health_fails_clearly_when_bucket_is_missing(settings: Settings) -> None:
+    broken = settings.model_copy(update={"s3_bucket": "bucket-que-no-existe"})
+
+    response = await _get_health(broken)
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "error",
+        "checks": {"database": "ok", "storage": "error"},
+    }
