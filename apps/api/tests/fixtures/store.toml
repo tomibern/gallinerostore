@@ -1,0 +1,17 @@
+# Tienda ficticia para tests: el núcleo no se prueba con datos de un cliente real.
+[store]
+name = "Tienda de Prueba"
+brand = "neutral"
+locale = "es-AR"
+currency = "USD"
+price_decimals = 2
+code_prefix = "TP"
+collection_label = "Marca"
+
+[features]
+collections = true
+versions = false
+on_order = true
+instagram = false
+metrics = true
+product_story = false
