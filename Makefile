@@ -14,7 +14,7 @@ endif
 
 API := apps/api
 
-.PHONY: help hooks e2e install infra storage seed gen-client test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks e2e install infra storage seed gen-client check-client test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -42,6 +42,20 @@ seed: migrate storage ## Carga los datos iniciales de config/seed.toml (se puede
 gen-client: ## Regenera el cliente TypeScript desde el OpenAPI de la API
 	cd $(API) && uv run python -m app.cli openapi > ../../packages/api-client/openapi.json
 	npm run generate -w @catalog/api-client
+
+# Regenera y compara con lo commiteado. Usa git status (y no git diff) para ver
+# también archivos nuevos sin trackear. Deja los archivos regenerados en disco.
+check-client: gen-client ## Falla si el cliente generado no está al día (lo regenera)
+	@if [ -n "$$(git status --porcelain -- packages/api-client)" ]; then \
+		msg="El cliente generado no está al día con el OpenAPI de la API. Regenerá el cliente con \`make gen-client\` y commitealo."; \
+		git status --porcelain -- packages/api-client; \
+		git --no-pager diff --stat -- packages/api-client; \
+		git --no-pager diff -- packages/api-client; \
+		if [ -n "$$GITHUB_ACTIONS" ]; then echo "::error title=Cliente desactualizado::$$msg"; fi; \
+		echo "$$msg" >&2; \
+		exit 1; \
+	fi
+	@echo "El cliente generado está al día."
 
 test-db: infra ## Crea la base de tests si no existe
 	@docker compose exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -tAc \
