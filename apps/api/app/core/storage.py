@@ -74,5 +74,19 @@ class ObjectStorage:
         return True
 
     def list_keys(self, prefix: str) -> list[str]:
-        response = self._s3.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
-        return sorted(obj["Key"] for obj in response.get("Contents", []))
+        paginator = self._s3.get_paginator("list_objects_v2")
+        return sorted(
+            obj["Key"]
+            for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix)
+            for obj in page.get("Contents", [])
+        )
+
+    def delete_prefix(self, prefix: str) -> int:
+        """Borra todos los archivos bajo el prefijo. Devuelve cuántos borró."""
+        keys = self.list_keys(prefix)
+        for start in range(0, len(keys), 1000):  # máximo por pedido en S3
+            batch = keys[start : start + 1000]
+            self._s3.delete_objects(
+                Bucket=self.bucket, Delete={"Objects": [{"Key": k} for k in batch]}
+            )
+        return len(keys)

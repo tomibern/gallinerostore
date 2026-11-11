@@ -1,7 +1,7 @@
 """Fixtures compartidas: la app se prueba por HTTP contra la base de tests."""
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 import httpx
@@ -87,9 +87,16 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 
 @pytest.fixture(scope="session")
-def storage(settings: Settings) -> ObjectStorage:
-    """El bucket de tests, a través de la misma interfaz que usa la app."""
-    return ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+def storage(settings: Settings) -> Iterator[ObjectStorage]:
+    """El bucket de tests, a través de la misma interfaz que usa la app.
+
+    La base hace rollback después de cada test, pero el bucket no: se vacía al
+    empezar y al terminar la sesión para que no se acumulen archivos huérfanos.
+    """
+    test_storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+    test_storage.delete_prefix("")
+    yield test_storage
+    test_storage.delete_prefix("")
 
 
 @pytest.fixture
