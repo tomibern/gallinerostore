@@ -14,7 +14,7 @@ endif
 
 API := apps/api
 
-.PHONY: help hooks install infra storage seed gen-client test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks e2e install infra storage seed gen-client test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -69,6 +69,9 @@ web: ## Solo la web, con recarga automática
 test: migrate-test ## Corre todos los tests de la API y la web
 	cd $(API) && uv run pytest
 	npm test -w @catalog/web
+
+e2e: ## Test de punta a punta con Playwright (con `make dev` y `make seed` corriendo)
+	npm run test:e2e -w @catalog/web
 
 lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)
 	cd $(API) && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests alembic
