@@ -85,7 +85,7 @@ async def test_seeding_twice_does_not_duplicate_products(
     assert {s: p["code"] for s, p in second.items()} == {s: p["code"] for s, p in first.items()}
 
 
-async def test_a_new_product_never_reuses_a_code(
+async def test_a_discarded_product_code_is_never_reused(
     client: httpx.AsyncClient, settings: Settings, db_session: AsyncSession, seeded: None
 ) -> None:
     seed = load_seed(FIXTURES / "seed.toml")
