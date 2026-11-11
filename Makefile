@@ -42,7 +42,9 @@ migrate-test: test-db ## Aplica las migraciones a la base de tests
 
 dev: install migrate storage ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
 	@echo "Web: http://localhost:3000  ·  en la red: http://$$(node -p "Object.values(require('os').networkInterfaces()).flat().find(n => n.family === 'IPv4' && !n.internal)?.address ?? 'localhost'"):3000"
-	@trap 'kill 0' INT TERM EXIT; \
+	@# Al cortar: se desactivan los traps y la shell ignora TERM antes de
+	@# avisarle al grupo, así la señal no vuelve a disparar el trap en bucle.
+	@trap 'trap - INT EXIT; trap "" TERM; kill 0 2>/dev/null; wait; exit 0' INT TERM EXIT; \
 	$(MAKE) --no-print-directory api & \
 	$(MAKE) --no-print-directory web & \
 	wait
