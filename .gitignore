@@ -29,3 +29,7 @@ test-results/
 # Sistema
 .DS_Store
 *.log
+
+# Generado desde brand/ por scripts/sync-brand.mjs
+apps/web/app/brand.generated.css
+apps/web/next-env.d.ts

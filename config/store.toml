@@ -1,0 +1,23 @@
+# Configuración de la tienda de este cliente. El núcleo (apps/) no conoce
+# ningún cliente: todo lo específico sale de acá, de brand/ o de la base.
+
+[store]
+name = "Gallinero Store"
+# Carpeta dentro de brand/ con logo, tokens de color y tipografías.
+brand = "gallinero"
+locale = "es-AR"
+currency = "ARS"
+# Decimales a mostrar. El precio se guarda siempre en la unidad menor (ADR 0002).
+price_decimals = 0
+# Prefijo del código de producto (GS-001).
+code_prefix = "GS"
+# Cómo se llama la colección en esta tienda (Equipo, Marca…).
+collection_label = "Equipo"
+
+[features]
+collections = true
+versions = true
+on_order = true
+instagram = true
+metrics = true
+product_story = true
