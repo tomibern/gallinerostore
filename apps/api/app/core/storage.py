@@ -36,3 +36,25 @@ def ensure_bucket(s3: S3Client, bucket: str) -> bool:
 def get_s3(request: Request) -> S3Client:
     client: S3Client = request.app.state.s3
     return client
+
+
+class ObjectStorage:
+    """Archivos en un bucket S3. En la base se guardan claves (rutas), nunca URLs."""
+
+    def __init__(self, s3: S3Client, bucket: str) -> None:
+        self._s3 = s3
+        self.bucket = bucket
+
+    def put(self, key: str, data: bytes, content_type: str) -> None:
+        self._s3.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+
+    def exists(self, key: str) -> bool:
+        try:
+            self._s3.head_object(Bucket=self.bucket, Key=key)
+        except self._s3.exceptions.ClientError:
+            return False
+        return True
+
+    def list_keys(self, prefix: str) -> list[str]:
+        response = self._s3.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
+        return sorted(obj["Key"] for obj in response.get("Contents", []))

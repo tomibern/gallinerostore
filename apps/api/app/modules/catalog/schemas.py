@@ -10,6 +10,14 @@ class ProductSizeOut(BaseModel):
     in_stock: bool
 
 
+class ImageOut(BaseModel):
+    full: str = Field(description="Ruta de la imagen completa (lado mayor 1600 px), bajo /media.")
+    thumb: str = Field(description="Ruta de la miniatura (400 px), bajo /media.")
+    alt: str
+    width: int
+    height: int
+
+
 class ProductListItem(BaseModel):
     code: str = Field(
         description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
@@ -23,3 +31,4 @@ class ProductListItem(BaseModel):
         description="Producto de stock sin ningún talle disponible. Nunca en encargues."
     )
     sizes: list[ProductSizeOut] = Field(description="En el orden de su grupo de talles.")
+    cover: ImageOut | None = Field(description="La primera imagen del producto, si tiene.")

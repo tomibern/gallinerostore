@@ -32,7 +32,10 @@ async def published_with_stock_flag(session: AsyncSession) -> Sequence[tuple[Pro
         select(Product, catalog_products.c.out_of_stock)
         .join(catalog_products, catalog_products.c.id == Product.id)
         .where(Product.status == ProductStatus.PUBLISHED)
-        .options(selectinload(Product.sizes).selectinload(ProductSize.size))
+        .options(
+            selectinload(Product.sizes).selectinload(ProductSize.size),
+            selectinload(Product.images),
+        )
         .order_by(Product.sort_order, Product.id)
     )
     result = await session.execute(stmt)

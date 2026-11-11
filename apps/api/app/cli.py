@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.db import create_engine
-from app.core.storage import create_s3_client, ensure_bucket
+from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
 
@@ -33,7 +33,8 @@ async def _seed(settings: Settings) -> None:
             engine.begin() as conn,
             AsyncSession(bind=conn, expire_on_commit=False) as session,
         ):
-            await apply_seed(session, seed, settings.store_config)
+            storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+            await apply_seed(session, seed, settings.store_config, storage)
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")

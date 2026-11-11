@@ -12,8 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import REPO_ROOT, Settings
 from app.core.db import get_session
-from app.core.storage import create_s3_client, ensure_bucket
+from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
+from app.modules.catalog.seed import apply_seed, load_seed
 from tests.support import http_client
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -83,3 +84,15 @@ def db_session(app: FastAPI) -> AsyncSession:
 async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with http_client(app) as c:
         yield c
+
+
+@pytest.fixture(scope="session")
+def storage(settings: Settings) -> ObjectStorage:
+    """El bucket de tests, a través de la misma interfaz que usa la app."""
+    return ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+
+
+@pytest.fixture
+async def seeded(settings: Settings, db_session: AsyncSession, storage: ObjectStorage) -> None:
+    """El seed ficticio cargado (con imágenes) dentro de la transacción del test."""
+    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config, storage)
