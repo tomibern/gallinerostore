@@ -8,7 +8,6 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -21,7 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models import Base
+from app.core.models import Base, text_enum
 from app.modules.media.service import StoredImage
 
 
@@ -39,19 +38,6 @@ class ProductStatus(StrEnum):
     PUBLISHED = "published"
     HIDDEN = "hidden"
     ARCHIVED = "archived"
-
-
-def _enum(enum_cls: type[StrEnum], name: str) -> Enum:
-    # Texto con CHECK en vez de enum nativo de Postgres: sumar un valor es una
-    # migración simple.
-    return Enum(
-        enum_cls,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        length=20,
-        values_callable=lambda e: [m.value for m in e],
-    )
 
 
 class Size(Base):
@@ -118,12 +104,12 @@ class Product(Base):
     collection_id: Mapped[int] = mapped_column(ForeignKey("collections.id"))
     version_id: Mapped[int | None] = mapped_column(ForeignKey("versions.id"))
     season: Mapped[str | None] = mapped_column(String(40))
-    sale_mode: Mapped[SaleMode] = mapped_column(_enum(SaleMode, "sale_mode"))
+    sale_mode: Mapped[SaleMode] = mapped_column(text_enum(SaleMode, "sale_mode"))
     # En la unidad menor de la moneda (ADR 0002).
     price: Mapped[int] = mapped_column(BigInteger)
     compare_at_price: Mapped[int | None] = mapped_column(BigInteger)
     status: Mapped[ProductStatus] = mapped_column(
-        _enum(ProductStatus, "product_status"), default=ProductStatus.DRAFT
+        text_enum(ProductStatus, "product_status"), default=ProductStatus.DRAFT
     )
     featured: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
@@ -159,7 +145,7 @@ class ProductSize(Base):
 
 
 class Tag(Base):
-    """Etiqueta libre (titular, alternativa, arquero…): filtros secundarios y colecciones."""
+    """Etiqueta libre, varias por producto: filtros secundarios y colecciones de la home."""
 
     __tablename__ = "tags"
 
@@ -181,7 +167,7 @@ class ProductTag(Base):
 class StoryItemKind(StrEnum):
     """Tipo de ítem de la historia del producto."""
 
-    MILESTONE = "milestone"  # figurita: año, título y anécdota
+    MILESTONE = "milestone"  # hito: año, título y anécdota
     STAT = "stat"  # cifra
     FUN_FACT = "fun_fact"  # ¿Sabías que…?
 
@@ -195,7 +181,7 @@ class ProductStoryItem(Base):
     product_id: Mapped[int] = mapped_column(
         ForeignKey("products.id", ondelete="CASCADE"), index=True
     )
-    kind: Mapped[StoryItemKind] = mapped_column(_enum(StoryItemKind, "story_item_kind"))
+    kind: Mapped[StoryItemKind] = mapped_column(text_enum(StoryItemKind, "story_item_kind"))
     year: Mapped[int | None] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(200))
     body: Mapped[str | None] = mapped_column(Text)

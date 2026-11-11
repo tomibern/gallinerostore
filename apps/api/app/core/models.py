@@ -1,6 +1,8 @@
 """Base declarativa de SQLAlchemy. Los modelos de cada módulo heredan de ``Base``."""
 
-from sqlalchemy import MetaData
+from enum import StrEnum
+
+from sqlalchemy import Enum, MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 # Nombres de constraints estables: Alembic genera migraciones reproducibles.
@@ -15,3 +17,16 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def text_enum(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
+    """Columna para un StrEnum: texto con CHECK en vez de enum nativo de Postgres,
+    así sumar un valor es una migración simple. Guarda el valor, no el nombre."""
+    return Enum(
+        enum_cls,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        length=length,
+        values_callable=lambda e: [m.value for m in e],
+    )
