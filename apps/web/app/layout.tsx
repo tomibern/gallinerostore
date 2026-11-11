@@ -10,9 +10,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return store ? { title: store.name } : {};
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const store = await getStore();
+
   return (
-    <html lang="es">
+    <html lang={store?.locale ?? "es"}>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
