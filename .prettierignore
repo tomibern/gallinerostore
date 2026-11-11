@@ -1,0 +1,10 @@
+# Prettier solo formatea JS/TS, CSS y JSON. Markdown y Python tienen su propio criterio.
+*.md
+**/node_modules
+**/.next
+**/.venv
+package-lock.json
+apps/api
+apps/web/app/brand.generated.css
+apps/web/next-env.d.ts
+.claude
