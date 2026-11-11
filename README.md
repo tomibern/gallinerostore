@@ -58,7 +58,15 @@ Para tener productos de prueba:
 make seed
 ```
 
-Se puede correr las veces que haga falta: actualiza lo que ya existe sin duplicar.
+Se puede correr las veces que haga falta: actualiza lo que ya existe sin duplicar. Cada producto sin fotos recibe una imagen de prueba, subida al almacenamiento y servida en `/media`.
+
+Con `make dev` y `make seed` corriendo, el test de punta a punta (Playwright, escritorio y celular):
+
+```bash
+make e2e
+```
+
+La primera vez hay que bajar el navegador: `npx playwright install chromium`.
 
 - Web: <http://localhost:3000>
 - Desde el celular (misma wifi): `http://<ip-de-la-compu>:3000` (`make dev` la imprime al arrancar)
@@ -80,6 +88,7 @@ Postgres se publica en el puerto 5433 para no chocar con un Postgres instalado e
 | `make seed` | Carga los datos de `config/seed.toml` |
 | `make gen-client` | Regenera el cliente TypeScript después de cambiar la API |
 | `make test` | Migra la base de tests y corre los tests |
+| `make e2e` | Test de punta a punta contra `make dev` |
 | `make lint` | Estilo y tipos de la API y la web |
 | `make reset` | Borra los datos de Postgres y del almacenamiento |
 | `make docker-api` | Construye la imagen de producción de la API |
