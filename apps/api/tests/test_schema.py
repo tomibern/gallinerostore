@@ -2,12 +2,14 @@
 datos personales."""
 
 from argparse import Namespace
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import anyio
+import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import inspect
+from sqlalchemy import inspect, make_url, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import Settings
@@ -58,15 +60,36 @@ async def _columns(database_url: str, table: str) -> set[str]:
         await engine.dispose()
 
 
-async def test_migrations_go_down_and_up_cleanly(settings: Settings) -> None:
-    config = _alembic(settings.database_url)
+@pytest.fixture
+async def scratch_database_url(settings: Settings) -> AsyncIterator[str]:
+    """Una base vacía solo para este test: bajar y subir migraciones en la base de
+    tests compartida rompería cualquier otra corrida que esté usándola."""
+    url = make_url(settings.database_url)
+    name = f"{url.database}_migrations"
+    admin = create_async_engine(url, isolation_level="AUTOCOMMIT")
+    try:
+        async with admin.connect() as conn:
+            await conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+            await conn.execute(text(f'CREATE DATABASE "{name}"'))
+        yield url.set(database=name).render_as_string(hide_password=False)
+        async with admin.connect() as conn:
+            await conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+    finally:
+        await admin.dispose()
+
+
+async def test_migrations_go_up_down_and_up_cleanly(scratch_database_url: str) -> None:
+    config = _alembic(scratch_database_url)
 
     # Alembic usa asyncio.run por dentro: corre en otro hilo, fuera del loop del test.
+    await anyio.to_thread.run_sync(command.upgrade, config, "head")
+    assert await _table_names(scratch_database_url) >= DISCOVERY_TABLES
+
     await anyio.to_thread.run_sync(command.downgrade, config, "base")
-    assert await _table_names(settings.database_url) <= {"alembic_version"}
+    assert await _table_names(scratch_database_url) <= {"alembic_version"}
 
     await anyio.to_thread.run_sync(command.upgrade, config, "head")
-    assert await _table_names(settings.database_url) >= DISCOVERY_TABLES
+    assert await _table_names(scratch_database_url) >= DISCOVERY_TABLES
 
 
 async def test_events_store_no_personal_data(settings: Settings) -> None:
