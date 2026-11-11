@@ -1,0 +1,11 @@
+# Contexto de build desde la raíz: solo entra lo que copian los Dockerfile.
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+.git
+.env
+.env.*
