@@ -13,8 +13,9 @@ Catálogo web de indumentaria de fútbol donde cada consulta termina en WhatsApp
 |---|---|
 | `apps/api` | API en FastAPI (Python 3.13, uv). Toda la lógica de negocio. |
 | `apps/web` | Web en Next.js. Muestra datos y habla con la API a través de `/api`. |
-| `packages/` | Paquetes compartidos (el cliente generado de la API llega en #7). |
+| `packages/api-client` | Cliente TypeScript de la API, generado desde su OpenAPI (`make gen-client`). No se edita a mano. |
 | `config/store.toml` | Datos de la tienda del cliente: nombre, moneda, prefijo de código, features. |
+| `config/seed.toml` | Datos iniciales del cliente: talles, categorías, colecciones, versiones y productos de prueba. |
 | `brand/<marca>/` | Tokens de color y recursos de la marca. Pisa el tema neutro del núcleo. |
 | `docker-compose.yml` | Postgres y almacenamiento S3 (RustFS) para desarrollo. |
 
@@ -51,6 +52,14 @@ make dev
 
 `make dev` instala dependencias, levanta Postgres y el almacenamiento, espera a que estén sanos, aplica las migraciones, crea el bucket de imágenes y arranca la API y la web con recarga automática. `Ctrl+C` corta todo. `make test` crea la base de tests si hace falta.
 
+Para tener productos de prueba:
+
+```bash
+make seed
+```
+
+Se puede correr las veces que haga falta: actualiza lo que ya existe sin duplicar.
+
 - Web: <http://localhost:3000>
 - Desde el celular (misma wifi): `http://<ip-de-la-compu>:3000` (`make dev` la imprime al arrancar)
 - API directa: <http://localhost:8000/docs>
@@ -68,6 +77,8 @@ Postgres se publica en el puerto 5433 para no chocar con un Postgres instalado e
 | Comando | Qué hace |
 |---|---|
 | `make dev` | Levanta todo |
+| `make seed` | Carga los datos de `config/seed.toml` |
+| `make gen-client` | Regenera el cliente TypeScript después de cambiar la API |
 | `make test` | Migra la base de tests y corre los tests |
 | `make lint` | Estilo y tipos de la API y la web |
 | `make reset` | Borra los datos de Postgres y del almacenamiento |

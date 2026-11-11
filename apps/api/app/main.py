@@ -10,6 +10,7 @@ from app.core.config import Settings
 from app.core.db import create_engine
 from app.core.storage import create_s3_client
 from app.health.router import router as health_router
+from app.modules.catalog.router import router as catalog_router
 from app.modules.settings.router import router as settings_router
 
 
@@ -26,7 +27,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await engine.dispose()
 
-    app = FastAPI(title=f"{settings.store_config.store.name} API", lifespan=lifespan)
+    # Título genérico: el OpenAPI (y el cliente generado) es del núcleo, no del cliente.
+    app = FastAPI(title="Catalog API", lifespan=lifespan)
     app.include_router(health_router)
     app.include_router(settings_router)
+    app.include_router(catalog_router)
     return app

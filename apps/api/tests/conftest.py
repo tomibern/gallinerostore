@@ -16,6 +16,8 @@ from app.core.storage import create_s3_client, ensure_bucket
 from app.main import create_app
 from tests.support import http_client
 
+FIXTURES = Path(__file__).parent / "fixtures"
+
 
 def _test_database_url() -> str:
     """De la variable de entorno (CI) o del .env de la raíz (desarrollo)."""
@@ -33,7 +35,7 @@ def settings() -> Settings:
     test_settings = Settings(  # el resto sale del entorno
         database_url=_test_database_url(),
         s3_bucket="test-media",
-        store_config_path=Path(__file__).parent / "fixtures" / "store.toml",
+        store_config_path=FIXTURES / "store.toml",
     )
     ensure_bucket(create_s3_client(test_settings), test_settings.s3_bucket)
     return test_settings
@@ -62,11 +64,19 @@ async def app(settings: Settings) -> AsyncIterator[FastAPI]:
             yield session
 
         application.dependency_overrides[get_session] = _session
+        application.state.test_session = session
         try:
             yield application
         finally:
             await session.close()
             await outer.rollback()
+
+
+@pytest.fixture
+def db_session(app: FastAPI) -> AsyncSession:
+    """La misma sesión que usa la app en este test (dentro de la transacción que se deshace)."""
+    session: AsyncSession = app.state.test_session
+    return session
 
 
 @pytest.fixture

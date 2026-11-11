@@ -1,0 +1,283 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Catalog API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Store",
+        "operationId": "store_store_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStore"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Products",
+        "description": "Productos publicados del catálogo.",
+        "operationId": "list_products_products_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProductListItem"
+                  },
+                  "type": "array",
+                  "title": "Response List Products Products Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/HealthChecks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "checks"
+        ],
+        "title": "Health"
+      },
+      "HealthChecks": {
+        "properties": {
+          "database": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Database"
+          },
+          "storage": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Storage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "database",
+          "storage"
+        ],
+        "title": "HealthChecks"
+      },
+      "ProductListItem": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Código permanente del producto: prefijo de la tienda y número (ABC-014)."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "price": {
+            "type": "integer",
+            "title": "Price",
+            "description": "Precio en la unidad menor de la moneda (centavos)."
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "sale_mode": {
+            "$ref": "#/components/schemas/SaleMode"
+          },
+          "out_of_stock": {
+            "type": "boolean",
+            "title": "Out Of Stock",
+            "description": "Producto de stock sin ningún talle disponible. Nunca en encargues."
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSizeOut"
+            },
+            "type": "array",
+            "title": "Sizes",
+            "description": "En el orden de su grupo de talles."
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "slug",
+          "price",
+          "currency",
+          "sale_mode",
+          "out_of_stock",
+          "sizes"
+        ],
+        "title": "ProductListItem"
+      },
+      "ProductSizeOut": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "in_stock"
+        ],
+        "title": "ProductSizeOut"
+      },
+      "PublicStore": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "locale": {
+            "type": "string",
+            "title": "Locale"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "price_decimals": {
+            "type": "integer",
+            "title": "Price Decimals"
+          },
+          "collection_label": {
+            "type": "string",
+            "title": "Collection Label"
+          },
+          "features": {
+            "$ref": "#/components/schemas/StoreFeatures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "locale",
+          "currency",
+          "price_decimals",
+          "collection_label",
+          "features"
+        ],
+        "title": "PublicStore",
+        "description": "Lo que la web necesita saber de la tienda. Nada secreto."
+      },
+      "SaleMode": {
+        "type": "string",
+        "enum": [
+          "stock",
+          "on_order"
+        ],
+        "title": "SaleMode",
+        "description": "Modo de venta: define en qué sección aparece el producto."
+      },
+      "StoreFeatures": {
+        "properties": {
+          "collections": {
+            "type": "boolean",
+            "title": "Collections",
+            "default": true
+          },
+          "versions": {
+            "type": "boolean",
+            "title": "Versions",
+            "default": true
+          },
+          "on_order": {
+            "type": "boolean",
+            "title": "On Order",
+            "default": true
+          },
+          "instagram": {
+            "type": "boolean",
+            "title": "Instagram",
+            "default": true
+          },
+          "metrics": {
+            "type": "boolean",
+            "title": "Metrics",
+            "default": true
+          },
+          "product_story": {
+            "type": "boolean",
+            "title": "Product Story",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "StoreFeatures"
+      }
+    }
+  }
+}
