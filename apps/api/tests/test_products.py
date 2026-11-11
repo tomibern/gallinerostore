@@ -4,9 +4,11 @@ from typing import Any
 
 import httpx
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.modules.catalog.models import Product
 from app.modules.catalog.seed import SeedError, apply_seed, load_seed
 from tests.conftest import FIXTURES
 
@@ -115,4 +117,29 @@ async def test_categories_reject_a_third_level(
     with pytest.raises(SeedError, match="dos niveles"):
         await apply_seed(
             db_session, seed.model_copy(update={"categories": [nested]}), settings.store_config
+        )
+
+
+async def test_seed_refuses_to_guess_between_products_sharing_a_slug(
+    settings: Settings, db_session: AsyncSession, seeded: None
+) -> None:
+    # Dos productos con el mismo slug (el slug no es único: lo puede repetir el admin).
+    other = await db_session.scalar(select(Product).where(Product.slug == "buzo-a-pedido"))
+    assert other is not None
+    other.slug = "remera-basica"
+    await db_session.flush()
+
+    with pytest.raises(SeedError, match="no puede saber cuál actualizar"):
+        await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
+
+
+async def test_seed_rejects_more_than_one_default_collection(
+    settings: Settings, db_session: AsyncSession
+) -> None:
+    seed = load_seed(FIXTURES / "seed.toml")
+    both_default = [c.model_copy(update={"default": True}) for c in seed.collections]
+
+    with pytest.raises(SeedError, match="Solo una colección"):
+        await apply_seed(
+            db_session, seed.model_copy(update={"collections": both_default}), settings.store_config
         )
