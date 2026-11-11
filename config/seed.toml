@@ -1,0 +1,113 @@
+# Datos iniciales de Gallinero Store: `make seed` los carga (se puede repetir
+# sin duplicar). Los productos son de prueba hasta la carga real desde el admin.
+# Los precios van en la unidad menor de la moneda: 4500000 = $ 45.000 (ADR 0002).
+
+[[sizes]]
+group = "prenda"
+labels = ["S", "M", "L", "XL", "XXL"]
+
+[[sizes]]
+group = "accesorio"
+labels = ["Único"]
+
+[[categories]]
+name = "Camisetas"
+slug = "camisetas"
+size_group = "prenda"
+
+[[categories]]
+name = "Abrigos"
+slug = "abrigos"
+size_group = "prenda"
+children = [
+  { name = "Buzos", slug = "buzos" },
+  { name = "Camperas", slug = "camperas" },
+]
+
+[[categories]]
+name = "Pantalones"
+slug = "pantalones"
+size_group = "prenda"
+children = [
+  { name = "Shorts", slug = "shorts" },
+  { name = "Pantalones largos", slug = "pantalones-largos" },
+]
+
+[[categories]]
+name = "Accesorios"
+slug = "accesorios"
+size_group = "accesorio"
+
+[[collections]]
+name = "River Plate"
+slug = "river-plate"
+default = true
+
+[[versions]]
+name = "Retro"
+slug = "retro"
+
+[[versions]]
+name = "Tela jugador"
+slug = "tela-jugador"
+
+[[versions]]
+name = "Tela hincha"
+slug = "tela-hincha"
+
+[[products]]
+slug = "camiseta-river-titular-2026-hincha"
+name = "Camiseta River titular 2026 — Tela hincha"
+category = "camisetas"
+collection = "river-plate"
+version = "tela-hincha"
+season = "2025/26"
+sale_mode = "stock"
+status = "published"
+price = 4500000
+featured = true
+sizes = { S = true, M = true, L = true, XL = false, XXL = false }
+
+[[products]]
+slug = "camiseta-river-alternativa-2026-jugador"
+name = "Camiseta River alternativa 2026 — Tela jugador"
+category = "camisetas"
+collection = "river-plate"
+version = "tela-jugador"
+season = "2025/26"
+sale_mode = "on_order"
+status = "published"
+price = 6500000
+sizes = { S = true, M = true, L = true, XL = true, XXL = true }
+
+[[products]]
+slug = "camiseta-river-retro-1986"
+name = "Camiseta River retro 1986"
+category = "camisetas"
+collection = "river-plate"
+version = "retro"
+season = "1986"
+sale_mode = "stock"
+status = "published"
+price = 5200000
+sizes = { S = false, M = false, L = false, XL = false }
+
+[[products]]
+slug = "buzo-river-entrenamiento"
+name = "Buzo River entrenamiento"
+category = "buzos"
+collection = "river-plate"
+sale_mode = "stock"
+status = "draft"
+price = 5800000
+sizes = { M = true, L = true }
+
+[[products]]
+slug = "campera-river-rompeviento"
+name = "Campera River rompeviento"
+category = "camperas"
+collection = "river-plate"
+sale_mode = "on_order"
+status = "hidden"
+price = 7900000
+sizes = { M = true, L = true, XL = true }

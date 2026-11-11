@@ -1,0 +1,85 @@
+# Seed ficticio para tests: cubre los casos del catálogo sin datos de un cliente real.
+# Los precios van en la unidad menor de la moneda (centavos).
+
+[[sizes]]
+group = "prenda"
+labels = ["S", "M", "L", "XL"]
+
+[[sizes]]
+group = "accesorio"
+labels = ["Único"]
+
+[[categories]]
+name = "Remeras"
+slug = "remeras"
+size_group = "prenda"
+
+[[categories]]
+name = "Abrigos"
+slug = "abrigos"
+size_group = "prenda"
+children = [{ name = "Buzos", slug = "buzos" }]
+
+[[collections]]
+name = "Marca A"
+slug = "marca-a"
+default = true
+
+[[collections]]
+name = "Marca B"
+slug = "marca-b"
+
+[[versions]]
+name = "Clásica"
+slug = "clasica"
+
+[[products]]
+slug = "remera-basica"
+name = "Remera básica"
+category = "remeras"
+collection = "marca-a"
+version = "clasica"
+sale_mode = "stock"
+status = "published"
+price = 1999900
+sizes = { S = true, M = false, L = true }
+
+[[products]]
+slug = "buzo-a-pedido"
+name = "Buzo a pedido"
+category = "buzos"
+collection = "marca-b"
+sale_mode = "on_order"
+status = "published"
+price = 4550000
+sizes = { M = true, XL = true }
+
+[[products]]
+slug = "remera-agotada"
+name = "Remera agotada"
+category = "remeras"
+collection = "marca-a"
+sale_mode = "stock"
+status = "published"
+price = 1500000
+sizes = { S = false, M = false }
+
+[[products]]
+slug = "remera-borrador"
+name = "Remera en borrador"
+category = "remeras"
+collection = "marca-a"
+sale_mode = "stock"
+status = "draft"
+price = 1000000
+sizes = { S = true }
+
+[[products]]
+slug = "remera-oculta"
+name = "Remera oculta"
+category = "remeras"
+collection = "marca-a"
+sale_mode = "stock"
+status = "hidden"
+price = 1000000
+sizes = { S = true }

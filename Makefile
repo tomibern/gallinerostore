@@ -14,7 +14,7 @@ endif
 
 API := apps/api
 
-.PHONY: help hooks install infra storage test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks install infra storage seed test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -35,6 +35,9 @@ storage: infra ## Crea el bucket de imágenes si no existe
 
 migrate: infra ## Aplica las migraciones a la base de desarrollo
 	cd $(API) && uv run alembic upgrade head
+
+seed: migrate ## Carga los datos iniciales de config/seed.toml (se puede repetir)
+	cd $(API) && uv run python -m app.cli seed
 
 test-db: infra ## Crea la base de tests si no existe
 	@docker compose exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -tAc \

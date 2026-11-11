@@ -1,0 +1,118 @@
+"""Catálogo público de solo lectura: lo que devuelve GET /products después del seed."""
+
+from typing import Any
+
+import httpx
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import Settings
+from app.modules.catalog.seed import SeedError, apply_seed, load_seed
+from tests.conftest import FIXTURES
+
+
+@pytest.fixture
+async def seeded(settings: Settings, db_session: AsyncSession) -> None:
+    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
+
+
+def _by_slug(products: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {p["slug"]: p for p in products}
+
+
+async def test_lists_only_published_products(client: httpx.AsyncClient, seeded: None) -> None:
+    response = await client.get("/products")
+
+    assert response.status_code == 200
+    assert sorted(p["slug"] for p in response.json()) == [
+        "buzo-a-pedido",
+        "remera-agotada",
+        "remera-basica",
+    ]
+
+
+async def test_product_carries_code_price_and_sizes_in_group_order(
+    client: httpx.AsyncClient, seeded: None
+) -> None:
+    products = _by_slug((await client.get("/products")).json())
+
+    remera = products["remera-basica"]
+    assert remera["code"].startswith("TP-")
+    assert remera["name"] == "Remera básica"
+    assert remera["price"] == 1999900
+    assert remera["currency"] == "USD"
+    assert remera["sale_mode"] == "stock"
+    assert remera["out_of_stock"] is False
+    assert remera["sizes"] == [
+        {"label": "S", "in_stock": True},
+        {"label": "M", "in_stock": False},
+        {"label": "L", "in_stock": True},
+    ]
+
+
+async def test_codes_follow_the_store_prefix_with_three_digits(
+    client: httpx.AsyncClient, seeded: None
+) -> None:
+    codes = [p["code"] for p in (await client.get("/products")).json()]
+
+    assert all(len(code) >= 6 and code[:3] == "TP-" and code[3:].isdigit() for code in codes)
+    assert len(set(codes)) == len(codes)
+
+
+async def test_stock_product_without_available_sizes_is_out_of_stock(
+    client: httpx.AsyncClient, seeded: None
+) -> None:
+    products = _by_slug((await client.get("/products")).json())
+
+    assert products["remera-agotada"]["out_of_stock"] is True
+    # Un encargue nunca está «sin stock»: se pide al proveedor.
+    assert products["buzo-a-pedido"]["out_of_stock"] is False
+    assert products["buzo-a-pedido"]["sale_mode"] == "on_order"
+
+
+async def test_seeding_twice_does_not_duplicate_products(
+    client: httpx.AsyncClient, settings: Settings, db_session: AsyncSession, seeded: None
+) -> None:
+    first = _by_slug((await client.get("/products")).json())
+
+    await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config)
+    second = _by_slug((await client.get("/products")).json())
+
+    assert second.keys() == first.keys()
+    assert {s: p["code"] for s, p in second.items()} == {s: p["code"] for s, p in first.items()}
+
+
+async def test_a_new_product_never_reuses_a_code(
+    client: httpx.AsyncClient, settings: Settings, db_session: AsyncSession, seeded: None
+) -> None:
+    seed = load_seed(FIXTURES / "seed.toml")
+    extra = seed.products[0].model_copy(update={"slug": "remera-descartada"})
+    # Se crea y se descarta (rollback): el número de código igual queda usado.
+    async with db_session.begin_nested() as nested:
+        await apply_seed(
+            db_session, seed.model_copy(update={"products": [extra]}), settings.store_config
+        )
+        discarded = _by_slug((await client.get("/products")).json())["remera-descartada"]["code"]
+        await nested.rollback()
+
+    again = seed.products[0].model_copy(update={"slug": "remera-nueva"})
+    await apply_seed(
+        db_session, seed.model_copy(update={"products": [again]}), settings.store_config
+    )
+    new_code = _by_slug((await client.get("/products")).json())["remera-nueva"]["code"]
+
+    assert new_code != discarded
+    assert int(new_code[3:]) > int(discarded[3:])
+
+
+async def test_categories_reject_a_third_level(
+    settings: Settings, db_session: AsyncSession
+) -> None:
+    seed = load_seed(FIXTURES / "seed.toml")
+    nested = seed.categories[1].model_copy(deep=True)
+    nested.children[0].children = [nested.children[0].model_copy(update={"slug": "nieto"})]
+
+    with pytest.raises(SeedError, match="dos niveles"):
+        await apply_seed(
+            db_session, seed.model_copy(update={"categories": [nested]}), settings.store_config
+        )

@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     s3_region: str = "us-east-1"
     s3_bucket: str = "media"
     store_config_path: Path = REPO_ROOT / "config" / "store.toml"
+    seed_path: Path = REPO_ROOT / "config" / "seed.toml"
 
     @cached_property
     def store_config(self) -> StoreConfig:
