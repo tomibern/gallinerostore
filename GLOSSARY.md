@@ -13,7 +13,7 @@ La variante de un producto. Pertenece a un grupo de talles ordenado (prenda: S a
 _Evitar_: variante, medida
 
 **Modo de venta**:
-Si un producto es de **stock** o de **encargue**. Define en qué sección aparece; nunca los dos.
+Si un producto es de **stock** o de **encargue**. Lo elige el admin y no cambia solo: un producto de stock agotado sigue siendo de stock.
 _Evitar_: tipo, disponibilidad (para esto)
 
 **Stock**:
@@ -21,15 +21,18 @@ Producto que el dueño tiene y entrega ya. Cada talle está disponible o sin sto
 _Evitar_: inventario, existencias
 
 **Sin stock**:
-Producto de stock sin ningún talle disponible. Se calcula, no se guarda; sigue visible.
-_Evitar_: agotado
+Talle de un producto de stock que no está disponible. Se muestra tachado y se puede consultar su disponibilidad.
+
+**Agotado**:
+Producto de stock sin ningún talle disponible. Se calcula, no se guarda. Mientras está agotado aparece en «Por encargue», avisando que se agotó, y se puede pedir en cualquier talle de su grupo; vuelve a «En stock» en cuanto un talle está disponible.
+_Evitar_: sin stock (para el producto entero)
 
 **Encargue**:
-Producto que se pide al proveedor después de la consulta. No está garantizado; demora y seña del 50% se acuerdan en el chat.
+Producto que se pide al proveedor después de la consulta. Se puede pedir en cualquier talle de su grupo y nunca tiene stock. No está garantizado; demora y seña del 50% se acuerdan en el chat.
 _Evitar_: preventa, pedido, backorder
 
 **Sección**:
-Cada una de las dos vistas del catálogo público: «En stock» y «Por encargue», derivadas del modo de venta.
+Cada una de las dos vistas del catálogo público: «En stock» y «Por encargue». Un producto está en una sola. Se deriva del modo de venta y de si está agotado: un producto de stock agotado aparece en «Por encargue».
 _Evitar_: tienda, listado (como entidad)
 
 **Categoría**:
@@ -57,7 +60,7 @@ Ciclo de vida del producto: borrador → publicado ↔ oculto → archivado. Sol
 _Evitar_: visible/invisible
 
 **Código**:
-Identificador corto y permanente del producto (ej.: GS-014). Va en el mensaje prearmado y en el link del producto, así un link compartido sigue funcionando aunque cambie el nombre.
+Identificador corto y permanente del producto (ej.: GS-014). Va en el mensaje prearmado y es lo que identifica al producto en su link, así un link compartido sigue funcionando aunque cambie el nombre.
 _Evitar_: SKU
 
 **Historia del producto**:
@@ -74,7 +77,7 @@ _Evitar_: pedido, orden, compra, lead
 Consulta sin producto, para pedidos especiales.
 
 **Mensaje prearmado**:
-Texto con producto, código, talle, modo de venta y link que la web prepara para abrir la conversación.
+Texto con producto, código, talle, disponibilidad (en stock, sin stock, por encargue o agotado por encargue) y link que la web prepara para abrir la conversación. En WhatsApp viaja dentro del link; en Instagram se muestra para que la persona lo copie si quiere.
 
 **Canal de contacto**:
 Destino de una consulta: WhatsApp o Instagram, configurable por cliente.

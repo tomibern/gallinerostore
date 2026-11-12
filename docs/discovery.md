@@ -1,6 +1,6 @@
 # Gallinero Store — Discovery y MVP
 
-Nov 9, 2026 · actualizado Nov 10, 2026 · @Tomas
+Nov 9, 2026 · actualizado Nov 12, 2026 · @Tomas
 
 Gallinero Store va a tener un catálogo web responsive (celular y computadora) de indumentaria de fútbol, centrado en River Plate, donde cada consulta termina en WhatsApp o Instagram. No hay carrito, pagos online ni cuentas de clientes; el único usuario es el admin, que carga el catálogo y ve métricas de visitas y consultas por producto. Tanto la tienda como el panel admin se usan completos en celular y en computadora.
 
@@ -85,8 +85,8 @@ La entidad central es el **Producto**. Cada producto pertenece a una categoría,
 | Descripción | Texto largo | No | Material, detalles, calce |
 | Categoría | Lista | Sí | Ver entidades |
 | Equipo | Lista | Sí | River por defecto |
-| Disponibilidad | Stock / Encargue | Sí | Define la sección donde aparece |
-| Talles | Lista de talles + disponible sí/no | Sí | Talles estándar de S a XXL. En encargue: talles que se pueden pedir |
+| Disponibilidad | Stock / Encargue | Sí | Define la sección donde aparece; un producto de stock agotado aparece en Por encargue |
+| Talles | Lista de talles + disponible sí/no | Sí (solo stock) | Talles estándar de S a XXL. Un encargue se puede pedir en cualquier talle del grupo de su categoría, así que no guarda talles |
 | Precio | Número (ARS) | Sí | Lo carga el admin y lo puede editar cuando quiera |
 | Temporada | Texto | No | Ej.: 2025/26 |
 | Versión | Retro / Tela jugador (player) / Tela hincha | No | Filtro en el listado |
@@ -101,12 +101,13 @@ La entidad central es el **Producto**. Cada producto pertenece a una categoría,
 ## Reglas de negocio
 
 - **Dos secciones excluyentes.** Cada producto está en **En stock** o en **Por encargue**, nunca en las dos.
-- **Stock = disponible ya.** Los talles sin stock se muestran tachados. Si no queda ningún talle, el producto sigue visible con la etiqueta «Agotado / Sin stock» y el botón pasa a «Consultar disponibilidad»; no se promete que se pueda encargar.
-- **Encargue = a pedido.** Cada encargue es por producto puntual y no está garantizado. Demora y condiciones se acuerdan en el chat; la web muestra el aviso «Demora y condiciones a confirmar por chat». Para confirmar un encargue se pide una seña del 50%, que se coordina en el chat.
+- **Stock = disponible ya.** Los talles sin stock se muestran tachados y se pueden elegir para consultar disponibilidad.
+- **Agotado pasa a encargue (12/11, confirmado con el dueño).** Si un producto de stock se queda sin ningún talle disponible, aparece solo en **Por encargue** con el aviso «Se agotó · disponible por encargue» y se puede pedir en cualquier talle de su grupo. No se guarda: se calcula. Su modo de venta sigue siendo stock, y vuelve a **En stock** en cuanto el admin marca un talle disponible. Un agotado parcial (sin M pero con L) se queda en En stock. Si el cliente apaga los encargues (`features.on_order`), el agotado sigue en En stock con la etiqueta «Agotado» y «Consultar disponibilidad».
+- **Encargue = a pedido.** Cada encargue es por producto puntual, se puede pedir en cualquier talle de su grupo y no está garantizado. Demora y condiciones se acuerdan en el chat; la web muestra el aviso «Demora y condiciones a confirmar por chat». Para confirmar un encargue se pide una seña del 50%, que se coordina en el chat.
 - **Sin stock numérico en el MVP.** Se registra disponible sí/no por talle, no cantidades. Es lo más simple de mantener.
 - **Precio siempre visible.** Cada producto tiene un precio en ARS que el admin carga y puede editar en cualquier momento.
 - **La consulta no es un pedido.** Tocar «Consultar» solo abre el chat y registra el evento. No se reserva stock ni se crea un pedido.
-- **Mensaje prearmado.** Incluye nombre del producto, talle elegido (si hay), disponibilidad y link al producto.
+- **Mensaje prearmado.** Incluye nombre y código del producto, talle elegido, disponibilidad y link al producto. Hay que elegir talle para consultar (con talle «Único», viene elegido). En WhatsApp el mensaje viaja en el link; en Instagram se muestra en una hoja con «Copiar mensaje» (opcional: nunca se copia sin que la persona lo pida) y «Abrir Instagram».
 - **Pago y entrega fuera de la web.** Transferencia o efectivo. Envío a todo el país por Correo Argentino o similar, o entrega en persona en La Plata. Todo se coordina en el chat. La web solo lo informa en «Cómo comprar».
 - **Pedidos especiales.** Un botón general «¿Buscás algo que no está? Consultanos» abre el chat sin producto, para encargues de otros equipos o artículos particulares.
 - **Solo el admin edita.** El catálogo es público y de solo lectura.
@@ -247,18 +248,19 @@ Decisiones tomadas: **producto = modelo + versión** y **variante = talle**. Cad
 
 Con la opción A se pueden vincular las versiones de un mismo modelo («También en tela hincha») con un campo opcional grupo_modelo. Prioridad: Podría.
 
-### 2. Disponibilidad (decidido)
+### 2. Disponibilidad (decidido, revisado el 12/11)
 
-El dueño no garantiza que un talle sin stock se pueda encargar: lo decide en el momento, por chat. Por eso la web no promete encargues de talles agotados.
+Un talle sin stock de un producto que todavía tiene otros talles no se promete como encargue: el dueño lo decide en el momento, por chat. En cambio, cuando el producto se agota por completo, el dueño (12/11) quiere que pase solo a Por encargue.
 
 | Tipo de producto | Talles | Qué muestra la web | Botón |
 |---|---|---|---|
-| **De stock** | Cada talle: disponible o sin stock | Talles disponibles normales, sin stock tachados. Si no queda ninguno: etiqueta «Sin stock» y el producto sigue visible | «Consultar»; si el talle o el producto están sin stock, «Consultar disponibilidad» |
-| **De encargue** | Talles que se pueden pedir | Aviso «A pedido: demora y condiciones a confirmar por chat» | «Consultar encargue» |
+| **De stock** | Cada talle: disponible o sin stock | Talles disponibles normales, sin stock tachados | «Consultar»; si el talle elegido está sin stock, «Consultar disponibilidad» |
+| **De stock, agotado** | Ninguno disponible | En Por encargue, con el aviso «Se agotó · disponible por encargue»; todos los talles del grupo se pueden pedir | «Consultar encargue» |
+| **De encargue** | Todos los del grupo de su categoría | Aviso «A pedido: demora y condiciones a confirmar por chat» | «Consultar encargue» |
 
-- Un producto de stock aparece en **En stock** (con o sin talles disponibles). Uno de encargue aparece en **Por encargue**.
-- Si el dueño se queda sin stock y decide traer más, cambia el tipo del producto o vuelve a marcar los talles como disponibles.
-- El mensaje a WhatsApp siempre dice el caso: «talle M (en stock)», «talle XL (sin stock, consulto disponibilidad)» o «(por encargue)».
+- Un producto de stock con algún talle disponible aparece en **En stock**; agotado, en **Por encargue**. Uno de encargue aparece en **Por encargue**.
+- Cuando vuelve a tener stock, el dueño marca los talles como disponibles y el producto vuelve solo a En stock.
+- El mensaje siempre dice el caso: «talle M (en stock)», «talle XL (sin stock, consulto disponibilidad)», «talle M (por encargue)» o «talle M (se agotó, por encargue)».
 
 ### 3. Categorías y anidación
 
@@ -302,7 +304,7 @@ El modelo refleja las decisiones de catálogo y es genérico para poder reutiliz
 | Tabla | Campos principales | Notas |
 |---|---|---|
 | products | id, code, name, slug, description, category_id, collection_id, version_id, season, sale_mode, price, compare_at_price, status, featured, sort_order, model_group, created_at, updated_at | sale_mode: stock / on_order. status: draft / published / hidden / archived. price en la moneda configurada, sin decimales |
-| product_sizes | product_id, size_id, in_stock | En productos de stock: disponible sí/no. En los de encargue: talles que se pueden pedir |
+| product_sizes | product_id, size_id, in_stock | Solo productos de stock: disponible sí/no. Los encargues no tienen filas; sus talles son los del grupo de su categoría |
 | sizes | id, label, sort_order, size_group | S…XXL en el grupo «prenda»; «Único» en «accesorio» |
 | categories | id, name, slug, parent_id, sort_order, size_group | parent_id vacío = nivel 1. Máximo 2 niveles, validado en la app |
 | collections | id, name, slug, is_default, sort_order | Dimensión configurable: en Gallinero se llama «Equipo» y River es la opción por defecto. Con un solo equipo cargado, el filtro de la tienda y el campo del admin se ocultan solos; al cargar un segundo equipo aparecen, sin cambiar código ni datos |
@@ -314,7 +316,7 @@ El modelo refleja las decisiones de catálogo y es genérico para poder reutiliz
 | events | id, type, product_id, channel, size_id, source, device, session_id, page, created_at | Sin datos personales. session_id es anónimo y se usa para no contar visitas repetidas. page es la página de las visitas a listados y de las consultas generales (ver «Métricas») |
 | settings | contact_channels, how_to_buy_md, faq_md, on_order_notice, message_templates | Una sola fila; lo editable desde el admin. Lo técnico va en config/store.toml |
 
-**Valores calculados (no se guardan):** la etiqueta «Sin stock» (producto de stock sin talles disponibles) sale de product_sizes. Una vista catalog_products lo devuelve ya calculado para el catálogo público.
+**Valores calculados (no se guardan):** si un producto está agotado (de stock y sin talles disponibles) sale de product_sizes, y de eso sale su sección: un agotado aparece en Por encargue. Una vista catalog_products lo devuelve ya calculado para el catálogo público.
 
 **Permisos:** solo la API accede a la base. Los endpoints públicos solo leen productos publicados y su información relacionada, y solo pueden insertar en events. Los endpoints del admin exigen sesión iniciada.
 
@@ -498,7 +500,7 @@ Hay que responderlas antes de cerrar el diseño; varias cambian el modelo de dat
 | Entrega | Envío a todo el país por Correo Argentino o una empresa similar, que gestiona él. Entrega en persona si el comprador es de La Plata |
 | Versiones | Retro, tela jugador (player) y tela hincha |
 | Personalización | No ofrece nombre, número ni estampados personalizados |
-| Producto agotado | Se sigue mostrando, con la etiqueta «Agotado» o «Sin stock» |
+| Producto agotado | Se sigue mostrando, con la etiqueta «Agotado» o «Sin stock». Revisado el 12/11: pasa solo a Por encargue avisando que se agotó |
 | Historias destacadas de Instagram | Dos grupos: stock (entrega inmediata) y encargue (catálogo de lo que se puede traer) |
 | Contacto | WhatsApp +54 9 2920 342004 · Instagram @gallinerostore14 |
 | Significado del 14 | Referencia a la hinchada de River |
@@ -562,7 +564,7 @@ Hay que responderlas antes de cerrar el diseño; varias cambian el modelo de dat
 | Término | Significado en este proyecto |
 |---|---|
 | Stock | Producto que el dueño tiene físicamente y puede entregar ya |
-| Encargue | Producto que se pide al proveedor después de la consulta; tiene demora y se confirma en el chat con una seña del 50% |
+| Encargue | Producto que se pide al proveedor después de la consulta, en cualquier talle; tiene demora y se confirma en el chat con una seña del 50%. Un producto de stock agotado también se ofrece por encargue |
 | Consulta | Clic en «Consultar» que abre WhatsApp o Instagram con el producto; no es un pedido ni una venta |
 | Mensaje prearmado | Texto que la web prepara con producto, talle y link para iniciar la conversación |
 | Talle | Medida de la prenda (S, M, L, XL, etc.); en stock se marca si está disponible |
