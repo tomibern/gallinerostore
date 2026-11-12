@@ -25,6 +25,8 @@ test-results/
 # Claude Code
 .claude/settings.local.json
 .scratch/
+# Notas de /research: quedan solo en local
+docs/research/
 
 # Sistema
 .DS_Store
