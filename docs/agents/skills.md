@@ -12,7 +12,7 @@ El de Matt Pocock (ver `/ask-matt` y su `PHASE-BOUNDARIES.md`), aplicado a este 
 
 Sin `/clear` ni `/compact` hasta terminar los tickets: el grill, la spec y los tickets salen del mismo razonamiento.
 
-1. **`/research`** (opcional): si hace falta un dato externo (una API, el comportamiento del navegador de Instagram, una librería), un agente en segundo plano lo investiga en fuentes primarias y deja un archivo citado en `docs/research/`. Alimenta al grill; no lo reemplaza.
+1. **`/research`** (opcional): si hace falta un dato externo (una API, el comportamiento del navegador de Instagram, una librería), un agente en segundo plano lo investiga en fuentes primarias y deja un archivo citado en `docs/research/`, que está en `.gitignore` y queda solo en local. Alimenta al grill; no lo reemplaza.
 2. **`/grill-with-docs`**: entrevista hasta que no quede nada asumido. Deja términos en `GLOSSARY.md` y decisiones difíciles de revertir en `docs/adr/`.
 3. **`/prototype`** (opcional): cuando una duda solo se resuelve viendo algo andando (una UI, una lógica de estados). El prototipo es descartable y queda en una rama `prototype/<nombre>`.
 4. **`/to-spec`**: la spec como issue en GitHub.

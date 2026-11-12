@@ -13,7 +13,7 @@ Monorepo:
 - `apps/api`: FastAPI (Python 3.12+, uv, SQLAlchemy 2 async, Alembic, Pydantic v2). Toda la lógica de negocio vive acá.
 - `apps/web`: Next.js (App Router, TypeScript, Tailwind, shadcn/ui en el admin). Solo muestra datos y llama a la API; no accede a la base.
 - `packages/api-client`: cliente TypeScript generado desde el OpenAPI de la API. No se edita a mano.
-- Local: `docker compose` con Postgres y MinIO; `make dev` levanta todo.
+- Local: `docker compose` con Postgres y almacenamiento compatible con S3; `make dev` levanta todo.
 
 ## Reglas que no se negocian
 
