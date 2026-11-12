@@ -5,6 +5,5 @@ export default defineConfig({
   test: {
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**", "e2e/**"],
-    passWithNoTests: true,
   },
 });
