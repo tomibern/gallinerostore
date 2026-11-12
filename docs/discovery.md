@@ -375,12 +375,12 @@ Todo el desarrollo (fases 2 a 4) corre en la computadora, sin cuentas ni servici
 | Base de datos | Postgres en Docker | Supabase o Neon |
 | API | FastAPI con uvicorn --reload | Cloud Run, Railway o Fly.io |
 | Frontend | next dev | Netlify |
-| Fotos | MinIO en Docker (compatible con S3) | Cloudflare R2 o Supabase Storage |
+| Fotos | RustFS en Docker (compatible con S3, ADR 0004) | Cloudflare R2 o Supabase Storage |
 | Migraciones | Alembic contra el Postgres local | Alembic en el pipeline de deploy |
 | Datos | Seed con productos y fotos de prueba | Carga real desde el admin |
 | Configuración | .env.local | Variables de entorno del hosting |
 
-- docker compose up levanta Postgres y MinIO; make dev levanta todo, incluidos la API y el frontend.
+- docker compose up levanta Postgres y el almacenamiento compatible con S3; make dev levanta todo, incluidos la API y el frontend.
 - Para probar en el celular: abrir la IP local de la computadora desde la misma red wifi.
 - El código va a GitHub desde el primer día (es control de versiones, no hosting).
 
@@ -419,7 +419,7 @@ Regla de oro: **en el núcleo no aparece nada de River, camisetas ni Gallinero.*
 ### Qué implica en el diseño del sistema
 
 - **Dominio genérico:** el «equipo» pasa a ser una dimensión configurable (Equipo, Marca, Colección), con su etiqueta definida en la configuración y la opción de desactivarla. Las versiones (retro, jugador, hincha) son una tabla editable, no un valor fijo en el código. Los talles, las categorías y las etiquetas ya son datos.
-- **Funciones activables:** por ejemplo features.teams, features.versions, features.onOrder, features.instagram, features.metrics, features.productStory. Un cliente que solo vende stock apaga los encargues.
+- **Funciones activables:** por ejemplo features.collections, features.versions, features.onOrder, features.instagram, features.metrics, features.productStory. Un cliente que solo vende stock apaga los encargues.
 - **Canales de contacto como módulos:** WhatsApp e Instagram hoy; se pueden sumar otros. Las plantillas de mensaje son configurables.
 - **Textos fuera de los componentes:** un diccionario de textos (es-AR por defecto), así cada cliente cambia el tono sin tocar componentes y se puede sumar otro idioma.
 - **Moneda y formato** desde la configuración (ARS por defecto).
@@ -472,7 +472,7 @@ Siete fases en orden; cada una se cierra cuando cumple su criterio de salida. La
 |---|---|---|
 | 0. Discovery | Este documento + respuestas del dueño | Preguntas abiertas respondidas; alcance del MVP aprobado |
 | 1. Diseño | Wireframes para celular y escritorio de home, listado, detalle, «Cómo comprar» y admin; dirección de arte con identidad River y paleta a partir del logo. Publicados (tienda y admin, celular y escritorio): [claude.ai/artifact/Fp24ciJ6yDajEhyz7Sk7Pb](https://claude.ai/artifact/Fp24ciJ6yDajEhyz7Sk7Pb) | Dueño aprueba las pantallas. Aprobado por el dueño el 10/11 (tienda y admin). |
-| 2. Base técnica | Monorepo, API en FastAPI con modelo de datos y migraciones, frontend Next.js y Docker Compose con Postgres y MinIO, todo en local | make dev levanta todo en local; migraciones y seed corren sin errores |
+| 2. Base técnica | Monorepo, API en FastAPI con modelo de datos y migraciones, frontend Next.js y Docker Compose con Postgres y almacenamiento compatible con S3, todo en local | make dev levanta todo en local; migraciones y seed corren sin errores |
 | 3. Catálogo público | Home, listados, filtros, detalle, botones de consulta | Recorrido completo en local con datos de prueba, en celular (misma wifi) y escritorio |
 | 4. Admin y métricas | Login, ABM de productos, fotos, panel de métricas | El dueño carga y edita un producto solo, desde el celular y desde la computadora |
 | 5. Deploy a producción | Cuentas de hosting, base y fotos; dominio; CI/CD; backups; decisión sobre el arranque en frío | Sitio funcionando en el dominio, probado dentro de Instagram en iOS y Android |
