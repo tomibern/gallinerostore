@@ -1,13 +1,22 @@
 """Reglas de negocio del catálogo (sección, disponibilidad, encargues, categorías y código)."""
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
 from app.modules.catalog import repository
-from app.modules.catalog.models import Availability, ProductImage, SaleMode, Section
-from app.modules.catalog.schemas import ImageOut, ProductListItem
+from app.modules.catalog.models import Availability, Category, ProductImage, SaleMode, Section
+from app.modules.catalog.repository import Filter, ListingQuery
+from app.modules.catalog.schemas import (
+    CategoryFacetValue,
+    FacetValue,
+    ImageOut,
+    ProductFacets,
+    ProductFilters,
+    ProductList,
+    ProductListItem,
+)
 
 MAX_CATEGORY_DEPTH = 2
 
@@ -62,14 +71,90 @@ def availability(section: Section, sold_out: bool) -> Availability:
     return Availability.SOLD_OUT if sold_out else Availability.IN_STOCK
 
 
-async def list_published(
-    session: AsyncSession, store: StoreConfig, media_base_url: str, section: Section | None
-) -> list[ProductListItem]:
-    """Productos publicados, de una sección o de todas, en el orden manual."""
-    rows = await repository.published_products(
-        session, section=section, sold_out_goes_on_order=store.features.on_order
+def _query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
+    """Los filtros que aplican: versión y colección solo con su función activa, y talle
+    solo en En stock (un encargue se pide en cualquier talle). Los demás se ignoran."""
+    applied: dict[Filter, list[str]] = {
+        Filter.CATEGORY: filters.category,
+        Filter.TAG: filters.tag,
+    }
+    if store.features.versions:
+        applied[Filter.VERSION] = filters.version
+    if store.features.collections:
+        applied[Filter.COLLECTION] = filters.collection
+    if filters.section is Section.STOCK:
+        applied[Filter.SIZE] = filters.size
+    return ListingQuery(
+        section=filters.section,
+        sold_out_goes_on_order=store.features.on_order,
+        filters=applied,
     )
-    return [
+
+
+def category_facet(
+    categories: Sequence[Category], counts: Mapping[int, int]
+) -> list[CategoryFacetValue]:
+    """Categorías con resultados en orden de árbol. Una de nivel 1 suma sus hijas."""
+    children: dict[int, list[Category]] = {}
+    for category in categories:
+        if category.parent_id is not None:
+            children.setdefault(category.parent_id, []).append(category)
+
+    facet: list[CategoryFacetValue] = []
+    for root in (c for c in categories if c.parent_id is None):
+        kids = children.get(root.id, [])
+        total = counts.get(root.id, 0) + sum(counts.get(kid.id, 0) for kid in kids)
+        if total:
+            facet.append(
+                CategoryFacetValue(value=root.slug, name=root.name, count=total, parent=None)
+            )
+        facet.extend(
+            CategoryFacetValue(
+                value=kid.slug, name=kid.name, count=counts[kid.id], parent=root.slug
+            )
+            for kid in kids
+            if counts.get(kid.id)
+        )
+    return facet
+
+
+async def _facet(
+    session: AsyncSession, query: ListingQuery, facet: Filter, *, shown: bool = True
+) -> list[FacetValue]:
+    if not shown:
+        return []
+    rows = await repository.facet_values(session, query, facet)
+    return [FacetValue(value=value, name=name, count=count) for value, name, count in rows]
+
+
+async def _facets(session: AsyncSession, store: StoreConfig, query: ListingQuery) -> ProductFacets:
+    """Lo necesario para dibujar los filtros: solo valores con resultados en la sección."""
+    features = store.features
+    return ProductFacets(
+        categories=category_facet(
+            await repository.all_categories(session),
+            await repository.count_by_category(session, query),
+        ),
+        versions=await _facet(session, query, Filter.VERSION, shown=features.versions),
+        # Con una sola colección cargada, el filtro no tiene sentido.
+        collections=await _facet(
+            session,
+            query,
+            Filter.COLLECTION,
+            shown=features.collections and await repository.count_collections(session) > 1,
+        ),
+        tags=await _facet(session, query, Filter.TAG),
+        sizes=await _facet(session, query, Filter.SIZE, shown=query.section is Section.STOCK),
+    )
+
+
+async def list_published(
+    session: AsyncSession, store: StoreConfig, media_base_url: str, filters: ProductFilters
+) -> ProductList:
+    """Productos publicados que cumplen los filtros, en el orden pedido, con las facetas."""
+    query = _query(store, filters)
+    rows = await repository.published_products(session, query, filters.sort)
+    items = [
         ProductListItem(
             code=product.code,
             name=product.name,
@@ -82,3 +167,4 @@ async def list_published(
         )
         for product, product_section, sold_out in rows
     ]
+    return ProductList(items=items, facets=await _facets(session, store, query))

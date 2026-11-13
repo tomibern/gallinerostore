@@ -14,7 +14,7 @@ from tests.conftest import FIXTURES
 async def _products(client: httpx.AsyncClient) -> list[dict[str, Any]]:
     response = await client.get("/products")
     assert response.status_code == 200
-    products: list[dict[str, Any]] = response.json()
+    products: list[dict[str, Any]] = response.json()["items"]
     return products
 
 
