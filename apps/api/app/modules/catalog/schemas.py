@@ -1,10 +1,8 @@
 """Modelos Pydantic de entrada y salida del catálogo."""
 
-from enum import StrEnum
-
 from pydantic import BaseModel, Field
 
-from app.modules.catalog.models import Availability, Section
+from app.modules.catalog.models import Availability, ProductSort, Section
 
 
 class ImageOut(BaseModel):
@@ -28,15 +26,6 @@ class ProductListItem(BaseModel):
     )
     availability: Availability = Field(description="Disponibilidad de cara al cliente.")
     cover: ImageOut | None = Field(description="La primera imagen del producto, si tiene.")
-
-
-class ProductSort(StrEnum):
-    """Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."""
-
-    MANUAL = "manual"  # orden manual del admin y, a igual orden, el más nuevo
-    NEWEST = "newest"
-    PRICE_ASC = "price_asc"
-    PRICE_DESC = "price_desc"
 
 
 class ProductFilters(BaseModel):

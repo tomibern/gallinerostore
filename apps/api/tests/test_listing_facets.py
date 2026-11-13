@@ -134,3 +134,28 @@ async def test_collection_facet_is_hidden_with_a_single_collection(
     await apply_seed(db_session, single, settings.store_config, storage)
 
     assert (await _facets(client, {"section": "stock"}))["collections"] == []
+
+
+async def test_selected_values_stay_in_their_facet_without_results(
+    client: httpx.AsyncClient, seeded: None
+) -> None:
+    # Ningún producto en stock tiene «arquero» y talle M: sin la fila, el chip para
+    # sacar «arquero» desaparecería. Un slug que no existe no se inventa.
+    facets = await _facets(
+        client, {"section": "stock", "tag": ["arquero", "no-existe"], "size": "M"}
+    )
+
+    assert {"value": "arquero", "name": "Arquero", "count": 0} in facets["tags"]
+    assert [v["value"] for v in facets["tags"]].count("no-existe") == 0
+
+
+async def test_selected_category_and_size_stay_without_results(
+    client: httpx.AsyncClient, seeded: None
+) -> None:
+    facets = await _facets(client, {"section": "stock", "category": "camperas", "size": "M"})
+
+    assert {"value": "camperas", "name": "Camperas", "count": 0, "parent": "abrigos"} in facets[
+        "categories"
+    ]
+    facets = await _facets(client, {"section": "stock", "category": "accesorios", "size": "M"})
+    assert {"value": "M", "name": "M", "count": 0} in facets["sizes"]

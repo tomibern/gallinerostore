@@ -17,6 +17,7 @@ from app.modules.catalog.models import (
     Product,
     ProductImage,
     ProductSize,
+    ProductSort,
     ProductStatus,
     ProductTag,
     SaleMode,
@@ -26,7 +27,6 @@ from app.modules.catalog.models import (
     Version,
     catalog_products,
 )
-from app.modules.catalog.schemas import ProductSort
 
 
 async def next_code_number(session: AsyncSession) -> int:
@@ -61,6 +61,15 @@ class ListingQuery:
     section: Section | None
     sold_out_goes_on_order: bool
     filters: Mapping[Filter, Sequence[str]] = field(default_factory=dict)
+
+
+def _facet_model(facet: Filter) -> type[Version | Collection | Tag]:
+    models: dict[Filter, type[Version | Collection | Tag]] = {
+        Filter.VERSION: Version,
+        Filter.COLLECTION: Collection,
+        Filter.TAG: Tag,
+    }
+    return models[facet]
 
 
 def _ids_by_slug(model: type[Version | Collection | Tag], slugs: Sequence[str]) -> Select[Any]:
@@ -169,6 +178,22 @@ async def all_categories(session: AsyncSession) -> Sequence[Category]:
 
 async def count_collections(session: AsyncSession) -> int:
     return int(await session.scalar(select(func.count()).select_from(Collection)) or 0)
+
+
+async def existing_values(
+    session: AsyncSession, facet: Filter, values: Sequence[str]
+) -> list[tuple[str, str]]:
+    """(valor, nombre) de los valores pedidos que existen; los desconocidos no vuelven."""
+    if facet is Filter.SIZE:
+        stmt = select(Size.label, Size.label).where(Size.label.in_(values)).distinct()
+    else:
+        model = _facet_model(facet)
+        stmt = (
+            select(model.slug, model.name)
+            .where(model.slug.in_(values))
+            .order_by(model.sort_order, model.id)
+        )
+    return [(value, name) for value, name in (await session.execute(stmt)).all()]
 
 
 async def facet_values(

@@ -71,7 +71,7 @@ def availability(section: Section, sold_out: bool) -> Availability:
     return Availability.SOLD_OUT if sold_out else Availability.IN_STOCK
 
 
-def _query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
+def _listing_query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
     """Los filtros que aplican: versión y colección solo con su función activa, y talle
     solo en En stock (un encargue se pide en cualquier talle). Los demás se ignoran."""
     applied: dict[Filter, list[str]] = {
@@ -92,9 +92,9 @@ def _query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
 
 
 def category_facet(
-    categories: Sequence[Category], counts: Mapping[int, int]
+    categories: Sequence[Category], counts: Mapping[int, int], selected: Collection[str]
 ) -> list[CategoryFacetValue]:
-    """Categorías con resultados en orden de árbol. Una de nivel 1 suma sus hijas."""
+    """Categorías con resultados (o elegidas) en orden de árbol. Una de nivel 1 suma sus hijas."""
     children: dict[int, list[Category]] = {}
     for category in categories:
         if category.parent_id is not None:
@@ -104,47 +104,53 @@ def category_facet(
     for root in (c for c in categories if c.parent_id is None):
         kids = children.get(root.id, [])
         total = counts.get(root.id, 0) + sum(counts.get(kid.id, 0) for kid in kids)
-        if total:
+        if total or root.slug in selected:
             facet.append(
                 CategoryFacetValue(value=root.slug, name=root.name, count=total, parent=None)
             )
         facet.extend(
             CategoryFacetValue(
-                value=kid.slug, name=kid.name, count=counts[kid.id], parent=root.slug
+                value=kid.slug, name=kid.name, count=counts.get(kid.id, 0), parent=root.slug
             )
             for kid in kids
-            if counts.get(kid.id)
+            if counts.get(kid.id) or kid.slug in selected
         )
     return facet
 
 
-async def _facet(
-    session: AsyncSession, query: ListingQuery, facet: Filter, *, shown: bool = True
-) -> list[FacetValue]:
-    if not shown:
+async def _facet(session: AsyncSession, query: ListingQuery, facet: Filter) -> list[FacetValue]:
+    """Valores con resultados, más los elegidos que se quedaron sin resultados (con 0):
+    así siempre está el chip para sacarlos. Un filtro que no aplica no tiene faceta."""
+    if facet not in query.filters:
         return []
-    rows = await repository.facet_values(session, query, facet)
-    return [FacetValue(value=value, name=name, count=count) for value, name, count in rows]
+    values = [
+        FacetValue(value=value, name=name, count=count)
+        for value, name, count in await repository.facet_values(session, query, facet)
+    ]
+    shown = {v.value for v in values}
+    missing = [v for v in query.filters[facet] if v not in shown]
+    if missing:
+        values += [
+            FacetValue(value=value, name=name, count=0)
+            for value, name in await repository.existing_values(session, facet, missing)
+        ]
+    return values
 
 
-async def _facets(session: AsyncSession, store: StoreConfig, query: ListingQuery) -> ProductFacets:
+async def _facets(session: AsyncSession, query: ListingQuery) -> ProductFacets:
     """Lo necesario para dibujar los filtros: solo valores con resultados en la sección."""
-    features = store.features
+    # Con una sola colección cargada, el filtro no tiene sentido.
+    collections_shown = await repository.count_collections(session) > 1
     return ProductFacets(
         categories=category_facet(
             await repository.all_categories(session),
             await repository.count_by_category(session, query),
+            query.filters.get(Filter.CATEGORY, []),
         ),
-        versions=await _facet(session, query, Filter.VERSION, shown=features.versions),
-        # Con una sola colección cargada, el filtro no tiene sentido.
-        collections=await _facet(
-            session,
-            query,
-            Filter.COLLECTION,
-            shown=features.collections and await repository.count_collections(session) > 1,
-        ),
+        versions=await _facet(session, query, Filter.VERSION),
+        collections=await _facet(session, query, Filter.COLLECTION) if collections_shown else [],
         tags=await _facet(session, query, Filter.TAG),
-        sizes=await _facet(session, query, Filter.SIZE, shown=query.section is Section.STOCK),
+        sizes=await _facet(session, query, Filter.SIZE),
     )
 
 
@@ -152,7 +158,7 @@ async def list_published(
     session: AsyncSession, store: StoreConfig, media_base_url: str, filters: ProductFilters
 ) -> ProductList:
     """Productos publicados que cumplen los filtros, en el orden pedido, con las facetas."""
-    query = _query(store, filters)
+    query = _listing_query(store, filters)
     rows = await repository.published_products(session, query, filters.sort)
     items = [
         ProductListItem(
@@ -167,4 +173,4 @@ async def list_published(
         )
         for product, product_section, sold_out in rows
     ]
-    return ProductList(items=items, facets=await _facets(session, store, query))
+    return ProductList(items=items, facets=await _facets(session, query))
