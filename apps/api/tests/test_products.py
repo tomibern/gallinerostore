@@ -23,7 +23,7 @@ async def test_lists_only_published_products(client: httpx.AsyncClient, seeded: 
     response = await client.get("/products")
 
     assert response.status_code == 200
-    slugs = {p["slug"] for p in response.json()}
+    slugs = {p["slug"] for p in response.json()["items"]}
     assert len(slugs) == 9
     assert not slugs & {"remera-borrador", "remera-oculta", "buzo-archivado"}
 
@@ -31,7 +31,7 @@ async def test_lists_only_published_products(client: httpx.AsyncClient, seeded: 
 async def test_product_carries_code_price_section_and_availability(
     client: httpx.AsyncClient, seeded: None
 ) -> None:
-    products = _by_slug((await client.get("/products")).json())
+    products = _by_slug((await client.get("/products")).json()["items"])
 
     remera = products["remera-basica"]
     assert remera["code"].startswith("TP-")
@@ -46,7 +46,7 @@ async def test_product_carries_code_price_section_and_availability(
 async def test_codes_follow_the_store_prefix_with_three_digits(
     client: httpx.AsyncClient, seeded: None
 ) -> None:
-    codes = [p["code"] for p in (await client.get("/products")).json()]
+    codes = [p["code"] for p in (await client.get("/products")).json()["items"]]
 
     assert all(len(code) >= 6 and code[:3] == "TP-" and code[3:].isdigit() for code in codes)
     assert len(set(codes)) == len(codes)
@@ -59,10 +59,10 @@ async def test_seeding_twice_does_not_duplicate_products(
     storage: ObjectStorage,
     seeded: None,
 ) -> None:
-    first = _by_slug((await client.get("/products")).json())
+    first = _by_slug((await client.get("/products")).json()["items"])
 
     await apply_seed(db_session, load_seed(FIXTURES / "seed.toml"), settings.store_config, storage)
-    second = _by_slug((await client.get("/products")).json())
+    second = _by_slug((await client.get("/products")).json()["items"])
 
     assert second.keys() == first.keys()
     assert {s: p["code"] for s, p in second.items()} == {s: p["code"] for s, p in first.items()}
@@ -85,14 +85,16 @@ async def test_a_discarded_product_code_is_never_reused(
             settings.store_config,
             storage,
         )
-        discarded = _by_slug((await client.get("/products")).json())["remera-descartada"]["code"]
+        discarded = _by_slug((await client.get("/products")).json()["items"])["remera-descartada"][
+            "code"
+        ]
         await nested.rollback()
 
     again = seed.products[0].model_copy(update={"slug": "remera-nueva"})
     await apply_seed(
         db_session, seed.model_copy(update={"products": [again]}), settings.store_config, storage
     )
-    new_code = _by_slug((await client.get("/products")).json())["remera-nueva"]["code"]
+    new_code = _by_slug((await client.get("/products")).json()["items"])["remera-nueva"]["code"]
 
     assert new_code != discarded
     assert int(new_code[3:]) > int(discarded[3:])

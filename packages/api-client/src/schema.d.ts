@@ -47,7 +47,7 @@ export interface paths {
         };
         /**
          * List Products
-         * @description Productos publicados del catálogo, en el orden manual.
+         * @description Productos publicados filtrados y ordenados, con los valores de filtro de la sección.
          */
         get: operations["list_products_products_get"];
         put?: never;
@@ -68,6 +68,41 @@ export interface components {
          * @enum {string}
          */
         Availability: "in_stock" | "on_order" | "sold_out_on_order" | "sold_out";
+        /** CategoryFacetValue */
+        CategoryFacetValue: {
+            /**
+             * Value
+             * @description Lo que se pasa en la query string: slug, o etiqueta de talle.
+             */
+            value: string;
+            /** Name */
+            name: string;
+            /**
+             * Count
+             * @description Productos con este valor, con los demás filtros aplicados (no el propio).
+             */
+            count: number;
+            /**
+             * Parent
+             * @description Slug de la categoría madre; null en las de nivel 1.
+             */
+            parent: string | null;
+        };
+        /** FacetValue */
+        FacetValue: {
+            /**
+             * Value
+             * @description Lo que se pasa en la query string: slug, o etiqueta de talle.
+             */
+            value: string;
+            /** Name */
+            name: string;
+            /**
+             * Count
+             * @description Productos con este valor, con los demás filtros aplicados (no el propio).
+             */
+            count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -114,6 +149,40 @@ export interface components {
             /** Height */
             height: number;
         };
+        /**
+         * ProductFacets
+         * @description Valores con resultados en la sección. Una lista vacía es un filtro que no se muestra.
+         */
+        ProductFacets: {
+            /**
+             * Categories
+             * @description En orden de árbol: cada categoría de nivel 1 seguida de sus hijas.
+             */
+            categories: components["schemas"]["CategoryFacetValue"][];
+            /**
+             * Versions
+             * @description Vacía con las versiones apagadas.
+             */
+            versions: components["schemas"]["FacetValue"][];
+            /**
+             * Collections
+             * @description Vacía con las colecciones apagadas o con una sola colección cargada.
+             */
+            collections: components["schemas"]["FacetValue"][];
+            /** Tags */
+            tags: components["schemas"]["FacetValue"][];
+            /**
+             * Sizes
+             * @description Solo en la sección En stock.
+             */
+            sizes: components["schemas"]["FacetValue"][];
+        };
+        /** ProductList */
+        ProductList: {
+            /** Items */
+            items: components["schemas"]["ProductListItem"][];
+            facets: components["schemas"]["ProductFacets"];
+        };
         /** ProductListItem */
         ProductListItem: {
             /**
@@ -139,6 +208,12 @@ export interface components {
             /** @description La primera imagen del producto, si tiene. */
             cover: components["schemas"]["ImageOut"] | null;
         };
+        /**
+         * ProductSort
+         * @description Orden del listado. ``manual`` es el que el visitante ve como «Destacados».
+         * @enum {string}
+         */
+        ProductSort: "manual" | "newest" | "price_asc" | "price_desc";
         /**
          * PublicStore
          * @description Lo que la web necesita saber de la tienda. Nada secreto.
@@ -263,6 +338,18 @@ export interface operations {
             query?: {
                 /** @description Solo los productos de esa sección. */
                 section?: components["schemas"]["Section"] | null;
+                /** @description Slugs de categoría. Una de nivel 1 incluye a sus hijas. */
+                category?: string[];
+                /** @description Slugs de versión. Se ignora con las versiones apagadas. */
+                version?: string[];
+                /** @description Slugs de colección. Se ignora con las colecciones apagadas. */
+                collection?: string[];
+                /** @description Slugs de etiqueta. */
+                tag?: string[];
+                /** @description Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock. */
+                size?: string[];
+                /** @description Orden del listado. */
+                sort?: components["schemas"]["ProductSort"];
             };
             header?: never;
             path?: never;
@@ -276,7 +363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductListItem"][];
+                    "application/json": components["schemas"]["ProductList"];
                 };
             };
             /** @description Validation Error */

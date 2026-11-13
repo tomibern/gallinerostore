@@ -25,7 +25,7 @@ for (const { path, section } of SECTIONS) {
   test(`${path} muestra las tarjetas de la sección en el orden de la API`, async ({ page }) => {
     const response = await page.request.get(`/api/products?section=${section}`);
     expect(response.ok()).toBe(true);
-    const products = (await response.json()) as ApiProduct[];
+    const products = ((await response.json()) as { items: ApiProduct[] }).items;
     expect(products.length).toBeGreaterThan(0);
     const store = (await (await page.request.get("/api/store")).json()) as ApiStore;
 
@@ -76,9 +76,11 @@ test("la grilla tiene 2 columnas en el celular y 3 o más en escritorio", async 
 });
 
 test("un agotado aparece en Por encargue y no en En stock", async ({ page }) => {
-  const onOrder = (await (
-    await page.request.get("/api/products?section=on_order")
-  ).json()) as ApiProduct[];
+  const onOrder = (
+    (await (await page.request.get("/api/products?section=on_order")).json()) as {
+      items: ApiProduct[];
+    }
+  ).items;
   const soldOut = onOrder.find((p) => p.availability === "sold_out_on_order");
   test.skip(!soldOut, "Los datos cargados no tienen ningún agotado");
 

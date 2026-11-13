@@ -50,6 +50,15 @@ class Availability(StrEnum):
     SOLD_OUT = "sold_out"
 
 
+class ProductSort(StrEnum):
+    """Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."""
+
+    MANUAL = "manual"  # orden manual del admin y, a igual orden, el más nuevo
+    NEWEST = "newest"
+    PRICE_ASC = "price_asc"
+    PRICE_DESC = "price_desc"
+
+
 class ProductStatus(StrEnum):
     """Estado: borrador → publicado ↔ oculto → archivado."""
 
