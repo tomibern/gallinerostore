@@ -9,8 +9,13 @@
   --color-muted: #6b6b73;
   --color-border: #e2e2e6;
   --color-primary: #2f5bd3;
+  /* Segundo tono del primario: la otra franja de la banda diagonal. */
+  --color-primary-strong: #2448a8;
   --color-primary-contrast: #ffffff;
+  /* Fondos oscuros (pie, bloques destacados) y el texto que va encima. */
   --color-accent: #1c1c1f;
+  --color-on-accent: #ffffff;
+  --color-on-accent-muted: #c9c9cf;
   --color-ok: #1f7a3d;
   --color-error: #c62828;
   --font-display: system-ui, sans-serif;
