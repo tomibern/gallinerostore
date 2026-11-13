@@ -19,7 +19,7 @@ ON_ORDER = ["buzo-a-pedido", "remera-agotada", "buzo-agotado", "gorra-a-pedido",
 async def _section(client: httpx.AsyncClient, section: str) -> list[dict[str, Any]]:
     response = await client.get("/products", params={"section": section})
     assert response.status_code == 200
-    products: list[dict[str, Any]] = response.json()
+    products: list[dict[str, Any]] = response.json()["items"]
     return products
 
 
@@ -58,7 +58,7 @@ async def test_on_order_section_lists_on_order_and_sold_out_products(
 async def test_without_section_lists_every_published_product_once(
     client: httpx.AsyncClient, seeded: None
 ) -> None:
-    products = (await client.get("/products")).json()
+    products = (await client.get("/products")).json()["items"]
 
     assert sorted(_slugs(products)) == sorted(STOCK + ON_ORDER)
 

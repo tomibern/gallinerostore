@@ -13,3 +13,7 @@ export function createApiClient(baseUrl: string) {
 export type Schemas = components["schemas"];
 export type ProductListItem = Schemas["ProductListItem"];
 export type PublicStore = Schemas["PublicStore"];
+export type ProductList = Schemas["ProductList"];
+export type ProductFacets = Schemas["ProductFacets"];
+export type FacetValue = Schemas["FacetValue"];
+export type CategoryFacetValue = Schemas["CategoryFacetValue"];

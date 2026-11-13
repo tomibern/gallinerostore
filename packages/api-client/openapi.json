@@ -53,7 +53,7 @@
           "catalog"
         ],
         "summary": "List Products",
-        "description": "Productos publicados del catálogo, en el orden manual.",
+        "description": "Productos publicados filtrados y ordenados, con los valores de filtro de la sección.",
         "operationId": "list_products_products_get",
         "parameters": [
           {
@@ -73,6 +73,92 @@
               "title": "Section"
             },
             "description": "Solo los productos de esa sección."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slugs de categoría. Una de nivel 1 incluye a sus hijas.",
+              "default": [],
+              "title": "Category"
+            },
+            "description": "Slugs de categoría. Una de nivel 1 incluye a sus hijas."
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slugs de versión. Se ignora con las versiones apagadas.",
+              "default": [],
+              "title": "Version"
+            },
+            "description": "Slugs de versión. Se ignora con las versiones apagadas."
+          },
+          {
+            "name": "collection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slugs de colección. Se ignora con las colecciones apagadas.",
+              "default": [],
+              "title": "Collection"
+            },
+            "description": "Slugs de colección. Se ignora con las colecciones apagadas."
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slugs de etiqueta.",
+              "default": [],
+              "title": "Tag"
+            },
+            "description": "Slugs de etiqueta."
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock.",
+              "default": [],
+              "title": "Size"
+            },
+            "description": "Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductSort",
+              "description": "Orden del listado.",
+              "default": "manual"
+            },
+            "description": "Orden del listado."
           }
         ],
         "responses": {
@@ -81,11 +167,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductListItem"
-                  },
-                  "title": "Response List Products Products Get"
+                  "$ref": "#/components/schemas/ProductList"
                 }
               }
             }
@@ -116,6 +198,69 @@
         ],
         "title": "Availability",
         "description": "Disponibilidad del producto de cara al cliente, ya calculada."
+      },
+      "CategoryFacetValue": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Lo que se pasa en la query string: slug, o etiqueta de talle."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Productos con este valor, con los demás filtros aplicados (no el propio)."
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent",
+            "description": "Slug de la categoría madre; null en las de nivel 1."
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "name",
+          "count",
+          "parent"
+        ],
+        "title": "CategoryFacetValue"
+      },
+      "FacetValue": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Lo que se pasa en la query string: slug, o etiqueta de talle."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Productos con este valor, con los demás filtros aplicados (no el propio)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "name",
+          "count"
+        ],
+        "title": "FacetValue"
       },
       "HTTPValidationError": {
         "properties": {
@@ -212,6 +357,79 @@
         ],
         "title": "ImageOut"
       },
+      "ProductFacets": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryFacetValue"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "En orden de árbol: cada categoría de nivel 1 seguida de sus hijas."
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/FacetValue"
+            },
+            "type": "array",
+            "title": "Versions",
+            "description": "Vacía con las versiones apagadas."
+          },
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/FacetValue"
+            },
+            "type": "array",
+            "title": "Collections",
+            "description": "Vacía con las colecciones apagadas o con una sola colección cargada."
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/FacetValue"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/FacetValue"
+            },
+            "type": "array",
+            "title": "Sizes",
+            "description": "Solo en la sección En stock."
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories",
+          "versions",
+          "collections",
+          "tags",
+          "sizes"
+        ],
+        "title": "ProductFacets",
+        "description": "Valores con resultados en la sección. Una lista vacía es un filtro que no se muestra."
+      },
+      "ProductList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "facets": {
+            "$ref": "#/components/schemas/ProductFacets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "facets"
+        ],
+        "title": "ProductList"
+      },
       "ProductListItem": {
         "properties": {
           "code": {
@@ -268,6 +486,17 @@
           "cover"
         ],
         "title": "ProductListItem"
+      },
+      "ProductSort": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "newest",
+          "price_asc",
+          "price_desc"
+        ],
+        "title": "ProductSort",
+        "description": "Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."
       },
       "PublicStore": {
         "properties": {
