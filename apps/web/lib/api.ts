@@ -3,11 +3,13 @@
 
 import { cache } from "react";
 
-import { createApiClient, type PublicStore } from "@catalog/api-client";
+import { createApiClient, type ProductListItem, type PublicStore } from "@catalog/api-client";
 
 import { apiInternalUrl } from "./env";
 
-export type { PublicStore };
+export type { ProductListItem, PublicStore };
+export type Section = ProductListItem["section"];
+export type Availability = ProductListItem["availability"];
 
 function api() {
   return createApiClient(apiInternalUrl());
@@ -22,3 +24,16 @@ export const getStore = cache(async (): Promise<PublicStore | null> => {
     return null;
   }
 });
+
+/** Productos publicados de una sección, en el orden manual, o null si la API no responde. */
+export async function getSectionProducts(section: Section): Promise<ProductListItem[] | null> {
+  try {
+    const { data } = await api().GET("/products", {
+      params: { query: { section } },
+      cache: "no-store",
+    });
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}

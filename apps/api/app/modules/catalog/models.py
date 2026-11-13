@@ -31,6 +31,25 @@ class SaleMode(StrEnum):
     ON_ORDER = "on_order"
 
 
+class Section(StrEnum):
+    """Sección del catálogo público. Se calcula, no se guarda: un producto de stock
+    agotado aparece en Por encargue."""
+
+    STOCK = "stock"
+    ON_ORDER = "on_order"
+
+
+class Availability(StrEnum):
+    """Disponibilidad del producto de cara al cliente, ya calculada."""
+
+    IN_STOCK = "in_stock"
+    ON_ORDER = "on_order"
+    # Agotado que pasó a Por encargue.
+    SOLD_OUT_ON_ORDER = "sold_out_on_order"
+    # Agotado con los encargues apagados: sigue en En stock.
+    SOLD_OUT = "sold_out"
+
+
 class ProductStatus(StrEnum):
     """Estado: borrador → publicado ↔ oculto → archivado."""
 
@@ -122,6 +141,7 @@ class Product(Base):
     sizes: Mapped[list["ProductSize"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )
+    tags: Mapped[list["Tag"]] = relationship(secondary="product_tags")
     # En orden: la primera es la portada.
     images: Mapped[list["ProductImage"]] = relationship(
         back_populates="product",
@@ -137,7 +157,8 @@ class ProductSize(Base):
         ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
     )
     size_id: Mapped[int] = mapped_column(ForeignKey("sizes.id"), primary_key=True)
-    # En stock: disponible ya. En encargue: talle que se puede pedir.
+    # Solo productos de stock: un encargue se pide en cualquier talle del grupo de
+    # su categoría y no tiene filas acá.
     in_stock: Mapped[bool] = mapped_column(Boolean, default=True)
 
     product: Mapped[Product] = relationship(back_populates="sizes")
@@ -222,13 +243,13 @@ class ProductImage(Base):
 # Secuencia de códigos: nunca reutiliza números aunque se borren productos.
 PRODUCT_CODE_SEQUENCE = "product_code_seq"
 
-# Vista de solo lectura para el catálogo público: calcula «sin stock» (producto
+# Vista de solo lectura para el catálogo público: calcula «agotado» (producto
 # de stock sin ningún talle disponible). La crea la migración; no la toca
 # autogenerate (ver alembic/env.py).
 catalog_products = Table(
     "catalog_products",
     Base.metadata,
     Column("id", Integer, primary_key=True),
-    Column("out_of_stock", Boolean),
+    Column("sold_out", Boolean),
     info={"is_view": True},
 )

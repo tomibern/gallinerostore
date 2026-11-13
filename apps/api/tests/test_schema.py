@@ -107,3 +107,52 @@ async def test_events_store_no_personal_data(settings: Settings) -> None:
         "page",
         "created_at",
     }
+
+
+# Un producto de stock y un encargue, ambos con un talle, antes de la migración.
+_ON_ORDER_FIXTURE = [
+    """
+    INSERT INTO sizes (id, label, sort_order, size_group) VALUES (1, 'M', 0, 'g')
+    """,
+    """
+    INSERT INTO categories (id, name, slug, sort_order, size_group)
+        VALUES (1, 'C', 'c', 0, 'g')
+    """,
+    """
+    INSERT INTO collections (id, name, slug, is_default, sort_order)
+        VALUES (1, 'K', 'k', true, 0)
+    """,
+    """
+    INSERT INTO products (id, code, name, slug, category_id, collection_id,
+        sale_mode, price, status, featured, sort_order)
+        VALUES
+        (1, 'X-001', 'Stock', 'stock', 1, 1, 'stock', 1, 'published', false, 0),
+        (2, 'X-002', 'Encargue', 'encargue', 1, 1, 'on_order', 1, 'published',
+        false, 1)
+    """,
+    """
+    INSERT INTO product_sizes (product_id, size_id, in_stock)
+        VALUES (1, 1, true), (2, 1, true)
+    """,
+]
+
+
+async def test_on_order_products_lose_their_own_sizes(scratch_database_url: str) -> None:
+    # Un encargue se pide en cualquier talle de su grupo: la migración borra sus talles
+    # y deja los de los productos de stock.
+    config = _alembic(scratch_database_url)
+    await anyio.to_thread.run_sync(command.upgrade, config, "398992582d68")
+
+    engine = create_async_engine(scratch_database_url)
+    try:
+        async with engine.begin() as conn:
+            for statement in _ON_ORDER_FIXTURE:
+                await conn.execute(text(statement))
+
+        await anyio.to_thread.run_sync(command.upgrade, config, "head")
+
+        async with engine.connect() as conn:
+            rows = await conn.execute(text("SELECT product_id FROM product_sizes"))
+            assert [row.product_id for row in rows] == [1]
+    finally:
+        await engine.dispose()

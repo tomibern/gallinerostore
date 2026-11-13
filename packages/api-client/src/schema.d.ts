@@ -47,7 +47,7 @@ export interface paths {
         };
         /**
          * List Products
-         * @description Productos publicados del catálogo.
+         * @description Productos publicados del catálogo, en el orden manual.
          */
         get: operations["list_products_products_get"];
         put?: never;
@@ -62,6 +62,17 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Availability
+         * @description Disponibilidad del producto de cara al cliente, ya calculada.
+         * @enum {string}
+         */
+        Availability: "in_stock" | "on_order" | "sold_out_on_order" | "sold_out";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** Health */
         Health: {
             /**
@@ -121,26 +132,12 @@ export interface components {
             price: number;
             /** Currency */
             currency: string;
-            sale_mode: components["schemas"]["SaleMode"];
-            /**
-             * Out Of Stock
-             * @description Producto de stock sin ningún talle disponible. Nunca en encargues.
-             */
-            out_of_stock: boolean;
-            /**
-             * Sizes
-             * @description En el orden de su grupo de talles.
-             */
-            sizes: components["schemas"]["ProductSizeOut"][];
+            /** @description Sección donde aparece: un producto de stock agotado va a Por encargue. */
+            section: components["schemas"]["Section"];
+            /** @description Disponibilidad de cara al cliente. */
+            availability: components["schemas"]["Availability"];
             /** @description La primera imagen del producto, si tiene. */
             cover: components["schemas"]["ImageOut"] | null;
-        };
-        /** ProductSizeOut */
-        ProductSizeOut: {
-            /** Label */
-            label: string;
-            /** In Stock */
-            in_stock: boolean;
         };
         /**
          * PublicStore
@@ -160,11 +157,12 @@ export interface components {
             features: components["schemas"]["StoreFeatures"];
         };
         /**
-         * SaleMode
-         * @description Modo de venta: define en qué sección aparece el producto.
+         * Section
+         * @description Sección del catálogo público. Se calcula, no se guarda: un producto de stock
+         *     agotado aparece en Por encargue.
          * @enum {string}
          */
-        SaleMode: "stock" | "on_order";
+        Section: "stock" | "on_order";
         /** StoreFeatures */
         StoreFeatures: {
             /**
@@ -197,6 +195,19 @@ export interface components {
              * @default true
              */
             product_story: boolean;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -249,7 +260,10 @@ export interface operations {
     };
     list_products_products_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Solo los productos de esa sección. */
+                section?: components["schemas"]["Section"] | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -263,6 +277,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

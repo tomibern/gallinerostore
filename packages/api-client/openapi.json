@@ -53,19 +53,49 @@
           "catalog"
         ],
         "summary": "List Products",
-        "description": "Productos publicados del catálogo.",
+        "description": "Productos publicados del catálogo, en el orden manual.",
         "operationId": "list_products_products_get",
+        "parameters": [
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Section"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo los productos de esa sección.",
+              "title": "Section"
+            },
+            "description": "Solo los productos de esa sección."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ProductListItem"
                   },
-                  "type": "array",
                   "title": "Response List Products Products Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -76,6 +106,30 @@
   },
   "components": {
     "schemas": {
+      "Availability": {
+        "type": "string",
+        "enum": [
+          "in_stock",
+          "on_order",
+          "sold_out_on_order",
+          "sold_out"
+        ],
+        "title": "Availability",
+        "description": "Disponibilidad del producto de cara al cliente, ya calculada."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "Health": {
         "properties": {
           "status": {
@@ -182,21 +236,13 @@
             "type": "string",
             "title": "Currency"
           },
-          "sale_mode": {
-            "$ref": "#/components/schemas/SaleMode"
+          "section": {
+            "$ref": "#/components/schemas/Section",
+            "description": "Sección donde aparece: un producto de stock agotado va a Por encargue."
           },
-          "out_of_stock": {
-            "type": "boolean",
-            "title": "Out Of Stock",
-            "description": "Producto de stock sin ningún talle disponible. Nunca en encargues."
-          },
-          "sizes": {
-            "items": {
-              "$ref": "#/components/schemas/ProductSizeOut"
-            },
-            "type": "array",
-            "title": "Sizes",
-            "description": "En el orden de su grupo de talles."
+          "availability": {
+            "$ref": "#/components/schemas/Availability",
+            "description": "Disponibilidad de cara al cliente."
           },
           "cover": {
             "anyOf": [
@@ -217,30 +263,11 @@
           "slug",
           "price",
           "currency",
-          "sale_mode",
-          "out_of_stock",
-          "sizes",
+          "section",
+          "availability",
           "cover"
         ],
         "title": "ProductListItem"
-      },
-      "ProductSizeOut": {
-        "properties": {
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "in_stock": {
-            "type": "boolean",
-            "title": "In Stock"
-          }
-        },
-        "type": "object",
-        "required": [
-          "label",
-          "in_stock"
-        ],
-        "title": "ProductSizeOut"
       },
       "PublicStore": {
         "properties": {
@@ -280,14 +307,14 @@
         "title": "PublicStore",
         "description": "Lo que la web necesita saber de la tienda. Nada secreto."
       },
-      "SaleMode": {
+      "Section": {
         "type": "string",
         "enum": [
           "stock",
           "on_order"
         ],
-        "title": "SaleMode",
-        "description": "Modo de venta: define en qué sección aparece el producto."
+        "title": "Section",
+        "description": "Sección del catálogo público. Se calcula, no se guarda: un producto de stock\nagotado aparece en Por encargue."
       },
       "StoreFeatures": {
         "properties": {
@@ -324,6 +351,46 @@
         },
         "type": "object",
         "title": "StoreFeatures"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

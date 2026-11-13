@@ -55,6 +55,28 @@ slug = "tela-jugador"
 name = "Tela hincha"
 slug = "tela-hincha"
 
+[[tags]]
+name = "Titular"
+slug = "titular"
+
+[[tags]]
+name = "Alternativa"
+slug = "alternativa"
+
+[[tags]]
+name = "Arquero"
+slug = "arquero"
+
+[[tags]]
+name = "Entrenamiento"
+slug = "entrenamiento"
+
+# Cubren todos los casos del catálogo: stock completo, con talles sin stock y
+# agotado (aparece en Por encargue), encargues de prenda y de accesorio (talle
+# único), categorías de nivel 2, versiones, etiquetas, destacados, y productos
+# fuera del catálogo público (borrador, oculto y archivado). Los encargues no
+# llevan talles: se piden en cualquiera del grupo de su categoría.
+
 [[products]]
 slug = "camiseta-river-titular-2026-hincha"
 name = "Camiseta River titular 2026 — Tela hincha"
@@ -66,6 +88,7 @@ sale_mode = "stock"
 status = "published"
 price = 4500000
 featured = true
+tags = ["titular"]
 sizes = { S = true, M = true, L = true, XL = false, XXL = false }
 
 [[products]]
@@ -78,7 +101,8 @@ season = "2025/26"
 sale_mode = "on_order"
 status = "published"
 price = 6500000
-sizes = { S = true, M = true, L = true, XL = true, XXL = true }
+featured = true
+tags = ["alternativa"]
 
 [[products]]
 slug = "camiseta-river-retro-1986"
@@ -90,7 +114,101 @@ season = "1986"
 sale_mode = "stock"
 status = "published"
 price = 5200000
+featured = true
+tags = ["titular"]
 sizes = { S = false, M = false, L = false, XL = false }
+
+[[products]]
+slug = "camiseta-river-titular-2026-jugador"
+name = "Camiseta River titular 2026 — Tela jugador"
+category = "camisetas"
+collection = "river-plate"
+version = "tela-jugador"
+season = "2025/26"
+sale_mode = "stock"
+status = "published"
+price = 6800000
+tags = ["titular"]
+sizes = { S = true, M = true, L = true, XL = true, XXL = true }
+
+[[products]]
+slug = "camiseta-river-arquero-2026"
+name = "Camiseta River arquero 2026"
+category = "camisetas"
+collection = "river-plate"
+version = "tela-hincha"
+season = "2025/26"
+sale_mode = "on_order"
+status = "published"
+price = 4800000
+tags = ["arquero"]
+
+[[products]]
+slug = "camiseta-river-retro-1996"
+name = "Camiseta River retro 1996"
+category = "camisetas"
+collection = "river-plate"
+version = "retro"
+season = "1996"
+sale_mode = "stock"
+status = "published"
+price = 5400000
+tags = ["alternativa"]
+sizes = { M = true, L = false }
+
+[[products]]
+slug = "buzo-river-entrenamiento-2026"
+name = "Buzo River entrenamiento 2026"
+category = "buzos"
+collection = "river-plate"
+season = "2025/26"
+sale_mode = "stock"
+status = "published"
+price = 5800000
+featured = true
+tags = ["entrenamiento"]
+sizes = { M = true, L = true, XL = false }
+
+[[products]]
+slug = "campera-river-presentacion"
+name = "Campera River presentación"
+category = "camperas"
+collection = "river-plate"
+sale_mode = "on_order"
+status = "published"
+price = 8900000
+tags = ["entrenamiento"]
+
+[[products]]
+slug = "short-river-titular-2026"
+name = "Short River titular 2026"
+category = "shorts"
+collection = "river-plate"
+season = "2025/26"
+sale_mode = "stock"
+status = "published"
+price = 2500000
+tags = ["titular"]
+sizes = { S = false, M = false, L = false }
+
+[[products]]
+slug = "gorra-river"
+name = "Gorra River"
+category = "accesorios"
+collection = "river-plate"
+sale_mode = "stock"
+status = "published"
+price = 1800000
+sizes = { "Único" = true }
+
+[[products]]
+slug = "bufanda-river"
+name = "Bufanda River"
+category = "accesorios"
+collection = "river-plate"
+sale_mode = "on_order"
+status = "published"
+price = 1500000
 
 [[products]]
 slug = "buzo-river-entrenamiento"
@@ -110,7 +228,18 @@ collection = "river-plate"
 sale_mode = "on_order"
 status = "hidden"
 price = 7900000
-sizes = { M = true, L = true, XL = true }
+
+[[products]]
+slug = "pantalon-river-entrenamiento-2025"
+name = "Pantalón River entrenamiento 2025"
+category = "pantalones-largos"
+collection = "river-plate"
+season = "2024/25"
+sale_mode = "stock"
+status = "archived"
+price = 4200000
+tags = ["entrenamiento"]
+sizes = { M = true }
 
 # Configuración editable de la tienda (la fila única de `settings`). El admin la
 # va a poder cambiar desde el panel; esto es el punto de partida.
