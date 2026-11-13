@@ -10,3 +10,5 @@ apps/web/next-env.d.ts
 .claude
 packages/api-client/openapi.json
 packages/api-client/src/schema.d.ts
+apps/web/lib/brand.generated.json
+apps/web/lib/texts/overrides.generated.json

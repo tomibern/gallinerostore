@@ -1,14 +1,28 @@
 /* Marca Gallinero Store: pisa los tokens neutros del núcleo.
-   Paleta del discovery: gama de rojos con blanco; el negro no es color de base. */
+   Paleta del discovery: gama de rojos con blanco; el negro no es color de base.
+   Las rutas /brand/* salen de brand/gallinero/public (scripts/sync-brand.mjs). */
+
+/* Oswald (SIL Open Font License 1.1), subconjunto latino, pesos 500 a 700. */
+@font-face {
+  font-family: "Oswald";
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url("/brand/fonts/oswald-latin.woff2") format("woff2");
+}
+
 :root {
-  --color-bg: #fff7f7;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
   --color-text: #6e1219;
-  --color-muted: #9b4a50;
-  --color-border: #f0c9cc;
+  --color-muted: #7a3e43;
+  --color-border: #ebc9cb;
   --color-primary: #e3262f;
+  --color-primary-strong: #b3202e;
   --color-primary-contrast: #ffffff;
   --color-accent: #6e1219;
+  --color-on-accent: #ffffff;
+  --color-on-accent-muted: #f6d3d5;
   --color-ok: #1f7a3d;
   --color-error: #e3262f;
   --font-display: "Oswald", "Arial Narrow", system-ui, sans-serif;

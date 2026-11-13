@@ -35,3 +35,6 @@ docs/research/
 # Generado desde brand/ por scripts/sync-brand.mjs
 apps/web/app/brand.generated.css
 apps/web/next-env.d.ts
+apps/web/public/brand/
+apps/web/lib/brand.generated.json
+apps/web/lib/texts/overrides.generated.json
