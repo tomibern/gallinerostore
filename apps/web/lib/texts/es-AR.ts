@@ -26,6 +26,22 @@ export const esAR = {
   "section.empty": "Todavía no hay productos en esta sección.",
   "section.unavailable": "No pudimos cargar los productos. Probá de nuevo en un rato.",
 
+  // Filtros y orden del listado
+  "listing.filters": "Filtros",
+  "listing.filter.category": "Categoría",
+  "listing.filter.version": "Versión",
+  "listing.filter.tag": "Etiquetas",
+  "listing.filter.size": "Talle",
+  "listing.clear": "Limpiar filtros",
+  "listing.sort": "Ordenar por",
+  "listing.sort.manual": "Destacados",
+  "listing.sort.newest": "Más nuevos",
+  "listing.sort.price_asc": "Menor precio",
+  "listing.sort.price_desc": "Mayor precio",
+  "listing.count.one": "1 producto",
+  "listing.count.other": "{count} productos",
+  "listing.empty": "No hay productos con estos filtros.",
+
   // Disponibilidad de un producto
   "availability.in_stock": "En stock",
   "availability.on_order": "Por encargue",
