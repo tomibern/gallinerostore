@@ -2,12 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from app.modules.catalog.models import SaleMode
-
-
-class ProductSizeOut(BaseModel):
-    label: str
-    in_stock: bool
+from app.modules.catalog.models import Availability, Section
 
 
 class ImageOut(BaseModel):
@@ -26,9 +21,8 @@ class ProductListItem(BaseModel):
     slug: str
     price: int = Field(description="Precio en la unidad menor de la moneda (centavos).")
     currency: str
-    sale_mode: SaleMode
-    out_of_stock: bool = Field(
-        description="Producto de stock sin ningún talle disponible. Nunca en encargues."
+    section: Section = Field(
+        description="Sección donde aparece: un producto de stock agotado va a Por encargue."
     )
-    sizes: list[ProductSizeOut] = Field(description="En el orden de su grupo de talles.")
+    availability: Availability = Field(description="Disponibilidad de cara al cliente.")
     cover: ImageOut | None = Field(description="La primera imagen del producto, si tiene.")

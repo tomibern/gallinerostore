@@ -25,6 +25,7 @@ from app.modules.catalog.models import (
     ProductStatus,
     SaleMode,
     Size,
+    Tag,
     Version,
 )
 from app.modules.media.placeholder import placeholder_image
@@ -58,6 +59,11 @@ class VersionSeed(BaseModel):
     slug: str
 
 
+class TagSeed(BaseModel):
+    name: str
+    slug: str
+
+
 class ProductSeed(BaseModel):
     # En el seed el slug identifica al producto (todavía no tiene código).
     slug: str
@@ -72,7 +78,9 @@ class ProductSeed(BaseModel):
     # En la unidad menor de la moneda (ADR 0002).
     price: int
     featured: bool = False
-    # Talle → disponible (en stock) o se puede pedir (en encargue).
+    tags: list[str] = []
+    # Talle → disponible o sin stock. Solo productos de stock: un encargue se pide en
+    # cualquier talle del grupo de su categoría.
     sizes: dict[str, bool] = {}
 
 
@@ -81,6 +89,7 @@ class CatalogSeed(BaseModel):
     categories: list[CategorySeed] = []
     collections: list[CollectionSeed] = []
     versions: list[VersionSeed] = []
+    tags: list[TagSeed] = []
     products: list[ProductSeed] = []
 
 
@@ -92,6 +101,7 @@ class SeedLookups:
     categories: dict[str, Category] = field(default_factory=dict)
     collections: dict[str, Collection] = field(default_factory=dict)
     versions: dict[str, Version] = field(default_factory=dict)
+    tags: dict[str, Tag] = field(default_factory=dict)
 
 
 def load_seed(path: Path) -> CatalogSeed:
@@ -108,6 +118,7 @@ async def apply_seed(
     """
     _check_categories(seed.categories)
     _check_single_default_collection(seed.collections)
+    _check_on_order_sizes(seed.products)
 
     lookups = SeedLookups(sizes=await _upsert_sizes(session, seed.sizes))
     for position, category in enumerate(seed.categories):
@@ -125,6 +136,10 @@ async def apply_seed(
         lookups.versions[version.slug] = await _upsert_by_slug(
             session, Version, version.slug, name=version.name, sort_order=position
         )
+    for position, tag in enumerate(seed.tags):
+        lookups.tags[tag.slug] = await _upsert_by_slug(
+            session, Tag, tag.slug, name=tag.name, sort_order=position
+        )
     await repository.flush(session)
 
     for position, product in enumerate(seed.products):
@@ -139,6 +154,14 @@ def _check_categories(categories: list[CategorySeed], depth: int = 1) -> None:
         except service.CategoryTooDeepError as error:
             raise SeedError(str(error)) from error
         _check_categories(category.children, depth + 1)
+
+
+def _check_on_order_sizes(products: list[ProductSeed]) -> None:
+    for product in products:
+        try:
+            service.check_on_order_sizes(product.slug, product.sale_mode, product.sizes.keys())
+        except service.OnOrderWithSizesError as error:
+            raise SeedError(str(error)) from error
 
 
 def _check_single_default_collection(collections: list[CollectionSeed]) -> None:
@@ -192,7 +215,7 @@ async def _upsert_category(
     return loaded
 
 
-async def _upsert_by_slug[T: (Category, Collection, Version)](
+async def _upsert_by_slug[T: (Category, Collection, Tag, Version)](
     session: AsyncSession, model: type[T], slug: str, **fields: object
 ) -> T:
     instance = await repository.find_by_slug(session, model, slug)
@@ -239,6 +262,9 @@ async def _upsert_product(
     product.price = seed.price
     product.featured = seed.featured
     product.sort_order = position
+    product.tags = [
+        _resolve(lookups.tags, slug, kind="etiqueta", product_slug=seed.slug) for slug in seed.tags
+    ]
     product.sizes = [
         ProductSize(
             size_id=_resolve_size(lookups, category, label, seed.slug).id, in_stock=in_stock

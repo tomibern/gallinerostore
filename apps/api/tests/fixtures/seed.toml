@@ -18,7 +18,15 @@ size_group = "prenda"
 name = "Abrigos"
 slug = "abrigos"
 size_group = "prenda"
-children = [{ name = "Buzos", slug = "buzos" }]
+children = [
+  { name = "Buzos", slug = "buzos" },
+  { name = "Camperas", slug = "camperas" },
+]
+
+[[categories]]
+name = "Accesorios"
+slug = "accesorios"
+size_group = "accesorio"
 
 [[collections]]
 name = "Marca A"
@@ -33,6 +41,24 @@ slug = "marca-b"
 name = "Clásica"
 slug = "clasica"
 
+[[versions]]
+name = "Moderna"
+slug = "moderna"
+
+[[tags]]
+name = "Titular"
+slug = "titular"
+
+[[tags]]
+name = "Alternativa"
+slug = "alternativa"
+
+[[tags]]
+name = "Arquero"
+slug = "arquero"
+
+# Publicados: cubren las dos secciones y el agotado.
+
 [[products]]
 slug = "remera-basica"
 name = "Remera básica"
@@ -42,6 +68,8 @@ version = "clasica"
 sale_mode = "stock"
 status = "published"
 price = 1999900
+featured = true
+tags = ["titular"]
 sizes = { S = true, M = false, L = true }
 
 [[products]]
@@ -49,10 +77,12 @@ slug = "buzo-a-pedido"
 name = "Buzo a pedido"
 category = "buzos"
 collection = "marca-b"
+version = "moderna"
 sale_mode = "on_order"
 status = "published"
 price = 4550000
-sizes = { M = true, XL = true }
+featured = true
+tags = ["titular"]
 
 [[products]]
 slug = "remera-agotada"
@@ -63,6 +93,72 @@ sale_mode = "stock"
 status = "published"
 price = 1500000
 sizes = { S = false, M = false }
+
+[[products]]
+slug = "remera-completa"
+name = "Remera completa"
+category = "remeras"
+collection = "marca-b"
+version = "moderna"
+sale_mode = "stock"
+status = "published"
+price = 2100000
+tags = ["alternativa"]
+sizes = { S = true, M = true, L = true, XL = true }
+
+[[products]]
+slug = "campera-en-stock"
+name = "Campera en stock"
+category = "camperas"
+collection = "marca-a"
+version = "clasica"
+sale_mode = "stock"
+status = "published"
+price = 6000000
+tags = ["arquero"]
+sizes = { L = true, XL = false }
+
+[[products]]
+slug = "buzo-agotado"
+name = "Buzo agotado"
+category = "buzos"
+collection = "marca-b"
+sale_mode = "stock"
+status = "published"
+price = 3800000
+sizes = { M = false }
+
+[[products]]
+slug = "gorra-en-stock"
+name = "Gorra en stock"
+category = "accesorios"
+collection = "marca-a"
+sale_mode = "stock"
+status = "published"
+price = 900000
+sizes = { "Único" = true }
+
+[[products]]
+slug = "gorra-a-pedido"
+name = "Gorra a pedido"
+category = "accesorios"
+collection = "marca-b"
+sale_mode = "on_order"
+status = "published"
+price = 1100000
+
+[[products]]
+slug = "campera-a-pedido"
+name = "Campera a pedido"
+category = "camperas"
+collection = "marca-a"
+version = "clasica"
+sale_mode = "on_order"
+status = "published"
+price = 8000000
+tags = ["alternativa", "arquero"]
+
+# Fuera del catálogo público.
 
 [[products]]
 slug = "remera-borrador"
@@ -83,6 +179,15 @@ sale_mode = "stock"
 status = "hidden"
 price = 1000000
 sizes = { S = true }
+
+[[products]]
+slug = "buzo-archivado"
+name = "Buzo archivado"
+category = "buzos"
+collection = "marca-b"
+sale_mode = "on_order"
+status = "archived"
+price = 1000000
 
 [settings]
 on_order_notice = "Demora a confirmar."

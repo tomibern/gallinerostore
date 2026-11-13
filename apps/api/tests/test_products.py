@@ -23,14 +23,12 @@ async def test_lists_only_published_products(client: httpx.AsyncClient, seeded: 
     response = await client.get("/products")
 
     assert response.status_code == 200
-    assert sorted(p["slug"] for p in response.json()) == [
-        "buzo-a-pedido",
-        "remera-agotada",
-        "remera-basica",
-    ]
+    slugs = {p["slug"] for p in response.json()}
+    assert len(slugs) == 9
+    assert not slugs & {"remera-borrador", "remera-oculta", "buzo-archivado"}
 
 
-async def test_product_carries_code_price_and_sizes_in_group_order(
+async def test_product_carries_code_price_section_and_availability(
     client: httpx.AsyncClient, seeded: None
 ) -> None:
     products = _by_slug((await client.get("/products")).json())
@@ -40,13 +38,9 @@ async def test_product_carries_code_price_and_sizes_in_group_order(
     assert remera["name"] == "Remera básica"
     assert remera["price"] == 1999900
     assert remera["currency"] == "USD"
-    assert remera["sale_mode"] == "stock"
-    assert remera["out_of_stock"] is False
-    assert remera["sizes"] == [
-        {"label": "S", "in_stock": True},
-        {"label": "M", "in_stock": False},
-        {"label": "L", "in_stock": True},
-    ]
+    assert remera["section"] == "stock"
+    assert remera["availability"] == "in_stock"
+    assert remera["cover"] is not None
 
 
 async def test_codes_follow_the_store_prefix_with_three_digits(
@@ -56,17 +50,6 @@ async def test_codes_follow_the_store_prefix_with_three_digits(
 
     assert all(len(code) >= 6 and code[:3] == "TP-" and code[3:].isdigit() for code in codes)
     assert len(set(codes)) == len(codes)
-
-
-async def test_stock_product_without_available_sizes_is_out_of_stock(
-    client: httpx.AsyncClient, seeded: None
-) -> None:
-    products = _by_slug((await client.get("/products")).json())
-
-    assert products["remera-agotada"]["out_of_stock"] is True
-    # Un encargue nunca está «sin stock»: se pide al proveedor.
-    assert products["buzo-a-pedido"]["out_of_stock"] is False
-    assert products["buzo-a-pedido"]["sale_mode"] == "on_order"
 
 
 async def test_seeding_twice_does_not_duplicate_products(
@@ -169,3 +152,20 @@ async def test_database_allows_a_single_default_collection(
 
     with pytest.raises(IntegrityError):
         await db_session.flush()
+
+
+async def test_seed_rejects_an_on_order_product_with_sizes(
+    settings: Settings, db_session: AsyncSession, storage: ObjectStorage
+) -> None:
+    # Un encargue se pide en cualquier talle del grupo de su categoría: no trae talles.
+    seed = load_seed(FIXTURES / "seed.toml")
+    on_order = next(p for p in seed.products if p.slug == "buzo-a-pedido")
+    with_sizes = on_order.model_copy(update={"sizes": {"M": True}})
+
+    with pytest.raises(SeedError, match="«buzo-a-pedido» es por encargue"):
+        await apply_seed(
+            db_session,
+            seed.model_copy(update={"products": [with_sizes]}),
+            settings.store_config,
+            storage,
+        )
