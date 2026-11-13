@@ -1,11 +1,20 @@
 // Filtros y orden del listado. Todo vive en la query string (así un listado
 // filtrado se comparte) y se pasa tal cual a GET /products.
 
+import type { Schemas } from "@catalog/api-client";
+
+export type Sort = Schemas["ProductSort"];
+
 export const FILTERS = ["category", "version", "collection", "tag", "size"] as const;
 export type FilterName = (typeof FILTERS)[number];
 
-export const SORTS = ["manual", "newest", "price_asc", "price_desc"] as const;
-export type Sort = (typeof SORTS)[number];
+// El orden por defecto («Destacados» en la UI) va primero.
+export const SORTS = [
+  "manual",
+  "newest",
+  "price_asc",
+  "price_desc",
+] as const satisfies readonly Sort[];
 
 export type Listing = Record<FilterName, string[]> & { sort?: Sort };
 
