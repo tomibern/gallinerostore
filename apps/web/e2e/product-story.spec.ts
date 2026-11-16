@@ -10,7 +10,8 @@ type ApiDetail = { code: string; story: StoryItem[] };
 
 // Historia del producto en el detalle. No conoce los datos ni los textos del
 // cliente: busca en la API un producto con historia y uno sin, y reconoce las
-// figuritas por su estado accesible (aria-expanded), no por el texto.
+// tarjetas de los hitos por su estado accesible (aria-expanded), no por el texto.
+// El seed tiene que traer los dos casos: si falta uno, el test falla.
 
 async function publishedDetails(request: APIRequestContext): Promise<ApiDetail[]> {
   const details: ApiDetail[] = [];
@@ -31,7 +32,8 @@ test("muestra la historia en un producto que la tiene y no en uno sin", async ({
   const details = await publishedDetails(page.request);
   const withStory = details.find((d) => d.story.some((item) => item.kind === "milestone"));
   const withoutStory = details.find((d) => d.story.length === 0);
-  test.skip(!withStory || !withoutStory, "El seed no tiene un producto con historia y uno sin");
+  expect(withStory, "un producto publicado con hitos en su historia").toBeDefined();
+  expect(withoutStory, "un producto publicado sin historia").toBeDefined();
 
   await page.goto(`/p/${withoutStory!.code.toLowerCase()}`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -47,10 +49,10 @@ test("muestra la historia en un producto que la tiene y no en uno sin", async ({
   }
 });
 
-test("las figuritas se dan vuelta con clic o toque y con teclado", async ({ page }) => {
+test("las tarjetas de los hitos se dan vuelta con clic o toque y con teclado", async ({ page }) => {
   const details = await publishedDetails(page.request);
   const withStory = details.find((d) => d.story.some((item) => item.kind === "milestone"));
-  test.skip(!withStory, "El seed no tiene un producto con hitos");
+  expect(withStory, "un producto publicado con hitos en su historia").toBeDefined();
   const milestone = withStory!.story.find((item) => item.kind === "milestone")!;
 
   await page.goto(`/p/${withStory!.code.toLowerCase()}`);
@@ -65,7 +67,7 @@ test("las figuritas se dan vuelta con clic o toque y con teclado", async ({ page
   await card.click();
   await expect(card).toHaveAttribute("aria-expanded", "true");
   await expect(back).not.toHaveAttribute("aria-hidden", "true");
-  if (milestone.body) await expect(back).toContainText(milestone.body);
+  await expect(back).toContainText(milestone.body!);
 
   // Teclado: Enter la vuelve y Espacio la da vuelta otra vez.
   await card.focus();

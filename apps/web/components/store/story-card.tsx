@@ -2,15 +2,17 @@
 
 import { useId, useState } from "react";
 
-type Props = { year: number | null; title: string; body: string | null; tilt: string };
+import type { StoryItemOut } from "@/lib/api";
 
-// Una figurita de la historia: año y título al frente, la anécdota atrás. Sigue el
+type Props = { item: StoryItemOut; tilt: string };
+
+// Un hito de la historia como tarjeta: año y título al frente, la anécdota atrás. Sigue el
 // patrón «disclosure» de WAI-ARIA: un botón con aria-expanded que muestra el dorso
-// (aria-controls). El botón cubre la figurita entera, así se da vuelta con clic,
+// (aria-controls). El botón cubre la tarjeta entera, así se da vuelta con clic,
 // toque, Enter o Espacio, y su nombre es solo año y título: la anécdota queda
 // afuera del botón, en el dorso, que se oculta a los lectores de pantalla mientras
 // no se ve. Con movimiento reducido, cambia de cara sin girar.
-export function StoryCard({ year, title, body, tilt }: Props) {
+export function StoryCard({ item: { year, title, body }, tilt }: Props) {
   const [flipped, setFlipped] = useState(false);
   const backId = useId();
   const name = year === null ? title : `${year} · ${title}`;

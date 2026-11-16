@@ -8,10 +8,10 @@ type Props = {
   labels: { title: string; hint: string; milestones: string; stats: string; funFact: string };
 };
 
-// Inclinación de cada figurita, como pegadas a mano en el álbum.
+// Inclinación de cada tarjeta, para que no queden en fila perfecta.
 const TILTS = ["-rotate-3", "rotate-2", "-rotate-1"];
 
-// Historia del producto: hitos como figuritas que se dan vuelta, cifras y datos
+// Historia del producto: hitos como tarjetas que se dan vuelta, cifras y datos
 // curiosos. La API ya la manda ordenada por tipo, y vacía si el producto no tiene
 // o si la función está apagada: entonces la sección no aparece.
 export function ProductStory({ story, labels }: Props) {
@@ -45,9 +45,7 @@ export function ProductStory({ story, labels }: Props) {
               {milestones.map((item, index) => (
                 <StoryCard
                   key={`${index}-${item.title}`}
-                  year={item.year}
-                  title={item.title}
-                  body={item.body}
+                  item={item}
                   tilt={TILTS[index % TILTS.length]}
                 />
               ))}

@@ -74,7 +74,7 @@ export const esAR = {
 
   // Producto
   "product.story.title": "Historia del producto",
-  "product.story.hint": "Tocá cada figurita para darla vuelta.",
+  "product.story.hint": "Tocá cada tarjeta para darla vuelta.",
   "product.story.milestones": "Hitos",
   "product.story.stats": "En números",
   "product.story.funFact": "¿Sabías que…?",
