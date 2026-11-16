@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { formatPrice } from "../lib/money";
+import { cardCodes, cards as productCards, loadAll } from "./listing-pages";
 
 type ApiStore = { locale: string; price_decimals: number };
 
@@ -15,7 +16,8 @@ type ApiProduct = {
 };
 
 // Las secciones En stock y Por encargue en celular y escritorio. No conocen los
-// datos del cliente: comparan cada página con lo que publica la API.
+// datos del cliente: comparan cada página con lo que publica la API (con todas
+// las páginas del listado cargadas).
 const SECTIONS = [
   { path: "/stock", section: "stock" },
   { path: "/encargue", section: "on_order" },
@@ -23,19 +25,18 @@ const SECTIONS = [
 
 for (const { path, section } of SECTIONS) {
   test(`${path} muestra las tarjetas de la sección en el orden de la API`, async ({ page }) => {
-    const response = await page.request.get(`/api/products?section=${section}`);
+    const response = await page.request.get(`/api/products?section=${section}&limit=100`);
     expect(response.ok()).toBe(true);
     const products = ((await response.json()) as { items: ApiProduct[] }).items;
     expect(products.length).toBeGreaterThan(0);
     const store = (await (await page.request.get("/api/store")).json()) as ApiStore;
 
     await page.goto(path);
+    await expect(productCards(page).first()).toBeVisible();
+    await loadAll(page);
 
-    const cards = page.locator("[data-testid=products] > li");
-    await expect(cards).toHaveCount(products.length);
-    await expect(cards.evaluateAll((items) => items.map((li) => li.dataset.code))).resolves.toEqual(
-      products.map((p) => p.code),
-    );
+    await expect(productCards(page)).toHaveCount(products.length);
+    expect(await cardCodes(page)).toEqual(products.map((p) => p.code));
 
     for (const product of products) {
       const card = page.locator(`[data-code="${product.code}"]`);
@@ -77,7 +78,7 @@ test("la grilla tiene 2 columnas en el celular y 3 o más en escritorio", async 
 
 test("un agotado aparece en Por encargue y no en En stock", async ({ page }) => {
   const onOrder = (
-    (await (await page.request.get("/api/products?section=on_order")).json()) as {
+    (await (await page.request.get("/api/products?section=on_order&limit=100")).json()) as {
       items: ApiProduct[];
     }
   ).items;
