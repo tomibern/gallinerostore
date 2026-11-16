@@ -3,6 +3,7 @@
 import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -10,11 +11,12 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import REPO_ROOT, Settings
+from app.core.config import REPO_ROOT, Settings, get_store_config
 from app.core.db import get_session
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
+from app.modules.settings.seed import SettingsSeed, apply_settings_seed, load_settings_seed
 from tests.isolation import (
     checkout_name,
     isolated_bucket,
@@ -113,6 +115,21 @@ def storage(settings: Settings) -> Iterator[ObjectStorage]:
     test_storage.delete_prefix("")
     yield test_storage
     test_storage.delete_prefix("")
+
+
+async def settings_seed(db_session: AsyncSession, **changes: Any) -> None:
+    """La configuración del fixture (WhatsApp, Instagram, plantillas y textos), con cambios."""
+    seed = load_settings_seed(FIXTURES / "seed.toml")
+    assert seed is not None
+    await apply_settings_seed(db_session, SettingsSeed.model_validate(seed.model_dump() | changes))
+
+
+@pytest.fixture
+def instagram_on(app: FastAPI, settings: Settings) -> None:
+    """Instagram prendido (el fixture de la tienda lo tiene apagado)."""
+    features = settings.store_config.features.model_copy(update={"instagram": True})
+    store = settings.store_config.model_copy(update={"features": features})
+    app.dependency_overrides[get_store_config] = lambda: store
 
 
 @pytest.fixture

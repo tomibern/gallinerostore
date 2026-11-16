@@ -27,6 +27,8 @@ class MessageCase(StrEnum):
     ON_ORDER = "on_order"
     # Agotado que pasó a Por encargue.
     SOLD_OUT_ON_ORDER = "sold_out_on_order"
+    # La consulta general: algo que no está en el catálogo. No lleva variables.
+    GENERAL = "general"
 
 
 class StoreSettings(Base):

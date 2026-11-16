@@ -195,7 +195,7 @@ price = 1000000
 [settings]
 on_order_notice = "Demora a confirmar."
 how_to_buy_md = "## Cómo comprar\n\nEscribinos."
-faq_md = "## Preguntas\n\n¿Envían? Sí."
+faq_md = "Respondemos por chat.\n\n## ¿Envían?\n\nSí, a todo el país.\n\n## ¿Cómo pago?\n\nPor **transferencia**."
 
 [settings.contact_channels]
 whatsapp = { number = "5491100000000" }
