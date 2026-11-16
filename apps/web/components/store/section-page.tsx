@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { getSectionListing, getStore, type Section } from "@/lib/api";
 import { listingPageSize } from "@/lib/env";
 import {
@@ -7,6 +9,7 @@ import {
   parsePages,
   type SearchParams,
 } from "@/lib/listing";
+import { pageMetadata } from "@/lib/seo";
 import { t, type TextKey } from "@/lib/texts";
 
 import { DiagonalBand } from "./diagonal-band";
@@ -22,6 +25,18 @@ const HEADINGS: Record<Section, { title: TextKey; description: TextKey }> = {
 
 export function sectionTitle(section: Section): string {
   return t(HEADINGS[section].title);
+}
+
+/** Título, descripción, canonical y Open Graph del listado de una sección. */
+export async function sectionMetadata(section: Section): Promise<Metadata> {
+  const store = await getStore();
+  const title = sectionTitle(section);
+  if (!store) return { title };
+  return pageMetadata(store, {
+    path: SECTION_PATHS[section],
+    title,
+    description: t(HEADINGS[section].description),
+  });
 }
 
 // Listado de una sección: encabezado, filtros (chips arriba en el celular,

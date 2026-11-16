@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DiagonalBand } from "@/components/store/diagonal-band";
@@ -5,6 +6,7 @@ import { HomeCarousel } from "@/components/store/home/home-carousel";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreLogo } from "@/components/store/store-logo";
 import { getFeatured, getStore, type HomeBlock } from "@/lib/api";
+import { pageMetadata } from "@/lib/seo";
 import { homeBlockText, t, type TextKey } from "@/lib/texts";
 
 // Accesos grandes a las secciones del catálogo.
@@ -16,6 +18,15 @@ const ACCESS: { href: string; title: TextKey; description: TextKey }[] = [
     description: "section.onOrder.description",
   },
 ];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const store = await getStore();
+  if (!store) return {};
+  return pageMetadata(store, {
+    path: "/",
+    description: t("meta.home.description", { store: store.name }),
+  });
+}
 
 // Home: portada, accesos a las secciones, destacados y bloques con carrusel.
 // Sin destacados (o si la API no responde) ese bloque no aparece; un bloque sin

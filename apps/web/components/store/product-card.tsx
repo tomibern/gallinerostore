@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import type { ProductListItem, PublicStore } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
+import { productPath } from "@/lib/seo";
 
 import { AvailabilityBadge } from "./availability-badge";
 
@@ -14,7 +15,7 @@ export function ProductCard({ product, store }: { product: ProductListItem; stor
   return (
     <li data-code={product.code} className="group">
       <Link
-        href={`/p/${product.code.toLowerCase()}`}
+        href={productPath(product.code)}
         className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface"
       >
         <div className="relative aspect-square bg-bg">

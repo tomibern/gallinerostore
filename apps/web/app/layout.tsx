@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
 import { getStore } from "@/lib/api";
+import { siteUrl } from "@/lib/env";
+import { rootMetadata } from "@/lib/seo";
 
 import "./globals.css";
 import "./brand.generated.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const store = await getStore();
-  return store ? { title: store.name } : {};
+  return rootMetadata(await getStore(), siteUrl());
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

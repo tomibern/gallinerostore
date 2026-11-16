@@ -7,6 +7,14 @@ export const esAR = {
   "store.tagline": "",
   "store.unavailable": "La tienda no está disponible en este momento. Probá de nuevo en un rato.",
 
+  // Metadatos: título de la pestaña, descripción y vista previa al compartir.
+  // En la plantilla, %s es el título de cada página.
+  "meta.titleTemplate": "%s · {store}",
+  "meta.home.description": "Catálogo de {store}. Elegí lo que te gusta y consultanos por chat.",
+  // El precio va primero: WhatsApp muestra una o dos líneas de la descripción.
+  "meta.product.description": "{price} · {availability}",
+  "meta.product.descriptionWithText": "{price} · {availability} · {text}",
+
   // Home
   "home.access.label": "Secciones",
   "home.featured.title": "Destacados",
