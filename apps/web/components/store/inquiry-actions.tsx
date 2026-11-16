@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { Channel, Inquiry } from "@/lib/api";
+import type { Channel, Inquiry, SizeStatus } from "@/lib/api";
 
 import { InstagramSheet, type InstagramSheetLabels } from "./instagram-sheet";
 
@@ -23,7 +23,7 @@ type Props = {
   // consultar (falta elegir talle) y los botones quedan deshabilitados.
   inquiries: Inquiry[] | null;
   // Para la etiqueta del caso (in_stock, out_of_stock, on_order…).
-  status?: string;
+  status?: SizeStatus;
   labels: InquiryActionsLabels;
   // Al abrir el chat de un canal (lo usa el registro de consultas).
   onInquiry?: (channel: Channel) => void;

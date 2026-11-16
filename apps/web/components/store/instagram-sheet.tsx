@@ -33,7 +33,7 @@ type CopyState = "idle" | "copied" | "failed";
 export function InstagramSheet({ inquiry, labels, onClose, onOpenChat }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const message = useRef<HTMLTextAreaElement>(null);
-  const [copy, setCopy] = useState<CopyState>("idle");
+  const [copyState, setCopy] = useState<CopyState>("idle");
 
   useEffect(() => {
     const element = dialog.current;
@@ -82,9 +82,9 @@ export function InstagramSheet({ inquiry, labels, onClose, onOpenChat }: Props) 
             data-testid="inquiry-message"
             className="w-full resize-none rounded-md border border-border bg-bg p-3 text-sm"
           />
-          <p aria-live="polite" data-copy={copy} className="min-h-5 text-sm">
-            {copy === "copied" && <span className="text-ok">{labels.copied}</span>}
-            {copy === "failed" && <span className="text-error">{labels.copyFailed}</span>}
+          <p aria-live="polite" data-copy={copyState} className="min-h-5 text-sm">
+            {copyState === "copied" && <span className="text-ok">{labels.copied}</span>}
+            {copyState === "failed" && <span className="text-error">{labels.copyFailed}</span>}
           </p>
           <div className="flex flex-col gap-2 md:flex-row-reverse">
             <a
