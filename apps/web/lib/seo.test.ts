@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import type { ProductDetail, PublicStore } from "./api";
 import { formatPrice } from "./money";
-import { baseOpenGraph, pageMetadata, productMetadata, productPath, rootMetadata } from "./seo";
+import {
+  baseOpenGraph,
+  collectProductCodes,
+  pageMetadata,
+  productMetadata,
+  productPath,
+  rootMetadata,
+  sitemapEntries,
+} from "./seo";
 import { t } from "./texts";
 
 const store = {
@@ -135,5 +143,51 @@ describe("productMetadata", () => {
   it("sin fotos no inventa una imagen", () => {
     const metadata = productMetadata(product({ images: [] }), store);
     expect(metadata.openGraph).not.toHaveProperty("images");
+  });
+});
+
+describe("sitemapEntries", () => {
+  it("vuelve absolutas las rutas fijas y las de cada producto", () => {
+    const entries = sitemapEntries(
+      new URL("https://tienda.test"),
+      ["/", "/stock"],
+      ["ABC-001", "XYZ-9"],
+    );
+    expect(entries).toEqual([
+      { url: "https://tienda.test/" },
+      { url: "https://tienda.test/stock" },
+      { url: "https://tienda.test/p/abc-001" },
+      { url: "https://tienda.test/p/xyz-9" },
+    ]);
+  });
+});
+
+describe("collectProductCodes", () => {
+  it("recorre las páginas de a 100 hasta que no haya más", async () => {
+    const offsets: number[] = [];
+    const codes = await collectProductCodes(async (offset, limit) => {
+      offsets.push(offset);
+      expect(limit).toBe(100);
+      return offset === 0
+        ? { items: [{ code: "A" }, { code: "B" }], has_more: true }
+        : { items: [{ code: "C" }], has_more: false };
+    });
+    expect(codes).toEqual(["A", "B", "C"]);
+    expect(offsets).toEqual([0, 100]);
+  });
+
+  it("falla si la API falla, en vez de devolver una lista incompleta", async () => {
+    await expect(
+      collectProductCodes(async (offset) => {
+        if (offset > 0) throw new Error("API caída");
+        return { items: [{ code: "A" }], has_more: true };
+      }),
+    ).rejects.toThrow("API caída");
+  });
+
+  it("corta si la API nunca termina", async () => {
+    await expect(
+      collectProductCodes(async () => ({ items: [{ code: "A" }], has_more: true })),
+    ).rejects.toThrow();
   });
 });

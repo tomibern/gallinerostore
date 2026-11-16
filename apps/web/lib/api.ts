@@ -20,6 +20,7 @@ import {
 
 import { apiInternalUrl } from "./env";
 import type { Listing } from "./listing";
+import { collectProductCodes } from "./seo";
 
 export type {
   CategoryFacetValue,
@@ -110,3 +111,19 @@ export const getProduct = cache(async (code: string): Promise<ProductResult> => 
     return { status: "error" };
   }
 });
+
+/**
+ * Códigos de todos los productos publicados (los dos listados), para el sitemap.
+ * A diferencia del resto, si la API no responde tira error: un sitemap sin
+ * productos le diría al buscador que ya no existen.
+ */
+export async function getPublishedCodes(): Promise<string[]> {
+  return collectProductCodes(async (offset, limit) => {
+    const { data } = await api().GET("/products", {
+      params: { query: { limit, offset } },
+      cache: "no-store",
+    });
+    if (!data) throw new Error("La API no devolvió el listado de productos.");
+    return data;
+  });
+}
