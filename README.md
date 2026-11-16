@@ -52,6 +52,8 @@ make dev
 
 `make dev` instala dependencias, levanta Postgres y el almacenamiento, espera a que estén sanos, aplica las migraciones, crea el bucket de imágenes y arranca la API y la web con recarga automática. `Ctrl+C` corta todo. `make test` crea la base de tests si hace falta.
 
+Los tests de la API también crean y migran su base solos. En un worktree de git, la base y el bucket de tests llevan el nombre del worktree como sufijo (`gallinero_test_<worktree>`, `test-media-<worktree>`), así varios worktrees pueden correr la suite en paralelo sin bloquearse ni borrarse las imágenes. Esas bases no se borran solas cuando se elimina el worktree.
+
 Para tener productos de prueba:
 
 ```bash

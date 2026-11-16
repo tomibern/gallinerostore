@@ -15,6 +15,12 @@ from app.core.db import get_session
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
+from tests.isolation import (
+    checkout_name,
+    isolated_bucket,
+    isolated_database_url,
+    prepare_database,
+)
 from tests.support import http_client
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -32,10 +38,17 @@ def _test_database_url() -> str:
 
 @pytest.fixture(scope="session")
 def settings() -> Settings:
-    """Configuración de tests: misma que desarrollo, pero contra la base de tests."""
+    """Configuración de tests: misma que desarrollo, pero contra la base de tests.
+
+    En un worktree, la base y el bucket llevan su nombre para no pisarse con otras
+    corridas en paralelo (ver `tests/isolation.py`).
+    """
+    name = checkout_name(REPO_ROOT)
+    database_url = isolated_database_url(_test_database_url(), name)
+    prepare_database(database_url)
     test_settings = Settings(  # el resto sale del entorno
-        database_url=_test_database_url(),
-        s3_bucket="test-media",
+        database_url=database_url,
+        s3_bucket=isolated_bucket("test-media", name),
         store_config_path=FIXTURES / "store.toml",
     )
     ensure_bucket(create_s3_client(test_settings), test_settings.s3_bucket)
