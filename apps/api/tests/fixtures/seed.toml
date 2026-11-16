@@ -105,6 +105,7 @@ status = "published"
 price = 2100000
 tags = ["alternativa"]
 sizes = { S = true, M = true, L = true, XL = true }
+photos = 3
 
 [[products]]
 slug = "campera-en-stock"

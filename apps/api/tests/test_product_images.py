@@ -55,4 +55,27 @@ async def test_reseeding_keeps_the_same_cover_without_new_files(
     after = {p["code"]: p["cover"] for p in await _products(client)}
     assert after == before
     assert {code: storage.list_keys(f"products/{code}/") for code in after} == files_before
-    assert all(len(keys) == 2 for keys in files_before.values())
+    # Dos archivos (completa y miniatura) por foto: remera-completa tiene tres.
+    photos = {
+        p["code"]: 3 if p["slug"] == "remera-completa" else 1 for p in await _products(client)
+    }
+    assert {code: len(keys) for code, keys in files_before.items()} == {
+        code: 2 * n for code, n in photos.items()
+    }
+
+
+async def test_seed_can_give_a_product_several_photos_in_order(
+    client: httpx.AsyncClient, storage: ObjectStorage, seeded: None
+) -> None:
+    code = next(p["code"] for p in await _products(client) if p["slug"] == "remera-completa")
+
+    images = (await client.get(f"/products/{code.lower()}")).json()["images"]
+
+    assert len(images) == 3
+    assert [image["full"].rsplit("/", 1)[1] for image in images] == [
+        "1-1600.webp",
+        "2-1600.webp",
+        "3-1600.webp",
+    ]
+    for image in images:
+        assert storage.exists(image["full"].removeprefix("/media/"))

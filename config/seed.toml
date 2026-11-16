@@ -90,6 +90,7 @@ price = 4500000
 featured = true
 tags = ["titular"]
 sizes = { S = true, M = true, L = true, XL = false, XXL = false }
+photos = 3
 
 [[products]]
 slug = "camiseta-river-alternativa-2026-jugador"
@@ -130,6 +131,7 @@ status = "published"
 price = 6800000
 tags = ["titular"]
 sizes = { S = true, M = true, L = true, XL = true, XXL = true }
+photos = 4
 
 [[products]]
 slug = "camiseta-river-arquero-2026"

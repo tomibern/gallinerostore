@@ -53,7 +53,7 @@ async def test_stock_product_shows_its_data_photos_and_sizes(
     assert detail["collection"] == {"slug": "marca-b", "name": "Marca B"}
     assert detail["description"] is None
     assert detail["season"] is None
-    assert len(detail["images"]) == 1
+    assert len(detail["images"]) == 3
     assert detail["images"][0]["full"].startswith("/media/")
     assert _sizes(detail) == [(label, "in_stock") for label in PRENDA]
     assert detail["on_order_notice"] is None

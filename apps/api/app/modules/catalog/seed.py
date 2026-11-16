@@ -10,7 +10,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
@@ -82,6 +82,8 @@ class ProductSeed(BaseModel):
     # Talle → disponible o sin stock. Solo productos de stock: un encargue se pide en
     # cualquier talle del grupo de su categoría.
     sizes: dict[str, bool] = {}
+    # Fotos de prueba que se generan si el producto no tiene ninguna (para ver la galería).
+    photos: int = Field(default=1, ge=1)
 
 
 class CatalogSeed(BaseModel):
@@ -273,11 +275,13 @@ async def _upsert_product(
     ]
     await repository.flush(session)
     if not await repository.has_images(session, product.id):
-        # Una foto de prueba solo si no tiene ninguna: repetir el seed no duplica.
-        stored = store_product_image(
-            storage, product.code, 0, placeholder_image(seed.name, product.code)
-        )
-        repository.add(session, ProductImage.from_stored(product.id, stored, alt=seed.name))
+        # Fotos de prueba solo si no tiene ninguna: repetir el seed no duplica.
+        for position in range(seed.photos):
+            title = seed.name if seed.photos == 1 else f"{seed.name} {position + 1}/{seed.photos}"
+            stored = store_product_image(
+                storage, product.code, position, placeholder_image(title, product.code)
+            )
+            repository.add(session, ProductImage.from_stored(product.id, stored, alt=seed.name))
         await repository.flush(session)
 
 
