@@ -30,7 +30,8 @@ export interface paths {
         };
         /**
          * Store
-         * @description Configuración pública de la tienda y los bloques de la home con sus fotos.
+         * @description Configuración pública de la tienda: los bloques de la home con sus fotos, «Cómo
+         *     comprar», las preguntas frecuentes, los canales activos y la consulta general.
          */
         get: operations["store_store_get"];
         put?: never;
@@ -131,6 +132,22 @@ export interface components {
              * @description Productos con este valor, con los demás filtros aplicados (no el propio).
              */
             count: number;
+        };
+        /**
+         * FaqItem
+         * @description Una pregunta frecuente: cada encabezado ``##`` de las preguntas abre una.
+         */
+        FaqItem: {
+            /**
+             * Question
+             * @description El texto del encabezado, sin los #.
+             */
+            question: string;
+            /**
+             * Answer Md
+             * @description La respuesta, en Markdown.
+             */
+            answer_md: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -389,6 +406,36 @@ export interface components {
              * @description Bloques con carrusel de la home, en el orden de la configuración.
              */
             home_blocks: components["schemas"]["HomeBlock"][];
+            /**
+             * Channels
+             * @description Canales de contacto activos, en el orden en que se ofrecen.
+             */
+            channels: components["schemas"]["Channel"][];
+            /**
+             * General Inquiries
+             * @description La consulta general (sin producto), una por canal activo.
+             */
+            general_inquiries: components["schemas"]["Inquiry"][];
+            /**
+             * On Order Notice
+             * @description El aviso de demora de los productos por encargue, si la tienda lo cargó.
+             */
+            on_order_notice: string | null;
+            /**
+             * How To Buy Md
+             * @description «Cómo comprar» en Markdown (puede ser vacío).
+             */
+            how_to_buy_md: string;
+            /**
+             * Faq Intro Md
+             * @description El texto de las preguntas frecuentes antes de la primera pregunta.
+             */
+            faq_intro_md: string;
+            /**
+             * Faq
+             * @description Las preguntas frecuentes, en su orden.
+             */
+            faq: components["schemas"]["FaqItem"][];
         };
         /**
          * Section

@@ -314,7 +314,7 @@ El modelo refleja las decisiones de catálogo y es genérico para poder reutiliz
 | product_story_items | id, product_id, kind, year, title, body, sort_order | kind: milestone (figurita) / stat (cifra) / fun_fact (¿Sabías que…?). Sin filas, la sección no se muestra. Se apaga con features.productStory |
 | home_slides | id, block, path_full, alt, sort_order | Fotos de los carruseles de la home (block: por ejemplo lbdt). Máximo 4 por bloque, validado en la API |
 | events | id, type, product_id, channel, size_id, source, device, session_id, page, created_at | Sin datos personales. session_id es anónimo y se usa para no contar visitas repetidas. page es la página de las visitas a listados y de las consultas generales (ver «Métricas») |
-| settings | contact_channels, how_to_buy_md, faq_md, on_order_notice, message_templates | Una sola fila; lo editable desde el admin. Lo técnico va en config/store.toml |
+| settings | contact_channels, how_to_buy_md, faq_md, on_order_notice, message_templates | Una sola fila; lo editable desde el admin. Lo técnico va en config/store.toml. En faq_md cada pregunta es un encabezado `##` y su respuesta, lo que sigue hasta el próximo; la API las devuelve ya partidas |
 
 **Valores calculados (no se guardan):** si un producto está agotado (de stock y sin talles disponibles) sale de product_sizes, y de eso sale su sección: un agotado aparece en Por encargue. Una vista catalog_products lo devuelve ya calculado para el catálogo público.
 

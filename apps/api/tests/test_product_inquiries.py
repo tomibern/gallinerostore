@@ -16,34 +16,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, StoreFeatures, get_settings, get_store_config
 from app.modules.settings.models import SETTINGS_ROW_ID, StoreSettings
-from app.modules.settings.seed import (
-    SettingsSeed,
-    apply_settings_seed,
-    load_settings_seed,
-)
-from tests.conftest import FIXTURES
+from app.modules.settings.seed import SettingsSeed
+from tests.conftest import settings_seed
 
 WHATSAPP = "5491100000000"
 
 
-async def _settings_seed(db_session: AsyncSession, **changes: Any) -> None:
-    """La configuración del fixture (WhatsApp, Instagram y plantillas), con cambios."""
-    seed = load_settings_seed(FIXTURES / "seed.toml")
-    assert seed is not None
-    await apply_settings_seed(db_session, SettingsSeed.model_validate(seed.model_dump() | changes))
-
-
 @pytest.fixture
 async def contact(db_session: AsyncSession, seeded: None) -> None:
-    await _settings_seed(db_session)
-
-
-@pytest.fixture
-def instagram_on(app: FastAPI, settings: Settings) -> None:
-    # El fixture tiene Instagram apagado.
-    features = settings.store_config.features.model_copy(update={"instagram": True})
-    store = settings.store_config.model_copy(update={"features": features})
-    app.dependency_overrides[get_store_config] = lambda: store
+    await settings_seed(db_session)
 
 
 async def _detail(client: httpx.AsyncClient, slug: str) -> dict[str, Any]:
@@ -135,7 +116,7 @@ async def test_sold_out_on_order_size_uses_its_own_template(
 async def test_sold_out_on_order_uses_the_store_template_when_it_has_one(
     client: httpx.AsyncClient, db_session: AsyncSession, seeded: None
 ) -> None:
-    await _settings_seed(
+    await settings_seed(
         db_session, message_templates={"sold_out_on_order": "Agotado {product} {size}"}
     )
 
@@ -180,7 +161,7 @@ async def test_instagram_has_the_same_message_and_a_link_to_the_chat(
 async def test_a_channel_that_is_not_loaded_is_left_out(
     client: httpx.AsyncClient, db_session: AsyncSession, seeded: None, instagram_on: None
 ) -> None:
-    await _settings_seed(db_session, contact_channels={"instagram": {"username": "solo.ig"}})
+    await settings_seed(db_session, contact_channels={"instagram": {"username": "solo.ig"}})
 
     detail = await _detail(client, "remera-completa")
 
@@ -202,7 +183,7 @@ async def test_a_broken_template_is_left_as_is_instead_of_failing(
     client: httpx.AsyncClient, db_session: AsyncSession, seeded: None, template: str
 ) -> None:
     # En la Fase 4 las plantillas las edita el admin: una mal escrita no tira el detalle.
-    await _settings_seed(db_session, message_templates={"stock": template})
+    await settings_seed(db_session, message_templates={"stock": template})
 
     detail = await _detail(client, "remera-completa")
 

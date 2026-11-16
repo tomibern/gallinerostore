@@ -7,6 +7,7 @@ import {
   createApiClient,
   type CategoryFacetValue,
   type Channel,
+  type FaqItem,
   type Inquiry,
   type FacetValue,
   type HomeBlock,
@@ -24,6 +25,7 @@ import type { Listing } from "./listing";
 export type {
   CategoryFacetValue,
   Channel,
+  FaqItem,
   Inquiry,
   FacetValue,
   HomeBlock,

@@ -78,7 +78,7 @@ Clic en «Consultar» que abre WhatsApp o Instagram con el mensaje prearmado y r
 _Evitar_: pedido, orden, compra, lead
 
 **Consulta general**:
-Consulta sin producto, para pedidos especiales.
+Consulta sin producto, para pedidos especiales («¿Buscás algo que no está?»). Abre los mismos canales que la consulta de un producto, con la plantilla general, que no lleva variables.
 
 **Mensaje prearmado**:
 Texto con producto, código, talle, disponibilidad (en stock, sin stock, por encargue o agotado por encargue) y link que arma la API (ADR 0005), a partir de las plantillas de la tienda, para abrir la conversación. En WhatsApp viaja dentro del link; en Instagram se muestra para que la persona lo copie si quiere.

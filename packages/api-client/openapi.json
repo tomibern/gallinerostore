@@ -32,7 +32,7 @@
           "settings"
         ],
         "summary": "Store",
-        "description": "Configuración pública de la tienda y los bloques de la home con sus fotos.",
+        "description": "Configuración pública de la tienda: los bloques de la home con sus fotos, «Cómo\ncomprar», las preguntas frecuentes, los canales activos y la consulta general.",
         "operationId": "store_store_get",
         "responses": {
           "200": {
@@ -356,6 +356,27 @@
           "count"
         ],
         "title": "FacetValue"
+      },
+      "FaqItem": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question",
+            "description": "El texto del encabezado, sin los #."
+          },
+          "answer_md": {
+            "type": "string",
+            "title": "Answer Md",
+            "description": "La respuesta, en Markdown."
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "answer_md"
+        ],
+        "title": "FaqItem",
+        "description": "Una pregunta frecuente: cada encabezado ``##`` de las preguntas abre una."
       },
       "HTTPValidationError": {
         "properties": {
@@ -881,6 +902,52 @@
             "type": "array",
             "title": "Home Blocks",
             "description": "Bloques con carrusel de la home, en el orden de la configuración."
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            },
+            "type": "array",
+            "title": "Channels",
+            "description": "Canales de contacto activos, en el orden en que se ofrecen."
+          },
+          "general_inquiries": {
+            "items": {
+              "$ref": "#/components/schemas/Inquiry"
+            },
+            "type": "array",
+            "title": "General Inquiries",
+            "description": "La consulta general (sin producto), una por canal activo."
+          },
+          "on_order_notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Order Notice",
+            "description": "El aviso de demora de los productos por encargue, si la tienda lo cargó."
+          },
+          "how_to_buy_md": {
+            "type": "string",
+            "title": "How To Buy Md",
+            "description": "«Cómo comprar» en Markdown (puede ser vacío)."
+          },
+          "faq_intro_md": {
+            "type": "string",
+            "title": "Faq Intro Md",
+            "description": "El texto de las preguntas frecuentes antes de la primera pregunta."
+          },
+          "faq": {
+            "items": {
+              "$ref": "#/components/schemas/FaqItem"
+            },
+            "type": "array",
+            "title": "Faq",
+            "description": "Las preguntas frecuentes, en su orden."
           }
         },
         "type": "object",
@@ -891,7 +958,13 @@
           "price_decimals",
           "collection_label",
           "features",
-          "home_blocks"
+          "home_blocks",
+          "channels",
+          "general_inquiries",
+          "on_order_notice",
+          "how_to_buy_md",
+          "faq_intro_md",
+          "faq"
         ],
         "title": "PublicStore",
         "description": "Lo que la web necesita saber de la tienda. Nada secreto."

@@ -10,6 +10,7 @@ import {
 import { t, type TextKey } from "@/lib/texts";
 
 import { DiagonalBand } from "./diagonal-band";
+import { GeneralInquiry } from "./general-inquiry";
 import { ListingFilters, SortOptions } from "./listing-filters";
 import { ProductGrid } from "./product-grid";
 
@@ -92,6 +93,7 @@ export async function SectionPage({
                 store={store}
               />
             )}
+            <GeneralInquiry inquiries={store.general_inquiries} placement="listing" />
           </div>
         </div>
       )}

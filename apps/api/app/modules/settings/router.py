@@ -17,5 +17,6 @@ async def store(
     config: Annotated[StoreConfig, Depends(get_store_config)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> PublicStore:
-    """Configuración pública de la tienda y los bloques de la home con sus fotos."""
+    """Configuración pública de la tienda: los bloques de la home con sus fotos, «Cómo
+    comprar», las preguntas frecuentes, los canales activos y la consulta general."""
     return await service.public_store(session, config, settings.media_base_url)
