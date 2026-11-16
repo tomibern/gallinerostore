@@ -171,9 +171,12 @@ async def _facets(session: AsyncSession, query: ListingQuery) -> ProductFacets:
 async def list_published(
     session: AsyncSession, store: StoreConfig, media_base_url: str, filters: ProductFilters
 ) -> ProductList:
-    """Productos publicados que cumplen los filtros, en el orden pedido, con las facetas."""
+    """Una página de los productos publicados que cumplen los filtros, en el orden
+    pedido, con el total y las facetas."""
     query = _listing_query(store, filters)
-    rows = await repository.published_products(session, query, filters.sort)
+    rows, has_more = await repository.published_products(
+        session, query, filters.sort, limit=filters.limit, offset=filters.offset
+    )
     items = [
         ProductListItem(
             code=product.code,
@@ -187,7 +190,12 @@ async def list_published(
         )
         for product, product_section, sold_out in rows
     ]
-    return ProductList(items=items, facets=await _facets(session, query))
+    return ProductList(
+        items=items,
+        has_more=has_more,
+        total=await repository.count_published(session, query),
+        facets=await _facets(session, query),
+    )
 
 
 def _named(item: Category | models.Collection | Version) -> NamedRef:

@@ -138,9 +138,10 @@ def _order_by(sort: ProductSort) -> list[ColumnElement[Any]]:
 
 
 async def published_products(
-    session: AsyncSession, query: ListingQuery, sort: ProductSort
-) -> Sequence[tuple[Product, Section, bool]]:
-    """Productos publicados que cumplen la consulta, con su sección y si están agotados."""
+    session: AsyncSession, query: ListingQuery, sort: ProductSort, *, limit: int, offset: int
+) -> tuple[list[tuple[Product, Section, bool]], bool]:
+    """Una página de productos publicados que cumplen la consulta, con su sección y si
+    están agotados, y si hay más después. Pide una fila de más para saberlo sin contar."""
     section_column = _section_column(query.sold_out_goes_on_order).label("section")
     stmt = (
         select(Product, section_column, catalog_products.c.sold_out)
@@ -148,12 +149,26 @@ async def published_products(
         .where(*_conditions(query))
         .options(selectinload(Product.images))
         .order_by(*_order_by(sort))
+        .limit(limit + 1)
+        .offset(offset)
     )
-    result = await session.execute(stmt)
-    return [
+    result = (await session.execute(stmt)).all()
+    rows = [
         (product, Section(section_value), bool(sold_out))
-        for product, section_value, sold_out in result.all()
+        for product, section_value, sold_out in result[:limit]
     ]
+    return rows, len(result) > limit
+
+
+async def count_published(session: AsyncSession, query: ListingQuery) -> int:
+    """Cuántos productos publicados cumplen la consulta (todas las páginas)."""
+    stmt = (
+        select(func.count())
+        .select_from(Product)
+        .join(catalog_products, catalog_products.c.id == Product.id)
+        .where(*_conditions(query))
+    )
+    return int(await session.scalar(stmt) or 0)
 
 
 async def published_product_by_code(
