@@ -71,18 +71,17 @@ export async function getSectionListing(
   }
 }
 
-// Destacados que muestra la home. La API todavía no tiene `limit` (#27): hasta
-// entonces se corta acá.
+// Destacados que muestra la home.
 export const MAX_FEATURED = 8;
 
 /** Los primeros destacados publicados, en su orden manual; null si la API no responde. */
 export async function getFeatured(): Promise<ProductListItem[] | null> {
   try {
     const { data } = await api().GET("/products", {
-      params: { query: { featured: true } },
+      params: { query: { featured: true, limit: MAX_FEATURED } },
       cache: "no-store",
     });
-    return data ? data.items.slice(0, MAX_FEATURED) : null;
+    return data ? data.items : null;
   } catch {
     return null;
   }
