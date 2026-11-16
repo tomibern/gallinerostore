@@ -53,16 +53,18 @@ export const getStore = cache(async (): Promise<PublicStore | null> => {
 });
 
 /**
- * Listado de una sección con los filtros y el orden de la URL, y los valores de
- * filtro disponibles; null si la API no responde.
+ * Los primeros `limit` productos del listado de una sección con los filtros y el
+ * orden de la URL, el total y los valores de filtro disponibles; null si la API
+ * no responde.
  */
 export async function getSectionListing(
   section: Section,
   listing: Listing,
+  limit: number,
 ): Promise<ProductList | null> {
   try {
     const { data } = await api().GET("/products", {
-      params: { query: { section, ...listing } },
+      params: { query: { section, ...listing, limit } },
       cache: "no-store",
     });
     return data ?? null;
