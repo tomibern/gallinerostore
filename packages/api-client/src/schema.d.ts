@@ -70,7 +70,7 @@ export interface paths {
         };
         /**
          * Get Product
-         * @description Detalle de un producto publicado. El código no distingue mayúsculas (gs-014 = GS-014).
+         * @description Detalle de un producto publicado. El código no distingue mayúsculas (abc-014 = ABC-014).
          */
         get: operations["get_product_products__code__get"];
         put?: never;

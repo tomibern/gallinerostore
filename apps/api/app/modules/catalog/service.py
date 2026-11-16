@@ -5,7 +5,7 @@ from collections.abc import Collection, Mapping, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
-from app.modules.catalog import repository
+from app.modules.catalog import models, repository
 from app.modules.catalog.models import (
     Availability,
     Category,
@@ -14,6 +14,7 @@ from app.modules.catalog.models import (
     SaleMode,
     Section,
     SizeStatus,
+    Version,
 )
 from app.modules.catalog.repository import Filter, ListingQuery
 from app.modules.catalog.schemas import (
@@ -189,6 +190,10 @@ async def list_published(
     return ProductList(items=items, facets=await _facets(session, query))
 
 
+def _named(item: Category | models.Collection | Version) -> NamedRef:
+    return NamedRef(slug=item.slug, name=item.name)
+
+
 async def _detail_sizes(
     session: AsyncSession, product: Product, section: Section
 ) -> list[ProductSizeOut]:
@@ -227,17 +232,9 @@ async def published_product(
         availability=availability(section, sold_out),
         description=product.description,
         season=product.season,
-        category=NamedRef(slug=product.category.slug, name=product.category.name),
-        version=(
-            NamedRef(slug=product.version.slug, name=product.version.name)
-            if features.versions and product.version
-            else None
-        ),
-        collection=(
-            NamedRef(slug=product.collection.slug, name=product.collection.name)
-            if features.collections
-            else None
-        ),
+        category=_named(product.category),
+        version=_named(product.version) if features.versions and product.version else None,
+        collection=_named(product.collection) if features.collections else None,
         images=[_image_out(image, media_base_url) for image in product.images],
         sizes=await _detail_sizes(session, product, section),
         on_order_notice=(

@@ -35,7 +35,7 @@ async def get_product(
     store: Annotated[StoreConfig, Depends(get_store_config)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> ProductDetail:
-    """Detalle de un producto publicado. El código no distingue mayúsculas (gs-014 = GS-014)."""
+    """Detalle de un producto publicado. El código no distingue mayúsculas (abc-014 = ABC-014)."""
     product = await service.published_product(session, store, settings.media_base_url, code)
     if product is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado.")
