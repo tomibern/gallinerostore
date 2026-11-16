@@ -61,6 +61,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Product
+         * @description Detalle de un producto publicado. El código no distingue mayúsculas (abc-014 = ABC-014).
+         */
+        get: operations["get_product_products__code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -179,6 +199,61 @@ export interface components {
             /** Height */
             height: number;
         };
+        /** NamedRef */
+        NamedRef: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+        };
+        /** ProductDetail */
+        ProductDetail: {
+            /**
+             * Code
+             * @description Código permanente del producto: prefijo de la tienda y número (ABC-014).
+             */
+            code: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Price
+             * @description Precio en la unidad menor de la moneda (centavos).
+             */
+            price: number;
+            /** Currency */
+            currency: string;
+            /** @description Sección donde aparece: un producto de stock agotado va a Por encargue. */
+            section: components["schemas"]["Section"];
+            /** @description Disponibilidad de cara al cliente. */
+            availability: components["schemas"]["Availability"];
+            /** Description */
+            description: string | null;
+            /** Season */
+            season: string | null;
+            /** @description La categoría asignada (puede ser de nivel 2). */
+            category: components["schemas"]["NamedRef"];
+            /** @description Null sin versión o con las versiones apagadas. */
+            version: components["schemas"]["NamedRef"] | null;
+            /** @description Null con las colecciones apagadas. */
+            collection: components["schemas"]["NamedRef"] | null;
+            /**
+             * Images
+             * @description En orden: la primera es la portada.
+             */
+            images: components["schemas"]["ImageOut"][];
+            /**
+             * Sizes
+             * @description En el orden del grupo de talles. En stock, los del producto; en un encargue o un agotado que pasó a encargue, todos los del grupo de su categoría.
+             */
+            sizes: components["schemas"]["ProductSizeOut"][];
+            /**
+             * On Order Notice
+             * @description Aviso de encargue que edita el admin. Solo en un encargue o un agotado que pasó a encargue, y null si no está cargado.
+             */
+            on_order_notice: string | null;
+        };
         /**
          * ProductFacets
          * @description Valores con resultados en la sección. Una lista vacía es un filtro que no se muestra.
@@ -238,6 +313,13 @@ export interface components {
             /** @description La primera imagen del producto, si tiene. */
             cover: components["schemas"]["ImageOut"] | null;
         };
+        /** ProductSizeOut */
+        ProductSizeOut: {
+            /** Label */
+            label: string;
+            /** @description in_stock y out_of_stock en un producto de stock (sin stock se muestra tachado, pero se puede elegir); on_order en un encargue o un agotado que pasó a encargue. */
+            status: components["schemas"]["SizeStatus"];
+        };
         /**
          * ProductSort
          * @description Orden del listado. ``manual`` es el que el visitante ve como «Destacados».
@@ -273,6 +355,12 @@ export interface components {
          * @enum {string}
          */
         Section: "stock" | "on_order";
+        /**
+         * SizeStatus
+         * @description Estado de un talle en el detalle, ya calculado. Todos son elegibles.
+         * @enum {string}
+         */
+        SizeStatus: "in_stock" | "out_of_stock" | "on_order";
         /** StoreFeatures */
         StoreFeatures: {
             /**
@@ -402,6 +490,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProductList"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_product_products__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetail"];
+                };
+            };
+            /** @description No hay un producto publicado con ese código. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

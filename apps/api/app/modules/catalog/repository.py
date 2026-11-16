@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy import ColumnElement, Select, case, exists, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.models import Base
 from app.modules.catalog.models import (
@@ -154,6 +154,38 @@ async def published_products(
         (product, Section(section_value), bool(sold_out))
         for product, section_value, sold_out in result.all()
     ]
+
+
+async def published_product_by_code(
+    session: AsyncSession, code: str, sold_out_goes_on_order: bool
+) -> tuple[Product, Section, bool] | None:
+    """El producto publicado con ese código (sin distinguir mayúsculas), con su sección,
+    si está agotado, y con fotos, talles, categoría, colección y versión ya cargados."""
+    query = ListingQuery(section=None, sold_out_goes_on_order=sold_out_goes_on_order)
+    section_column = _section_column(sold_out_goes_on_order).label("section")
+    stmt = (
+        select(Product, section_column, catalog_products.c.sold_out)
+        .join(catalog_products, catalog_products.c.id == Product.id)
+        .where(*_conditions(query), func.lower(Product.code) == code.lower())
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.sizes).joinedload(ProductSize.size),
+            joinedload(Product.category),
+            joinedload(Product.collection),
+            joinedload(Product.version),
+        )
+    )
+    row = (await session.execute(stmt)).first()
+    if row is None:
+        return None
+    product, section_value, sold_out = row
+    return product, Section(section_value), bool(sold_out)
+
+
+async def sizes_in_group(session: AsyncSession, group: str) -> Sequence[Size]:
+    """Los talles de un grupo, en su orden."""
+    stmt = select(Size).where(Size.size_group == group).order_by(Size.sort_order, Size.id)
+    return (await session.scalars(stmt)).all()
 
 
 def _count_stmt(query: ListingQuery, skip: Filter) -> Select[Any]:

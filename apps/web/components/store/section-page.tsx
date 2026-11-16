@@ -6,7 +6,7 @@ import { DiagonalBand } from "./diagonal-band";
 import { ListingFilters, SortOptions } from "./listing-filters";
 import { ProductCard } from "./product-card";
 
-const PATHS: Record<Section, string> = { stock: "/stock", on_order: "/encargue" };
+export const SECTION_PATHS: Record<Section, string> = { stock: "/stock", on_order: "/encargue" };
 
 const HEADINGS: Record<Section, { title: TextKey; description: TextKey }> = {
   stock: { title: "section.stock.title", description: "section.stock.description" },
@@ -28,7 +28,7 @@ export async function SectionPage({
   searchParams: SearchParams;
 }) {
   const listing = parseListing(searchParams);
-  const pathname = PATHS[section];
+  const pathname = SECTION_PATHS[section];
   const [store, result] = await Promise.all([getStore(), getSectionListing(section, listing)]);
   const heading = HEADINGS[section];
 

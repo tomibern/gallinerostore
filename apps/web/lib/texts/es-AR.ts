@@ -62,6 +62,24 @@ export const esAR = {
 
   // Producto
   "product.story.title": "Historia del producto",
+  "product.unavailable": "No pudimos cargar el producto. Probá de nuevo en un rato.",
+  "product.category": "Categoría",
+  "product.version": "Versión",
+  "product.season": "Temporada",
+  "product.onOrderNotice": "A pedido: demora y condiciones a confirmar por chat",
+  "product.gallery.label": "Fotos",
+  "product.gallery.pick": "Ver foto {n}",
+  "product.size.legend": "Talle",
+  "product.size.outOfStock": "sin stock",
+  "product.size.choose": "Elegí un talle",
+  "product.size.status.in_stock": "Talle {size} · en stock",
+  "product.size.status.out_of_stock": "Talle {size} · sin stock, consultá disponibilidad",
+  "product.size.status.on_order": "Talle {size} · por encargue",
+
+  // Página no encontrada
+  "notFound.title": "No encontramos esta página",
+  "notFound.text": "Puede que el producto ya no esté publicado o que el link esté mal escrito.",
+  "notFound.sections": "Seguí recorriendo",
 } as const satisfies Record<string, string>;
 
 export type TextKey = keyof typeof esAR;

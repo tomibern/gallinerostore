@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from app.modules.catalog.models import Availability, ProductSort, Section
+from app.modules.catalog.models import Availability, ProductSort, Section, SizeStatus
 
 
 class ImageOut(BaseModel):
@@ -87,3 +87,50 @@ class ProductFacets(BaseModel):
 class ProductList(BaseModel):
     items: list[ProductListItem]
     facets: ProductFacets
+
+
+class NamedRef(BaseModel):
+    slug: str
+    name: str
+
+
+class ProductSizeOut(BaseModel):
+    label: str
+    status: SizeStatus = Field(
+        description=(
+            "in_stock y out_of_stock en un producto de stock (sin stock se muestra tachado, "
+            "pero se puede elegir); on_order en un encargue o un agotado que pasó a encargue."
+        )
+    )
+
+
+class ProductDetail(BaseModel):
+    code: str = Field(
+        description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
+    )
+    name: str
+    slug: str
+    price: int = Field(description="Precio en la unidad menor de la moneda (centavos).")
+    currency: str
+    section: Section = Field(
+        description="Sección donde aparece: un producto de stock agotado va a Por encargue."
+    )
+    availability: Availability = Field(description="Disponibilidad de cara al cliente.")
+    description: str | None
+    season: str | None
+    category: NamedRef = Field(description="La categoría asignada (puede ser de nivel 2).")
+    version: NamedRef | None = Field(description="Null sin versión o con las versiones apagadas.")
+    collection: NamedRef | None = Field(description="Null con las colecciones apagadas.")
+    images: list[ImageOut] = Field(description="En orden: la primera es la portada.")
+    sizes: list[ProductSizeOut] = Field(
+        description=(
+            "En el orden del grupo de talles. En stock, los del producto; en un encargue o "
+            "un agotado que pasó a encargue, todos los del grupo de su categoría."
+        )
+    )
+    on_order_notice: str | None = Field(
+        description=(
+            "Aviso de encargue que edita el admin. Solo en un encargue o un agotado que pasó "
+            "a encargue, y null si no está cargado."
+        )
+    )

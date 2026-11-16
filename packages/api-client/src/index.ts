@@ -19,3 +19,6 @@ export type FacetValue = Schemas["FacetValue"];
 export type CategoryFacetValue = Schemas["CategoryFacetValue"];
 export type HomeBlock = Schemas["HomeBlock"];
 export type HomeSlideOut = Schemas["HomeSlideOut"];
+export type ProductDetail = Schemas["ProductDetail"];
+export type ProductSizeOut = Schemas["ProductSizeOut"];
+export type SizeStatus = Schemas["SizeStatus"];
