@@ -9,9 +9,10 @@ Dos fuentes:
 import tomllib
 from functools import cached_property
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import Request
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel, StringConstraints
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Raíz del monorepo en desarrollo. En la imagen de Docker no existe esa
@@ -39,9 +40,27 @@ class StoreFeatures(BaseModel):
     product_story: bool = True
 
 
+# Clave de un bloque de la home: une la config, las fotos (home_slides.block) y los
+# textos del diccionario (home.blocks.<clave>.*). Cabe en home_slides.block.
+BlockKey = Annotated[str, StringConstraints(pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$", max_length=40)]
+
+
+def _unique(keys: list[str]) -> list[str]:
+    repeated = sorted({key for key in keys if keys.count(key) > 1})
+    if repeated:
+        raise ValueError(f"Bloques repetidos en [home]: {', '.join(repeated)}")
+    return keys
+
+
+class StoreHome(BaseModel):
+    # Bloques con carrusel, en el orden en que aparecen en la home.
+    blocks: Annotated[list[BlockKey], AfterValidator(_unique)] = []
+
+
 class StoreConfig(BaseModel):
     store: StoreInfo
     features: StoreFeatures = StoreFeatures()
+    home: StoreHome = StoreHome()
 
     @classmethod
     def from_toml(cls, path: Path) -> "StoreConfig":

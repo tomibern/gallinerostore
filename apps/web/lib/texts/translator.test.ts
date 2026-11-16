@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createTranslator } from "./translator";
+import { createPrefixedTexts, createTranslator } from "./translator";
 
 // Diccionario de ejemplo: los tests no dependen de los textos reales del núcleo.
 const core = {
@@ -33,5 +33,28 @@ describe("createTranslator", () => {
   it("completa las variables del texto", () => {
     const t = createTranslator({ "footer.rights": "© {year} {store}" }, null);
     expect(t("footer.rights", { year: 2026, store: "Tienda" })).toBe("© 2026 Tienda");
+  });
+});
+
+describe("createPrefixedTexts", () => {
+  const overrides = {
+    "home.blocks.galeria.title": "Galería",
+    "home.blocks.galeria.text": 7,
+    "product.story.title": "Historia de la prenda",
+  };
+
+  it("devuelve el texto del cliente para una clave con el prefijo", () => {
+    const text = createPrefixedTexts("home.blocks.", overrides);
+    expect(text("galeria.title")).toBe("Galería");
+  });
+
+  it("devuelve vacío si el cliente no la define o no es texto", () => {
+    const text = createPrefixedTexts("home.blocks.", overrides);
+    expect(text("otro.title")).toBe("");
+    expect(text("galeria.text")).toBe("");
+  });
+
+  it("devuelve vacío cuando el cliente no tiene archivo de reemplazos", () => {
+    expect(createPrefixedTexts("home.blocks.", null)("galeria.title")).toBe("");
   });
 });

@@ -52,3 +52,13 @@ def store_product_image(
     return StoredImage(
         position=position, path_full=path_full, path_thumb=path_thumb, width=width, height=height
     )
+
+
+def store_home_slide(storage: ObjectStorage, block: str, position: int, data: bytes) -> str:
+    """Procesa una foto de un bloque de la home y la sube. Devuelve la ruta para guardar."""
+    with Image.open(io.BytesIO(data)) as source:
+        image = ImageOps.exif_transpose(source).convert("RGB")
+    full, _, _ = _to_webp(image, FULL_SIZE)
+    path = f"home/{block}/{position + 1}-{FULL_SIZE}.webp"
+    storage.put(path, full, "image/webp")
+    return path

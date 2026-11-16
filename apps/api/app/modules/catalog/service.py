@@ -87,6 +87,7 @@ def _listing_query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
     return ListingQuery(
         section=filters.section,
         sold_out_goes_on_order=store.features.on_order,
+        featured=filters.featured,
         filters=applied,
     )
 

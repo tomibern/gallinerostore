@@ -1,4 +1,5 @@
-"""Carga la configuración editable de la tienda desde la sección [settings] del seed.
+"""Carga la configuración editable de la tienda ([settings]) y las fotos de los
+bloques de la home ([[home_slides]]) desde el seed.
 
 Los datos (WhatsApp, Instagram, textos) son del cliente y viven en su
 ``config/seed.toml``; el núcleo solo sabe cargarlos. Solo crea la fila si no
@@ -13,8 +14,13 @@ from typing import Any
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import StoreConfig
+from app.core.storage import ObjectStorage
+from app.modules.media.placeholder import placeholder_image
+from app.modules.media.service import store_home_slide
 from app.modules.settings import repository
-from app.modules.settings.models import SETTINGS_ROW_ID, StoreSettings
+from app.modules.settings.models import SETTINGS_ROW_ID, HomeSlide, StoreSettings
+from app.modules.settings.service import check_slide_count
 
 
 class SettingsSeed(BaseModel):
@@ -40,3 +46,48 @@ async def apply_settings_seed(session: AsyncSession, seed: SettingsSeed) -> bool
     repository.add(session, store_settings)
     await repository.flush(session)
     return True
+
+
+class HomeSlideSeed(BaseModel):
+    """Una foto de prueba de un bloque de la home: el seed dibuja una imagen con el texto."""
+
+    block: str
+    alt: str
+
+
+def load_home_slides_seed(path: Path) -> list[HomeSlideSeed]:
+    """Las fotos de [[home_slides]] del seed, en orden (vacía si no tiene)."""
+    with path.open("rb") as f:
+        slides = tomllib.load(f).get("home_slides", [])
+    return [HomeSlideSeed.model_validate(slide) for slide in slides]
+
+
+async def apply_home_slides_seed(
+    session: AsyncSession, seed: list[HomeSlideSeed], store: StoreConfig, storage: ObjectStorage
+) -> list[str]:
+    """Carga las fotos de cada bloque que todavía no tiene ninguna. Devuelve los bloques
+    cargados: un bloque con fotos ya lo maneja el admin y el seed no lo toca."""
+    by_block: dict[str, list[HomeSlideSeed]] = {}
+    for slide in seed:
+        by_block.setdefault(slide.block, []).append(slide)
+    undeclared = sorted(set(by_block) - set(store.home.blocks))
+    if undeclared:
+        raise ValueError(
+            f"El seed trae fotos de bloques que [home] no declara: {', '.join(undeclared)}"
+        )
+    for block, slides in by_block.items():
+        check_slide_count(block, len(slides))
+
+    loaded: list[str] = []
+    for block, slides in by_block.items():
+        if await repository.count_slides(session, block):
+            continue
+        for position, slide in enumerate(slides):
+            image = placeholder_image(slide.alt, f"{block} {position + 1}")
+            path = store_home_slide(storage, block, position, image)
+            repository.add(
+                session, HomeSlide(block=block, path_full=path, alt=slide.alt, sort_order=position)
+            )
+        loaded.append(block)
+    await repository.flush(session)
+    return loaded

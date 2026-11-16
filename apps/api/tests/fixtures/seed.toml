@@ -136,6 +136,7 @@ collection = "marca-a"
 sale_mode = "stock"
 status = "published"
 price = 900000
+featured = true
 sizes = { "Único" = true }
 
 [[products]]
@@ -178,6 +179,7 @@ collection = "marca-a"
 sale_mode = "stock"
 status = "hidden"
 price = 1000000
+featured = true
 sizes = { S = true }
 
 [[products]]
@@ -201,3 +203,13 @@ instagram = { username = "tienda.de.prueba" }
 [settings.message_templates]
 stock = "Hola! Me interesa {product}, talle {size} (en stock). {link}"
 on_order = "Hola! Me interesa {product}, talle {size} (por encargue). {link}"
+
+# Fotos de prueba de los bloques de la home (una imagen de color por foto).
+
+[[home_slides]]
+block = "galeria"
+alt = "Primera foto de la galería"
+
+[[home_slides]]
+block = "galeria"
+alt = "Segunda foto de la galería"

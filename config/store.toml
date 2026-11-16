@@ -21,3 +21,9 @@ on_order = true
 instagram = true
 metrics = true
 product_story = true
+
+[home]
+# Bloques con carrusel, en el orden de la home. La clave une esta config, las
+# fotos (home_slides.block, cargadas por el seed o el admin) y los textos del
+# diccionario (home.blocks.<clave>.title y .text en config/texts.json).
+blocks = ["lbdt"]

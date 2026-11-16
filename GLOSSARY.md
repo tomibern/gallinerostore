@@ -55,6 +55,10 @@ Monto único por producto, en la moneda de la tienda. No varía por talle.
 **Destacado**:
 Producto que el admin elige mostrar en la home.
 
+**Bloque de la home**:
+Sección de la home con título, texto y un carrusel de hasta 4 fotos. La tienda lo declara por clave en su configuración; los textos salen del diccionario y las fotos las carga el admin.
+_Evitar_: banner, slider
+
 **Estado**:
 Ciclo de vida del producto: borrador → publicado ↔ oculto → archivado. Solo un borrador se puede borrar; un producto que se publicó alguna vez se archiva.
 _Evitar_: visible/invisible

@@ -281,3 +281,22 @@ stock = "Hola! Me interesa {product} ({code}), talle {size} (en stock). {link}"
 out_of_stock = "Hola! Me interesa {product} ({code}), talle {size} (sin stock, consulto disponibilidad). {link}"
 on_order = "Hola! Me interesa {product} ({code}), talle {size} (por encargue). {link}"
 general = "Hola! Busco algo que no está en el catálogo: "
+
+# Fotos de prueba de los bloques de la home (los declara [home] en store.toml).
+# El seed dibuja una imagen de color con el texto alternativo; las fotos reales
+# las sube el admin. Solo se cargan en un bloque que todavía no tiene fotos.
+[[home_slides]]
+block = "lbdt"
+alt = "LBDT 14, foto 1"
+
+[[home_slides]]
+block = "lbdt"
+alt = "LBDT 14, foto 2"
+
+[[home_slides]]
+block = "lbdt"
+alt = "LBDT 14, foto 3"
+
+[[home_slides]]
+block = "lbdt"
+alt = "LBDT 14, foto 4"
