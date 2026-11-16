@@ -19,4 +19,8 @@ async def test_store_exposes_public_configuration(client: httpx.AsyncClient) -> 
             "metrics": True,
             "product_story": False,
         },
+        "home_blocks": [
+            {"key": "galeria", "slides": []},
+            {"key": "sin-fotos", "slides": []},
+        ],
     }

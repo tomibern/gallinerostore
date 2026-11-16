@@ -60,6 +60,7 @@ class ListingQuery:
 
     section: Section | None
     sold_out_goes_on_order: bool
+    featured: bool = False
     filters: Mapping[Filter, Sequence[str]] = field(default_factory=dict)
 
 
@@ -106,12 +107,15 @@ def _filter_condition(name: Filter, values: Sequence[str]) -> ColumnElement[bool
 
 
 def _conditions(query: ListingQuery, *, skip: Filter | None = None) -> list[ColumnElement[bool]]:
-    """Publicado, de la sección y con cada filtro (se cruzan: Y). ``skip`` deja uno
-    afuera: cada faceta se cuenta sin su propio filtro, para poder sumar valores."""
+    """Publicado, de la sección, destacado si se pide y con cada filtro (se cruzan: Y).
+    ``skip`` deja uno afuera: cada faceta se cuenta sin su propio filtro, para poder
+    sumar valores."""
     conditions: list[ColumnElement[bool]] = [Product.status == ProductStatus.PUBLISHED]
     if query.section is not None:
         section = _section_column(query.sold_out_goes_on_order)
         conditions.append(section == query.section.value)
+    if query.featured:
+        conditions.append(Product.featured.is_(True))
     conditions.extend(
         _filter_condition(name, values)
         for name, values in query.filters.items()

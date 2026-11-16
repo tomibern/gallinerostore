@@ -15,3 +15,6 @@ on_order = true
 instagram = false
 metrics = true
 product_story = false
+
+[home]
+blocks = ["galeria", "sin-fotos"]

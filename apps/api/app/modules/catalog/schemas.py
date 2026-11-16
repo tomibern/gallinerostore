@@ -34,6 +34,10 @@ class ProductFilters(BaseModel):
     existe deja el listado vacío, así un link compartido nunca da error."""
 
     section: Section | None = Field(default=None, description="Solo los productos de esa sección.")
+    featured: bool = Field(
+        default=False,
+        description="Solo los destacados (los de la home). Con false no filtra.",
+    )
     category: list[str] = Field(
         default=[], description="Slugs de categoría. Una de nivel 1 incluye a sus hijas."
     )

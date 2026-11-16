@@ -32,6 +32,7 @@
           "settings"
         ],
         "summary": "Store",
+        "description": "Configuración pública de la tienda y los bloques de la home con sus fotos.",
         "operationId": "store_store_get",
         "responses": {
           "200": {
@@ -73,6 +74,18 @@
               "title": "Section"
             },
             "description": "Solo los productos de esa sección."
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Solo los destacados (los de la home). Con false no filtra.",
+              "default": false,
+              "title": "Featured"
+            },
+            "description": "Solo los destacados (los de la home). Con false no filtra."
           },
           {
             "name": "category",
@@ -322,6 +335,49 @@
         ],
         "title": "HealthChecks"
       },
+      "HomeBlock": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Clave del bloque, declarada en la configuración de la tienda."
+          },
+          "slides": {
+            "items": {
+              "$ref": "#/components/schemas/HomeSlideOut"
+            },
+            "type": "array",
+            "title": "Slides",
+            "description": "Hasta 4 fotos, en su orden. Vacía si el bloque todavía no tiene fotos."
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "slides"
+        ],
+        "title": "HomeBlock",
+        "description": "Un bloque con carrusel de la home. Sus textos salen del diccionario de la web\n(``home.blocks.<key>.*``); la API solo da la clave y las fotos."
+      },
+      "HomeSlideOut": {
+        "properties": {
+          "full": {
+            "type": "string",
+            "title": "Full",
+            "description": "Ruta de la foto (lado mayor 1600 px), bajo /media."
+          },
+          "alt": {
+            "type": "string",
+            "title": "Alt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full",
+          "alt"
+        ],
+        "title": "HomeSlideOut"
+      },
       "ImageOut": {
         "properties": {
           "full": {
@@ -522,6 +578,14 @@
           },
           "features": {
             "$ref": "#/components/schemas/StoreFeatures"
+          },
+          "home_blocks": {
+            "items": {
+              "$ref": "#/components/schemas/HomeBlock"
+            },
+            "type": "array",
+            "title": "Home Blocks",
+            "description": "Bloques con carrusel de la home, en el orden de la configuración."
           }
         },
         "type": "object",
@@ -531,7 +595,8 @@
           "currency",
           "price_decimals",
           "collection_label",
-          "features"
+          "features",
+          "home_blocks"
         ],
         "title": "PublicStore",
         "description": "Lo que la web necesita saber de la tienda. Nada secreto."

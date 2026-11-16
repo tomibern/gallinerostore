@@ -28,7 +28,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Store */
+        /**
+         * Store
+         * @description Configuración pública de la tienda y los bloques de la home con sus fotos.
+         */
         get: operations["store_store_get"];
         put?: never;
         post?: never;
@@ -130,6 +133,33 @@ export interface components {
              */
             storage: "ok" | "error";
         };
+        /**
+         * HomeBlock
+         * @description Un bloque con carrusel de la home. Sus textos salen del diccionario de la web
+         *     (``home.blocks.<key>.*``); la API solo da la clave y las fotos.
+         */
+        HomeBlock: {
+            /**
+             * Key
+             * @description Clave del bloque, declarada en la configuración de la tienda.
+             */
+            key: string;
+            /**
+             * Slides
+             * @description Hasta 4 fotos, en su orden. Vacía si el bloque todavía no tiene fotos.
+             */
+            slides: components["schemas"]["HomeSlideOut"][];
+        };
+        /** HomeSlideOut */
+        HomeSlideOut: {
+            /**
+             * Full
+             * @description Ruta de la foto (lado mayor 1600 px), bajo /media.
+             */
+            full: string;
+            /** Alt */
+            alt: string;
+        };
         /** ImageOut */
         ImageOut: {
             /**
@@ -230,6 +260,11 @@ export interface components {
             /** Collection Label */
             collection_label: string;
             features: components["schemas"]["StoreFeatures"];
+            /**
+             * Home Blocks
+             * @description Bloques con carrusel de la home, en el orden de la configuración.
+             */
+            home_blocks: components["schemas"]["HomeBlock"][];
         };
         /**
          * Section
@@ -338,6 +373,8 @@ export interface operations {
             query?: {
                 /** @description Solo los productos de esa sección. */
                 section?: components["schemas"]["Section"] | null;
+                /** @description Solo los destacados (los de la home). Con false no filtra. */
+                featured?: boolean;
                 /** @description Slugs de categoría. Una de nivel 1 incluye a sus hijas. */
                 category?: string[];
                 /** @description Slugs de versión. Se ignora con las versiones apagadas. */

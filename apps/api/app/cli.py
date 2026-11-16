@@ -16,7 +16,12 @@ from app.core.db import create_engine
 from app.core.storage import ObjectStorage, allow_public_read, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
-from app.modules.settings.seed import apply_settings_seed, load_settings_seed
+from app.modules.settings.seed import (
+    apply_home_slides_seed,
+    apply_settings_seed,
+    load_home_slides_seed,
+    load_settings_seed,
+)
 
 USAGE = "Uso: python -m app.cli [ensure-bucket | seed | openapi]"
 
@@ -42,6 +47,14 @@ async def _seed(settings: Settings) -> None:
             settings_seed = load_settings_seed(settings.seed_path)
             if settings_seed is not None and not await apply_settings_seed(session, settings_seed):
                 print("Configuración de la tienda: ya existía, no se modificó")
+            slides_seed = load_home_slides_seed(settings.seed_path)
+            loaded = await apply_home_slides_seed(
+                session, slides_seed, settings.store_config, storage
+            )
+            skipped = {slide.block for slide in slides_seed} - set(loaded)
+            if skipped:
+                blocks = ", ".join(sorted(skipped))
+                print(f"Bloques de la home con fotos, no se modificaron: {blocks}")
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")
