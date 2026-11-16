@@ -163,6 +163,25 @@
             "description": "Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock."
           },
           {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código.",
+              "title": "Q"
+            },
+            "description": "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código."
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,

@@ -8,6 +8,8 @@ from app.modules.settings.schemas import Inquiry
 # Productos por página del listado, y el tope de seguridad de un pedido.
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
+# Largo máximo del texto que se busca.
+MAX_SEARCH_LENGTH = 100
 
 
 class ImageOut(BaseModel):
@@ -34,7 +36,7 @@ class ProductListItem(BaseModel):
 
 
 class ProductFilters(BaseModel):
-    """Query string del listado: filtros, orden y página. Varios valores de un filtro
+    """Query string del listado: búsqueda, filtros, orden y página. Varios valores de un filtro
     se suman (O) y filtros distintos se cruzan (Y). Un filtro que no aplica se ignora
     y un valor que no existe deja el listado vacío, así un link compartido nunca da
     error. La página se pide con ``limit`` y ``offset`` sobre un orden estable."""
@@ -59,6 +61,14 @@ class ProductFilters(BaseModel):
         description=(
             "Etiquetas de talle disponible (en cualquier grupo de talles). "
             "Solo filtra en la sección En stock."
+        ),
+    )
+    q: str | None = Field(
+        default=None,
+        max_length=MAX_SEARCH_LENGTH,
+        description=(
+            "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. "
+            "Cada palabra tiene que aparecer en el nombre o en el código."
         ),
     )
     sort: ProductSort = Field(default=ProductSort.MANUAL, description="Orden del listado.")

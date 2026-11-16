@@ -562,6 +562,8 @@ export interface operations {
                 tag?: string[];
                 /** @description Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock. */
                 size?: string[];
+                /** @description Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código. */
+                q?: string | null;
                 /** @description Orden del listado. */
                 sort?: components["schemas"]["ProductSort"];
                 /** @description Cuántos productos traer como máximo. */

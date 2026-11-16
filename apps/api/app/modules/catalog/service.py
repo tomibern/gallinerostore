@@ -91,7 +91,8 @@ def availability(section: Section, sold_out: bool) -> Availability:
 
 def _listing_query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
     """Los filtros que aplican: versión y colección solo con su función activa, y talle
-    solo en En stock (un encargue se pide en cualquier talle). Los demás se ignoran."""
+    solo en En stock (un encargue se pide en cualquier talle). Los demás se ignoran.
+    La búsqueda se cruza con todo."""
     applied: dict[Filter, list[str]] = {
         Filter.CATEGORY: filters.category,
         Filter.TAG: filters.tag,
@@ -107,7 +108,13 @@ def _listing_query(store: StoreConfig, filters: ProductFilters) -> ListingQuery:
         sold_out_goes_on_order=store.features.on_order,
         featured=filters.featured,
         filters=applied,
+        search=search_words(filters.q),
     )
+
+
+def search_words(q: str | None) -> tuple[str, ...]:
+    """Las palabras de la búsqueda; sin texto (o solo espacios), ninguna."""
+    return tuple(q.split()) if q else ()
 
 
 def category_facet(
