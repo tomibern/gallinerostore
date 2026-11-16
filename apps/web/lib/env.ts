@@ -1,4 +1,5 @@
 import { parsePageSize } from "./listing";
+import { parseSiteUrl } from "./site-url";
 
 // URL con la que el servidor de Next llega a la API (nunca la usa el navegador).
 // Es una función para leer la variable recién cuando se necesita: next.config
@@ -19,4 +20,10 @@ export function mediaInternalUrl(): string {
 // varias páginas con pocos productos: LISTING_PAGE_SIZE=3 make dev.
 export function listingPageSize(): number {
   return parsePageSize(process.env.LISTING_PAGE_SIZE);
+}
+
+// URL pública del sitio, la misma SITE_URL que usa la API. Por defecto,
+// http://localhost:3000. Un valor inválido tira error (next.config la valida al arrancar).
+export function siteUrl(): URL {
+  return parseSiteUrl(process.env.SITE_URL);
 }
