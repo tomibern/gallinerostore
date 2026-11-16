@@ -22,3 +22,5 @@ export type HomeSlideOut = Schemas["HomeSlideOut"];
 export type ProductDetail = Schemas["ProductDetail"];
 export type ProductSizeOut = Schemas["ProductSizeOut"];
 export type SizeStatus = Schemas["SizeStatus"];
+export type Inquiry = Schemas["Inquiry"];
+export type Channel = Schemas["Channel"];

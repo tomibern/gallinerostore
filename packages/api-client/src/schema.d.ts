@@ -111,6 +111,12 @@ export interface components {
              */
             parent: string | null;
         };
+        /**
+         * Channel
+         * @description Canal de contacto: por donde se consulta (y se registra la consulta).
+         * @enum {string}
+         */
+        Channel: "whatsapp" | "instagram";
         /** FacetValue */
         FacetValue: {
             /**
@@ -198,6 +204,23 @@ export interface components {
             width: number;
             /** Height */
             height: number;
+        };
+        /**
+         * Inquiry
+         * @description Una consulta lista para usar: el mensaje prearmado y el link que abre el chat.
+         */
+        Inquiry: {
+            channel: components["schemas"]["Channel"];
+            /**
+             * Message
+             * @description El mensaje prearmado, ya armado.
+             */
+            message: string;
+            /**
+             * Url
+             * @description WhatsApp: wa.me con el mensaje en el texto. Instagram: el chat (ig.me) sin texto, porque no lo acepta; el mensaje se muestra aparte para copiarlo.
+             */
+            url: string;
         };
         /** NamedRef */
         NamedRef: {
@@ -333,6 +356,11 @@ export interface components {
             label: string;
             /** @description in_stock y out_of_stock en un producto de stock (sin stock se muestra tachado, pero se puede elegir); on_order en un encargue o un agotado que pasó a encargue. */
             status: components["schemas"]["SizeStatus"];
+            /**
+             * Inquiries
+             * @description La consulta por este talle, una por canal ofrecido (WhatsApp primero), con el mensaje y el link ya armados. Vacía si la tienda no cargó canales.
+             */
+            inquiries: components["schemas"]["Inquiry"][];
         };
         /**
          * ProductSort

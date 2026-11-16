@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
-import type { ProductDetail } from "@/lib/api";
+import type { ProductDetail, SizeStatus } from "@/lib/api";
+
+import { InquiryActions, type InquiryActionsLabels } from "./inquiry-actions";
 
 type Props = {
   sizes: ProductDetail["sizes"];
@@ -12,16 +14,22 @@ type Props = {
     outOfStock: string;
     // La línea de estado de cada talle, por etiqueta («Talle M · en stock»).
     status: Record<string, string>;
+    // Los botones de consulta: el caso y los canales según el estado del talle elegido
+    // («idle»: todavía sin talle).
+    inquiry: Record<SizeStatus | "idle", Omit<InquiryActionsLabels, "sheet">> &
+      Pick<InquiryActionsLabels, "sheet">;
   };
 };
 
-// Consulta del detalle: por ahora, el selector de talle y su línea de estado; el
-// talle elegido vive acá para que los botones de Consultar se sumen al lado. El estado de
-// cada talle ya viene calculado de la API; acá solo se elige. Con talle único,
-// viene elegido. Los sin stock se ven tachados, pero se pueden elegir.
+// Consulta del detalle: el selector de talle, su línea de estado y los botones de
+// consulta. El estado de cada talle y sus mensajes ya vienen armados de la API; acá
+// solo se elige. Con talle único, viene elegido. Los sin stock se ven tachados, pero
+// se pueden elegir (y consultar su disponibilidad).
 export function ProductInquiry({ sizes, labels }: Props) {
   const [chosen, setChosen] = useState<string | null>(sizes.length === 1 ? sizes[0].label : null);
   const size = sizes.find((s) => s.label === chosen);
+  // Todos los talles ofrecen los mismos canales.
+  const channels = sizes[0]?.inquiries.map((i) => i.channel) ?? [];
 
   if (sizes.length === 0) return null;
 
@@ -66,6 +74,12 @@ export function ProductInquiry({ sizes, labels }: Props) {
       >
         {size ? labels.status[size.label] : labels.choose}
       </p>
+      <InquiryActions
+        channels={channels}
+        inquiries={size ? size.inquiries : null}
+        status={size?.status}
+        labels={{ ...labels.inquiry[size?.status ?? "idle"], sheet: labels.inquiry.sheet }}
+      />
     </div>
   );
 }

@@ -80,6 +80,24 @@ export const esAR = {
   "product.size.status.out_of_stock": "Talle {size} · sin stock, consultá disponibilidad",
   "product.size.status.on_order": "Talle {size} · por encargue",
 
+  // Consulta por WhatsApp o Instagram
+  "inquiry.action.idle": "Elegí un talle para consultar",
+  "inquiry.action.in_stock": "Consultar",
+  "inquiry.action.out_of_stock": "Consultar disponibilidad",
+  "inquiry.action.on_order": "Consultar encargue",
+  "inquiry.channel.whatsapp": "WhatsApp",
+  "inquiry.channel.instagram": "Instagram",
+  // El botón completo, en escritorio y para lectores de pantalla.
+  "inquiry.channel.long": "{action} por {channel}",
+  "inquiry.channel.idle": "Consultar",
+  "inquiry.sheet.title": "Consultá por Instagram",
+  "inquiry.sheet.text": "Abrí Instagram y mandanos este mensaje. Si querés, copialo antes.",
+  "inquiry.sheet.copy": "Copiar mensaje",
+  "inquiry.sheet.copied": "Mensaje copiado",
+  "inquiry.sheet.copyFailed": "No pudimos copiarlo. Seleccioná el texto y copialo a mano.",
+  "inquiry.sheet.open": "Abrir Instagram",
+  "inquiry.sheet.close": "Cerrar",
+
   // Página no encontrada
   "notFound.title": "No encontramos esta página",
   "notFound.text": "Puede que el producto ya no esté publicado o que el link esté mal escrito.",

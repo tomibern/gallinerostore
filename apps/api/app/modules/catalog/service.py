@@ -30,8 +30,13 @@ from app.modules.catalog.schemas import (
     ProductSizeOut,
 )
 from app.modules.settings import service as settings_service
+from app.modules.settings.models import MessageCase
 
 MAX_CATEGORY_DEPTH = 2
+
+# Ruta del detalle en la web, para el link del mensaje prearmado. El e2e verifica que
+# lleve al mismo producto.
+PRODUCT_PATH = "/p/{code}"
 
 
 class CategoryTooDeepError(ValueError):
@@ -202,34 +207,63 @@ def _named(item: Category | models.Collection | Version) -> NamedRef:
     return NamedRef(slug=item.slug, name=item.name)
 
 
-async def _detail_sizes(
+def product_url(site_url: str, code: str) -> str:
+    """El link público del detalle de un producto (el código va en minúsculas)."""
+    return site_url.rstrip("/") + PRODUCT_PATH.format(code=code.lower())
+
+
+def message_case(product_availability: Availability, status: SizeStatus) -> MessageCase:
+    """Qué plantilla usa la consulta por un talle. Un agotado con los encargues apagados
+    tiene sus talles sin stock: pregunta por disponibilidad."""
+    if status is SizeStatus.ON_ORDER:
+        if product_availability is Availability.SOLD_OUT_ON_ORDER:
+            return MessageCase.SOLD_OUT_ON_ORDER
+        return MessageCase.ON_ORDER
+    if status is SizeStatus.OUT_OF_STOCK:
+        return MessageCase.OUT_OF_STOCK
+    return MessageCase.STOCK
+
+
+async def _size_statuses(
     session: AsyncSession, product: Product, section: Section
-) -> list[ProductSizeOut]:
+) -> list[tuple[str, SizeStatus]]:
     """En Por encargue, todos los talles del grupo de la categoría (aunque un agotado
     tenga los suyos); en stock, los propios con su estado. Siempre en el orden del grupo."""
     if section is Section.ON_ORDER:
         group = await repository.sizes_in_group(session, product.category.size_group)
-        return [ProductSizeOut(label=size.label, status=SizeStatus.ON_ORDER) for size in group]
+        return [(size.label, SizeStatus.ON_ORDER) for size in group]
     own = sorted(product.sizes, key=lambda ps: (ps.size.sort_order, ps.size.id))
     return [
-        ProductSizeOut(
-            label=ps.size.label,
-            status=SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK,
-        )
+        (ps.size.label, SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK)
         for ps in own
     ]
 
 
 async def published_product(
-    session: AsyncSession, store: StoreConfig, media_base_url: str, code: str
+    session: AsyncSession, store: StoreConfig, media_base_url: str, site_url: str, code: str
 ) -> ProductDetail | None:
     """El detalle de un producto publicado por su código, o None si no existe o no está
-    publicado (borrador, oculto y archivado no se ven)."""
+    publicado (borrador, oculto y archivado no se ven). Cada talle trae sus consultas
+    con el mensaje prearmado y el link ya armados (ADR 0005)."""
     row = await repository.published_product_by_code(session, code, store.features.on_order)
     if row is None:
         return None
     product, section, sold_out = row
     features = store.features
+    product_availability = availability(section, sold_out)
+    contact = await settings_service.contact(session, features)
+    link = product_url(site_url, product.code)
+    sizes = [
+        ProductSizeOut(
+            label=label,
+            status=status,
+            inquiries=contact.inquiries(
+                message_case(product_availability, status),
+                {"product": product.name, "code": product.code, "size": label, "link": link},
+            ),
+        )
+        for label, status in await _size_statuses(session, product, section)
+    ]
     return ProductDetail(
         code=product.code,
         name=product.name,
@@ -237,15 +271,13 @@ async def published_product(
         price=product.price,
         currency=store.store.currency,
         section=section,
-        availability=availability(section, sold_out),
+        availability=product_availability,
         description=product.description,
         season=product.season,
         category=_named(product.category),
         version=_named(product.version) if features.versions and product.version else None,
         collection=_named(product.collection) if features.collections else None,
         images=[_image_out(image, media_base_url) for image in product.images],
-        sizes=await _detail_sizes(session, product, section),
-        on_order_notice=(
-            await settings_service.on_order_notice(session) if section is Section.ON_ORDER else None
-        ),
+        sizes=sizes,
+        on_order_notice=contact.on_order_notice if section is Section.ON_ORDER else None,
     )

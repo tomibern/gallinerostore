@@ -6,6 +6,8 @@ import { cache } from "react";
 import {
   createApiClient,
   type CategoryFacetValue,
+  type Channel,
+  type Inquiry,
   type FacetValue,
   type HomeBlock,
   type HomeSlideOut,
@@ -21,6 +23,8 @@ import type { Listing } from "./listing";
 
 export type {
   CategoryFacetValue,
+  Channel,
+  Inquiry,
   FacetValue,
   HomeBlock,
   HomeSlideOut,

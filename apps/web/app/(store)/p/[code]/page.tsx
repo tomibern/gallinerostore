@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { AvailabilityBadge } from "@/components/store/availability-badge";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { ProductInquiry } from "@/components/store/product-inquiry";
-import { getProduct, getStore } from "@/lib/api";
+import { getProduct, getStore, type Channel, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { t } from "@/lib/texts";
 
@@ -13,7 +13,45 @@ export async function generateMetadata({ params }: PageProps<"/p/[code]">): Prom
   return result.status === "ok" ? { title: result.product.name } : {};
 }
 
-// Detalle del producto: galería, datos, aviso de encargue y selector de talle.
+const CHANNELS: Channel[] = ["whatsapp", "instagram"];
+const SIZE_STATUSES: SizeStatus[] = ["in_stock", "out_of_stock", "on_order"];
+
+// Textos de los botones de consulta según el estado del talle elegido («idle»: sin talle).
+function inquiryLabels() {
+  const byCase = (action: string, buttonAction: string) => ({
+    action,
+    channels: Object.fromEntries(
+      CHANNELS.map((channel) => {
+        const short = t(`inquiry.channel.${channel}`);
+        return [
+          channel,
+          { short, long: t("inquiry.channel.long", { action: buttonAction, channel: short }) },
+        ];
+      }),
+    ) as Record<Channel, { short: string; long: string }>,
+  });
+  const statuses = Object.fromEntries(
+    SIZE_STATUSES.map((status) => {
+      const action = t(`inquiry.action.${status}`);
+      return [status, byCase(action, action)];
+    }),
+  ) as Record<SizeStatus, ReturnType<typeof byCase>>;
+  return {
+    ...statuses,
+    idle: byCase(t("inquiry.action.idle"), t("inquiry.channel.idle")),
+    sheet: {
+      title: t("inquiry.sheet.title"),
+      text: t("inquiry.sheet.text"),
+      copy: t("inquiry.sheet.copy"),
+      copied: t("inquiry.sheet.copied"),
+      copyFailed: t("inquiry.sheet.copyFailed"),
+      open: t("inquiry.sheet.open"),
+      close: t("inquiry.sheet.close"),
+    },
+  };
+}
+
+// Detalle del producto: galería, datos, aviso de encargue, selector de talle y consulta.
 // El código en la URL va en minúsculas; en mayúsculas redirige (una sola URL por
 // producto). Si el producto no existe o no está publicado, la 404 de la tienda.
 export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
@@ -81,6 +119,7 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
                 t(`product.size.status.${status}`, { size: label }),
               ]),
             ),
+            inquiry: inquiryLabels(),
           }}
         />
 

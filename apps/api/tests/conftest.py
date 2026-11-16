@@ -50,6 +50,7 @@ def settings() -> Settings:
         database_url=database_url,
         s3_bucket=isolated_bucket("test-media", name),
         store_config_path=FIXTURES / "store.toml",
+        site_url="https://tienda.test",
     )
     ensure_bucket(create_s3_client(test_settings), test_settings.s3_bucket)
     return test_settings
