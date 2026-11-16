@@ -98,6 +98,12 @@ export const esAR = {
   "inquiry.sheet.open": "Abrir Instagram",
   "inquiry.sheet.close": "Cerrar",
 
+  // Cómo comprar
+  "howToBuy.title": "Cómo comprar",
+  "howToBuy.description": "Pagos, envíos, entregas y encargues: todo se arregla por chat.",
+  "howToBuy.empty": "Todavía no cargamos esta información. Escribinos y te contamos.",
+  "howToBuy.faq": "Preguntas frecuentes",
+
   // Página no encontrada
   "notFound.title": "No encontramos esta página",
   "notFound.text": "Puede que el producto ya no esté publicado o que el link esté mal escrito.",
