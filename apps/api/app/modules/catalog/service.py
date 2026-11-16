@@ -6,17 +6,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
 from app.modules.catalog import repository
-from app.modules.catalog.models import Availability, Category, ProductImage, SaleMode, Section
+from app.modules.catalog.models import (
+    Availability,
+    Category,
+    Product,
+    ProductImage,
+    SaleMode,
+    Section,
+    SizeStatus,
+)
 from app.modules.catalog.repository import Filter, ListingQuery
 from app.modules.catalog.schemas import (
     CategoryFacetValue,
     FacetValue,
     ImageOut,
+    NamedRef,
+    ProductDetail,
     ProductFacets,
     ProductFilters,
     ProductList,
     ProductListItem,
+    ProductSizeOut,
 )
+from app.modules.settings import service as settings_service
 
 MAX_CATEGORY_DEPTH = 2
 
@@ -175,3 +187,60 @@ async def list_published(
         for product, product_section, sold_out in rows
     ]
     return ProductList(items=items, facets=await _facets(session, query))
+
+
+async def _detail_sizes(
+    session: AsyncSession, product: Product, section: Section
+) -> list[ProductSizeOut]:
+    """En Por encargue, todos los talles del grupo de la categoría (aunque un agotado
+    tenga los suyos); en stock, los propios con su estado. Siempre en el orden del grupo."""
+    if section is Section.ON_ORDER:
+        group = await repository.sizes_in_group(session, product.category.size_group)
+        return [ProductSizeOut(label=size.label, status=SizeStatus.ON_ORDER) for size in group]
+    own = sorted(product.sizes, key=lambda ps: (ps.size.sort_order, ps.size.id))
+    return [
+        ProductSizeOut(
+            label=ps.size.label,
+            status=SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK,
+        )
+        for ps in own
+    ]
+
+
+async def published_product(
+    session: AsyncSession, store: StoreConfig, media_base_url: str, code: str
+) -> ProductDetail | None:
+    """El detalle de un producto publicado por su código, o None si no existe o no está
+    publicado (borrador, oculto y archivado no se ven)."""
+    row = await repository.published_product_by_code(session, code, store.features.on_order)
+    if row is None:
+        return None
+    product, section, sold_out = row
+    features = store.features
+    return ProductDetail(
+        code=product.code,
+        name=product.name,
+        slug=product.slug,
+        price=product.price,
+        currency=store.store.currency,
+        section=section,
+        availability=availability(section, sold_out),
+        description=product.description,
+        season=product.season,
+        category=NamedRef(slug=product.category.slug, name=product.category.name),
+        version=(
+            NamedRef(slug=product.version.slug, name=product.version.name)
+            if features.versions and product.version
+            else None
+        ),
+        collection=(
+            NamedRef(slug=product.collection.slug, name=product.collection.name)
+            if features.collections
+            else None
+        ),
+        images=[_image_out(image, media_base_url) for image in product.images],
+        sizes=await _detail_sizes(session, product, section),
+        on_order_notice=(
+            await settings_service.on_order_notice(session) if section is Section.ON_ORDER else None
+        ),
+    )

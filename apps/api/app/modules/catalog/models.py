@@ -50,6 +50,16 @@ class Availability(StrEnum):
     SOLD_OUT = "sold_out"
 
 
+class SizeStatus(StrEnum):
+    """Estado de un talle en el detalle, ya calculado. Todos son elegibles."""
+
+    IN_STOCK = "in_stock"
+    # De stock y sin stock: se muestra tachado, pero se puede consultar.
+    OUT_OF_STOCK = "out_of_stock"
+    # Encargue, o agotado que pasó a Por encargue: se pide en cualquier talle del grupo.
+    ON_ORDER = "on_order"
+
+
 class ProductSort(StrEnum):
     """Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."""
 
@@ -147,6 +157,9 @@ class Product(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    category: Mapped[Category] = relationship()
+    collection: Mapped[Collection] = relationship()
+    version: Mapped[Version | None] = relationship()
     sizes: Mapped[list["ProductSize"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )

@@ -49,3 +49,9 @@ async def public_store(
         features=config.features,
         home_blocks=await home_blocks(session, config, media_base_url),
     )
+
+
+async def on_order_notice(session: AsyncSession) -> str | None:
+    """El aviso de encargue que edita el admin, o None si no está cargado."""
+    store_settings = await repository.get_store_settings(session)
+    return (store_settings.on_order_notice or None) if store_settings else None
