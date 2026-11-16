@@ -247,37 +247,53 @@ sizes = { M = true }
 # va a poder cambiar desde el panel; esto es el punto de partida.
 [settings]
 on_order_notice = "A pedido: demora y condiciones a confirmar por chat."
+# «Cómo comprar» va en Markdown. La página ya tiene su título: los títulos de acá son
+# de cada sección (##).
 how_to_buy_md = """
-## Cómo comprar
+## Paso a paso
 
 1. Elegí el producto y el talle, y tocá **Consultar por WhatsApp** o **Consultar por Instagram**.
 2. Te confirmamos disponibilidad, precio y forma de entrega por chat.
-3. Pagás por transferencia o en efectivo.
+3. Pagás y coordinamos el envío o la entrega.
 
-## Envíos y entregas
+## Pagos
 
-- Envíos a todo el país por Correo Argentino o una empresa similar.
-- Entrega en persona si sos de La Plata.
+Por transferencia o en efectivo, a coordinar por chat.
+
+## Envíos a todo el país
+
+Por Correo Argentino o una empresa similar.
+
+## Entrega en La Plata
+
+Entrega en persona si sos de La Plata.
 
 ## Encargues
 
 Los productos por encargue se piden al proveedor después de tu consulta. Para confirmarlos se pide una seña del 50 %. La demora y las condiciones se acuerdan por chat.
 """
+# Preguntas frecuentes: cada pregunta es un encabezado «## » y su respuesta, lo que
+# sigue hasta la próxima. Lo que haya antes de la primera pregunta se muestra arriba.
 faq_md = """
-## Preguntas frecuentes
+## ¿Qué calidad tienen los productos?
 
-**¿Qué calidad tienen los productos?** Productos de la mejor calidad importada.
+Productos de la mejor calidad importada.
 
-**¿Puedo personalizar la camiseta con nombre y número?** No, por ahora no hacemos personalizaciones.
+## ¿Puedo personalizar la camiseta con nombre y número?
 
-**¿Cómo pago?** Por transferencia o en efectivo, a coordinar por chat.
+No, por ahora no hacemos personalizaciones.
+
+## ¿Cómo pago?
+
+Por transferencia o en efectivo, a coordinar por chat.
 """
 
 [settings.contact_channels]
 whatsapp = { number = "5492920342004" }
 instagram = { username = "gallinerostore14" }
 
-# Mensajes prearmados. Variables: {product}, {code}, {size} y {link}.
+# Mensajes prearmados. Variables: {product}, {code}, {size} y {link}. La consulta
+# general (`general`) no tiene producto: no lleva variables.
 [settings.message_templates]
 stock = "Hola! Me interesa {product} ({code}), talle {size} (en stock). {link}"
 out_of_stock = "Hola! Me interesa {product} ({code}), talle {size} (sin stock, consulto disponibilidad). {link}"
