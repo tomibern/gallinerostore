@@ -21,7 +21,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     <div className="flex min-h-dvh flex-col">
       <StoreHeader storeName={store.name} />
       <div className="flex-1">{children}</div>
-      <StoreFooter storeName={store.name} />
+      <StoreFooter storeName={store.name} inquiries={store.general_inquiries} />
     </div>
   );
 }

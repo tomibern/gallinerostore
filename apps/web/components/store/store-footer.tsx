@@ -1,13 +1,15 @@
 import Link from "next/link";
 
+import type { Inquiry } from "@/lib/api";
 import { t } from "@/lib/texts";
 
+import { GeneralInquiry } from "./general-inquiry";
 import { navLinks } from "./nav-links";
 import { StoreLogo } from "./store-logo";
 
-// Pie de la tienda sobre el fondo de acento: marca, frase y secciones.
-// Los canales de contacto se suman cuando la API los publique.
-export function StoreFooter({ storeName }: { storeName: string }) {
+// Pie de la tienda sobre el fondo de acento: marca, frase, secciones y la consulta
+// general (los canales de contacto).
+export function StoreFooter({ storeName, inquiries }: { storeName: string; inquiries: Inquiry[] }) {
   const tagline = t("store.tagline");
 
   return (
@@ -37,6 +39,8 @@ export function StoreFooter({ storeName }: { storeName: string }) {
             ))}
           </ul>
         </nav>
+
+        <GeneralInquiry inquiries={inquiries} placement="footer" variant="compact" />
       </div>
     </footer>
   );

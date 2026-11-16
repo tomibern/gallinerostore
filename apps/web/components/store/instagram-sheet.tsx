@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { Inquiry } from "@/lib/api";
 
@@ -34,6 +34,8 @@ export function InstagramSheet({ inquiry, labels, onClose, onOpenChat }: Props) 
   const dialog = useRef<HTMLDialogElement>(null);
   const message = useRef<HTMLTextAreaElement>(null);
   const [copyState, setCopy] = useState<CopyState>("idle");
+  // Puede haber más de una hoja en la página (la del producto y la de la consulta general).
+  const titleId = useId();
 
   useEffect(() => {
     const element = dialog.current;
@@ -63,13 +65,13 @@ export function InstagramSheet({ inquiry, labels, onClose, onOpenChat }: Props) 
   return (
     <dialog
       ref={dialog}
-      aria-labelledby="instagram-sheet-title"
+      aria-labelledby={titleId}
       onClose={close}
       className="m-0 mt-auto max-h-[90dvh] w-full max-w-none rounded-t-lg bg-surface p-5 text-text shadow-xl backdrop:bg-black/50 md:m-auto md:max-w-md md:rounded-lg"
     >
       {inquiry && (
         <div className="flex flex-col gap-4">
-          <h2 id="instagram-sheet-title" className="font-display text-xl font-bold">
+          <h2 id={titleId} className="font-display text-xl font-bold">
             {labels.title}
           </h2>
           <p className="text-sm text-muted">{labels.text}</p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { DiagonalBand } from "@/components/store/diagonal-band";
 import { FaqAccordion } from "@/components/store/faq-accordion";
+import { GeneralInquiry } from "@/components/store/general-inquiry";
 import { StoreMarkdown } from "@/components/store/store-markdown";
 import { getStore } from "@/lib/api";
 import { t } from "@/lib/texts";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 // «Cómo comprar»: pagos, envíos, entregas y encargues (Markdown que edita el admin)
-// y las preguntas frecuentes como acordeón. El layout ya resolvió que la tienda
+// y las preguntas frecuentes como acordeón, y al final la consulta general. El layout ya resolvió que la tienda
 // responde; getStore() reusa ese pedido.
 export default async function HowToBuyPage() {
   const store = await getStore();
@@ -54,6 +55,13 @@ export default async function HowToBuyPage() {
             {faq.length > 0 && <FaqAccordion faq={faq} />}
           </section>
         )}
+
+        <GeneralInquiry
+          inquiries={store?.general_inquiries ?? []}
+          placement="how-to-buy"
+          title={t("howToBuy.questions.title")}
+          text={t("howToBuy.questions.text")}
+        />
       </div>
     </main>
   );
