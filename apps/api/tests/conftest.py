@@ -92,8 +92,10 @@ def storage(settings: Settings) -> Iterator[ObjectStorage]:
 
     La base hace rollback después de cada test, pero el bucket no: se vacía al
     empezar y al terminar la sesión para que no se acumulen archivos huérfanos.
+    Vaciarlo puede tardar más que el timeout de lectura de la app (cada `seeded`
+    sube imágenes con códigos nuevos), así que este cliente espera más.
     """
-    test_storage = ObjectStorage(create_s3_client(settings), settings.s3_bucket)
+    test_storage = ObjectStorage(create_s3_client(settings, read_timeout=60), settings.s3_bucket)
     test_storage.delete_prefix("")
     yield test_storage
     test_storage.delete_prefix("")

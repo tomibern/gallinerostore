@@ -10,7 +10,8 @@ from mypy_boto3_s3 import S3Client
 from app.core.config import Settings
 
 
-def create_s3_client(settings: Settings) -> S3Client:
+def create_s3_client(settings: Settings, *, read_timeout: int = 5) -> S3Client:
+    """Cliente S3 con timeouts cortos: si el storage no responde, el pedido falla rápido."""
     return boto3.client(
         "s3",
         endpoint_url=settings.s3_endpoint_url,
@@ -20,7 +21,7 @@ def create_s3_client(settings: Settings) -> S3Client:
         config=Config(
             s3={"addressing_style": "path"},
             connect_timeout=3,
-            read_timeout=5,
+            read_timeout=read_timeout,
             retries={"max_attempts": 1},
         ),
     )
