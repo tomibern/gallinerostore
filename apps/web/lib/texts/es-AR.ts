@@ -75,6 +75,11 @@ export const esAR = {
   "product.size.status.in_stock": "Talle {size} · en stock",
   "product.size.status.out_of_stock": "Talle {size} · sin stock, consultá disponibilidad",
   "product.size.status.on_order": "Talle {size} · por encargue",
+
+  // Página no encontrada
+  "notFound.title": "No encontramos esta página",
+  "notFound.text": "Puede que el producto ya no esté publicado o que el link esté mal escrito.",
+  "notFound.sections": "Seguí recorriendo",
 } as const satisfies Record<string, string>;
 
 export type TextKey = keyof typeof esAR;

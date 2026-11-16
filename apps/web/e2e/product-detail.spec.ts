@@ -150,3 +150,17 @@ test("el código en mayúsculas redirige a la URL en minúsculas", async ({ page
   await expect(page).toHaveURL(`/p/${product.code.toLowerCase()}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(product.name);
 });
+
+for (const path of ["/p/no-existe-999", "/no-existe/tampoco"]) {
+  test(`${path} da 404 con accesos a las secciones`, async ({ page }) => {
+    const response = await page.goto(path);
+
+    expect(response?.status()).toBe(404);
+    const main = page.getByRole("main");
+    await expect(main.locator('a[href="/stock"]')).toBeVisible();
+    await expect(main.locator('a[href="/encargue"]')).toBeVisible();
+    // Dentro del layout de la tienda: con encabezado y pie.
+    await expect(page.getByRole("banner")).toBeVisible();
+    await expect(page.getByRole("contentinfo")).toBeAttached();
+  });
+}
