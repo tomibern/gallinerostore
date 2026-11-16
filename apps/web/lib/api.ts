@@ -9,6 +9,7 @@ import {
   type FacetValue,
   type HomeBlock,
   type HomeSlideOut,
+  type ProductDetail,
   type ProductFacets,
   type ProductList,
   type ProductListItem,
@@ -23,6 +24,7 @@ export type {
   FacetValue,
   HomeBlock,
   HomeSlideOut,
+  ProductDetail,
   ProductFacets,
   ProductList,
   ProductListItem,
@@ -30,6 +32,11 @@ export type {
 };
 export type Section = ProductListItem["section"];
 export type Availability = ProductListItem["availability"];
+export type SizeStatus = ProductDetail["sizes"][number]["status"];
+
+/** Un producto, que no existe (o no está publicado), o la API que no responde. */
+export type ProductResult =
+  { status: "ok"; product: ProductDetail } | { status: "not_found" } | { status: "error" };
 
 function api() {
   return createApiClient(apiInternalUrl());
@@ -80,3 +87,21 @@ export async function getFeatured(): Promise<ProductListItem[] | null> {
     return null;
   }
 }
+
+/**
+ * Detalle de un producto publicado por su código. Distingue «no existe» (404) de
+ * «la API no responde»: un corte no tiene que marcar los productos como inexistentes.
+ * Un pedido por render (la página y sus metadatos lo comparten).
+ */
+export const getProduct = cache(async (code: string): Promise<ProductResult> => {
+  try {
+    const { data, response } = await api().GET("/products/{code}", {
+      params: { path: { code } },
+      cache: "no-store",
+    });
+    if (data) return { status: "ok", product: data };
+    return response.status === 404 ? { status: "not_found" } : { status: "error" };
+  } catch {
+    return { status: "error" };
+  }
+});
