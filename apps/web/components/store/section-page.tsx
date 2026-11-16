@@ -15,6 +15,7 @@ import { t, type TextKey } from "@/lib/texts";
 import { DiagonalBand } from "./diagonal-band";
 import { GeneralInquiry } from "./general-inquiry";
 import { ListingFilters, SortOptions } from "./listing-filters";
+import { ListingSearch } from "./listing-search";
 import { ProductGrid } from "./product-grid";
 
 export const SECTION_PATHS: Record<Section, string> = { stock: "/stock", on_order: "/encargue" };
@@ -42,7 +43,8 @@ export async function sectionMetadata(section: Section): Promise<Metadata> {
 
 // Listado de una sección: encabezado, filtros (chips arriba en el celular,
 // barra lateral en escritorio), orden y grilla de tarjetas (2 columnas en el
-// celular, 3 o 4 en escritorio). Filtros, orden y páginas cargadas salen de la URL.
+// celular, 3 o 4 en escritorio). Búsqueda, filtros, orden y páginas cargadas salen
+// de la URL. La búsqueda va arriba de todo, también en el celular.
 export async function SectionPage({
   section,
   searchParams,
@@ -75,7 +77,10 @@ export async function SectionPage({
       {!store || !result ? (
         <p className="py-12 text-center text-muted">{t("section.unavailable")}</p>
       ) : (
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:grid md:grid-cols-[13rem_1fr] md:gap-10 md:px-16 md:py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:grid md:grid-cols-[13rem_1fr] md:gap-x-10 md:gap-y-6 md:px-16 md:py-10">
+          <div className="md:col-span-2">
+            <ListingSearch pathname={pathname} listing={listing} />
+          </div>
           <ListingFilters
             pathname={pathname}
             listing={listing}
@@ -93,7 +98,11 @@ export async function SectionPage({
             </div>
             {result.items.length === 0 ? (
               <p className="py-12 text-center text-muted">
-                {hasFilters(listing) ? t("listing.empty") : t("section.empty")}
+                {listing.q
+                  ? t("listing.search.empty", { q: listing.q })
+                  : hasFilters(listing)
+                    ? t("listing.empty")
+                    : t("section.empty")}
               </p>
             ) : (
               <ProductGrid
