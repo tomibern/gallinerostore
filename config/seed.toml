@@ -118,6 +118,15 @@ price = 5200000
 featured = true
 tags = ["titular"]
 sizes = { S = false, M = false, L = false, XL = false }
+# Historia de prueba: la reemplaza el dueño desde el admin.
+story = [
+  { kind = "milestone", year = 1986, title = "Campeón del torneo", body = "Se cerró el campeonato 1985/86 con una campaña que todavía se recuerda en la tribuna." },
+  { kind = "milestone", year = 1986, title = "Primera Libertadores", body = "Final contra América de Cali: la primera Copa Libertadores del club." },
+  { kind = "milestone", year = 1986, title = "Campeón del mundo", body = "En Tokio, 1 a 0 a Steaua Bucarest con gol de Alzamendi: la Copa Intercontinental." },
+  { kind = "stat", title = "3", body = "títulos en 1986" },
+  { kind = "stat", title = "1", body = "Intercontinental" },
+  { kind = "fun_fact", title = "La banda roja en diagonal acompaña a la camiseta desde los primeros años del club." },
+]
 
 [[products]]
 slug = "camiseta-river-titular-2026-jugador"
@@ -157,6 +166,13 @@ status = "published"
 price = 5400000
 tags = ["alternativa"]
 sizes = { M = true, L = false }
+# Historia de prueba: la reemplaza el dueño desde el admin.
+story = [
+  { kind = "milestone", year = 1996, title = "Segunda Libertadores", body = "Otra vez América de Cali en la final, y la vuelta en el Monumental." },
+  { kind = "milestone", year = 1996, title = "Campeón del Apertura", body = "El mismo año, también el torneo local." },
+  { kind = "stat", title = "2", body = "goles de Crespo en la final de vuelta" },
+  { kind = "fun_fact", title = "Fue la segunda Libertadores del club, diez años después de la primera." },
+]
 
 [[products]]
 slug = "buzo-river-entrenamiento-2026"
