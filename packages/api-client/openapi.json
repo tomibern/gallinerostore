@@ -172,6 +172,33 @@
               "default": "manual"
             },
             "description": "Orden del listado."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Cuántos productos traer como máximo.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Cuántos productos traer como máximo."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Cuántos productos saltear desde el inicio.",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Cuántos productos saltear desde el inicio."
           }
         ],
         "responses": {
@@ -666,15 +693,29 @@
               "$ref": "#/components/schemas/ProductListItem"
             },
             "type": "array",
-            "title": "Items"
+            "title": "Items",
+            "description": "La página pedida."
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "description": "Si hay más productos después de esta página."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Productos que cumplen los filtros, en todas las páginas."
           },
           "facets": {
-            "$ref": "#/components/schemas/ProductFacets"
+            "$ref": "#/components/schemas/ProductFacets",
+            "description": "Calculadas sobre todo el listado filtrado, no sobre la página."
           }
         },
         "type": "object",
         "required": [
           "items",
+          "has_more",
+          "total",
           "facets"
         ],
         "title": "ProductList"
