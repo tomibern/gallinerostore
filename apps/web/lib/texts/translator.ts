@@ -26,3 +26,18 @@ export function createTranslator<D extends Dictionary>(core: D, overrides: unkno
     );
   };
 }
+
+/**
+ * Textos que el núcleo no puede declarar porque dependen de la configuración
+ * del cliente (por ejemplo, los bloques de la home: `home.blocks.<clave>.title`).
+ * Solo salen de los reemplazos del cliente, bajo un prefijo; si falta, vacío.
+ */
+export function createPrefixedTexts(prefix: string, overrides: unknown) {
+  const texts: Record<string, unknown> =
+    typeof overrides === "object" && overrides !== null ? { ...overrides } : {};
+
+  return function text(key: string): string {
+    const value = texts[`${prefix}${key}`];
+    return typeof value === "string" ? value : "";
+  };
+}

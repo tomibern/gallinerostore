@@ -7,6 +7,8 @@ import {
   createApiClient,
   type CategoryFacetValue,
   type FacetValue,
+  type HomeBlock,
+  type HomeSlideOut,
   type ProductFacets,
   type ProductList,
   type ProductListItem,
@@ -19,6 +21,8 @@ import type { Listing } from "./listing";
 export type {
   CategoryFacetValue,
   FacetValue,
+  HomeBlock,
+  HomeSlideOut,
   ProductFacets,
   ProductList,
   ProductListItem,
@@ -55,6 +59,23 @@ export async function getSectionListing(
       cache: "no-store",
     });
     return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Destacados que muestra la home. La API todavía no tiene `limit` (#27): hasta
+// entonces se corta acá.
+export const MAX_FEATURED = 8;
+
+/** Los primeros destacados publicados, en su orden manual; null si la API no responde. */
+export async function getFeatured(): Promise<ProductListItem[] | null> {
+  try {
+    const { data } = await api().GET("/products", {
+      params: { query: { featured: true } },
+      cache: "no-store",
+    });
+    return data ? data.items.slice(0, MAX_FEATURED) : null;
   } catch {
     return null;
   }

@@ -7,6 +7,16 @@ export const esAR = {
   "store.tagline": "",
   "store.unavailable": "La tienda no está disponible en este momento. Probá de nuevo en un rato.",
 
+  // Home
+  "home.access.label": "Secciones",
+  "home.featured.title": "Destacados",
+  "home.carousel.label": "Fotos",
+  "home.carousel.stop": "Detener fotos",
+  "home.carousel.start": "Reanudar fotos",
+  "home.carousel.picker": "Elegir foto",
+  "home.carousel.pick": "Ver foto {n}",
+  "home.carousel.slide": "{n} de {total}",
+
   // Navegación
   "nav.label": "Navegación principal",
   "nav.menuOpen": "Abrir menú",
