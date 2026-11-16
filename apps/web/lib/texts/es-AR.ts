@@ -74,6 +74,10 @@ export const esAR = {
 
   // Producto
   "product.story.title": "Historia del producto",
+  "product.story.hint": "Tocá cada figurita para darla vuelta.",
+  "product.story.milestones": "Hitos",
+  "product.story.stats": "En números",
+  "product.story.funFact": "¿Sabías que…?",
   "product.unavailable": "No pudimos cargar el producto. Probá de nuevo en un rato.",
   "product.category": "Categoría",
   "product.version": "Versión",
