@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-
-import { SectionPage, sectionTitle } from "@/components/store/section-page";
+import { SectionPage, sectionMetadata } from "@/components/store/section-page";
 import type { SearchParams } from "@/lib/listing";
 
-export const metadata: Metadata = { title: sectionTitle("on_order") };
+export function generateMetadata() {
+  return sectionMetadata("on_order");
+}
 
 export default async function OnOrderPage({
   searchParams,

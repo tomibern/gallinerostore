@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import type { NextConfig } from "next";
 
-import { apiInternalUrl, mediaInternalUrl } from "./lib/env";
+import { apiInternalUrl, mediaInternalUrl, siteUrl } from "./lib/env";
 
 // En desarrollo las variables viven en el .env de la raíz del monorepo.
 try {
@@ -11,6 +11,9 @@ try {
 } catch {
   // Sin .env: en producción las variables las pone el hosting.
 }
+
+// Una SITE_URL inválida corta el arranque en vez de romper cada página.
+siteUrl();
 
 // Next bloquea por defecto los pedidos de desarrollo desde otras direcciones.
 // Habilitamos las IPs de esta máquina para probar desde el celular en la misma red.

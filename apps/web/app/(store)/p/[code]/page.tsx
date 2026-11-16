@@ -7,11 +7,13 @@ import { caseLabels, instagramSheetLabels } from "@/components/store/inquiry-lab
 import { ProductInquiry } from "@/components/store/product-inquiry";
 import { getProduct, getStore, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
+import { productMetadata, productPath } from "@/lib/seo";
 import { t } from "@/lib/texts";
 
 export async function generateMetadata({ params }: PageProps<"/p/[code]">): Promise<Metadata> {
-  const result = await getProduct((await params).code);
-  return result.status === "ok" ? { title: result.product.name } : {};
+  const [store, result] = await Promise.all([getStore(), getProduct((await params).code)]);
+  if (result.status !== "ok") return {};
+  return store ? productMetadata(result.product, store) : { title: result.product.name };
 }
 
 const SIZE_STATUSES: SizeStatus[] = ["in_stock", "out_of_stock", "on_order"];
@@ -33,7 +35,7 @@ function inquiryLabels() {
 // producto). Si el producto no existe o no está publicado, la 404 de la tienda.
 export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
   const { code } = await params;
-  if (code !== code.toLowerCase()) permanentRedirect(`/p/${code.toLowerCase()}`);
+  if (code !== code.toLowerCase()) permanentRedirect(productPath(code));
 
   const [store, result] = await Promise.all([getStore(), getProduct(code)]);
   // Fuera de cualquier try: notFound() corta el render lanzando un error.
