@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     s3_bucket: str = "media"
     # Prefijo público de las fotos. Next reenvía /media/* al bucket (ADR 0003).
     media_base_url: str = "/media"
+    # Dirección pública del sitio, para los links que salen de la API (por ejemplo,
+    # el del producto en el mensaje prearmado). Cambia por entorno, no por cliente.
+    site_url: str = "http://localhost:3000"
     store_config_path: Path = REPO_ROOT / "config" / "store.toml"
     seed_path: Path = REPO_ROOT / "config" / "seed.toml"
 

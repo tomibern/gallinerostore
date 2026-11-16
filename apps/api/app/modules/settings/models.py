@@ -1,5 +1,6 @@
 """Configuración editable de la tienda y fotos de los carruseles de la home."""
 
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import CheckConstraint, Integer, String, Text
@@ -11,6 +12,23 @@ from app.core.models import Base
 SETTINGS_ROW_ID = 1
 
 
+class Channel(StrEnum):
+    """Canal de contacto: por donde se consulta (y se registra la consulta)."""
+
+    WHATSAPP = "whatsapp"
+    INSTAGRAM = "instagram"
+
+
+class MessageCase(StrEnum):
+    """Caso del mensaje prearmado: la clave de su plantilla en ``message_templates``."""
+
+    STOCK = "stock"
+    OUT_OF_STOCK = "out_of_stock"
+    ON_ORDER = "on_order"
+    # Agotado que pasó a Por encargue.
+    SOLD_OUT_ON_ORDER = "sold_out_on_order"
+
+
 class StoreSettings(Base):
     """La fila única con lo que el admin edita. Lo técnico va en config/store.toml."""
 
@@ -18,12 +36,13 @@ class StoreSettings(Base):
     __table_args__ = (CheckConstraint(f"id = {SETTINGS_ROW_ID}", name="single_row"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=SETTINGS_ROW_ID)
-    # Canal → datos de contacto, por ejemplo {"whatsapp": {"number": "..."}}.
+    # Canal → datos de contacto, por ejemplo {"whatsapp": {"number": "..."}}. La forma
+    # la valida ContactChannels al cargarlos.
     contact_channels: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     how_to_buy_md: Mapped[str] = mapped_column(Text, default="")
     faq_md: Mapped[str] = mapped_column(Text, default="")
     on_order_notice: Mapped[str] = mapped_column(Text, default="")
-    # Plantillas de los mensajes prearmados, por caso (stock, sin stock, encargue…).
+    # Plantillas de los mensajes prearmados, por caso (MessageCase) y la general.
     message_templates: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
 
 

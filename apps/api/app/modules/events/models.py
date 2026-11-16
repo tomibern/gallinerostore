@@ -7,6 +7,7 @@ from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, text_enum
+from app.modules.settings.models import Channel
 
 
 class EventType(StrEnum):
@@ -14,13 +15,6 @@ class EventType(StrEnum):
     PRODUCT_VIEW = "product_view"  # visita al detalle de un producto
     CONTACT_CLICK = "contact_click"  # consulta por un producto
     GENERAL_CONTACT_CLICK = "general_contact_click"  # consulta general
-
-
-class Channel(StrEnum):
-    """Canal de contacto de una consulta."""
-
-    WHATSAPP = "whatsapp"
-    INSTAGRAM = "instagram"
 
 
 class Event(Base):

@@ -323,6 +323,15 @@
         ],
         "title": "CategoryFacetValue"
       },
+      "Channel": {
+        "type": "string",
+        "enum": [
+          "whatsapp",
+          "instagram"
+        ],
+        "title": "Channel",
+        "description": "Canal de contacto: por donde se consulta (y se registra la consulta)."
+      },
       "FacetValue": {
         "properties": {
           "value": {
@@ -485,6 +494,31 @@
           "height"
         ],
         "title": "ImageOut"
+      },
+      "Inquiry": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "El mensaje prearmado, ya armado."
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "WhatsApp: wa.me con el mensaje en el texto. Instagram: el chat (ig.me) sin texto, porque no lo acepta; el mensaje se muestra aparte para copiarlo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "message",
+          "url"
+        ],
+        "title": "Inquiry",
+        "description": "Una consulta lista para usar: el mensaje prearmado y el link que abre el chat."
       },
       "NamedRef": {
         "properties": {
@@ -786,12 +820,21 @@
           "status": {
             "$ref": "#/components/schemas/SizeStatus",
             "description": "in_stock y out_of_stock en un producto de stock (sin stock se muestra tachado, pero se puede elegir); on_order en un encargue o un agotado que pasó a encargue."
+          },
+          "inquiries": {
+            "items": {
+              "$ref": "#/components/schemas/Inquiry"
+            },
+            "type": "array",
+            "title": "Inquiries",
+            "description": "La consulta por este talle, una por canal ofrecido (WhatsApp primero), con el mensaje y el link ya armados. Vacía si la tienda no cargó canales."
           }
         },
         "type": "object",
         "required": [
           "label",
-          "status"
+          "status",
+          "inquiries"
         ],
         "title": "ProductSizeOut"
       },

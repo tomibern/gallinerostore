@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field
 
 from app.modules.catalog.models import Availability, ProductSort, Section, SizeStatus
+from app.modules.settings.schemas import Inquiry
 
 # Productos por página del listado, y el tope de seguridad de un pedido.
 DEFAULT_PAGE_SIZE = 20
@@ -116,6 +117,12 @@ class ProductSizeOut(BaseModel):
         description=(
             "in_stock y out_of_stock en un producto de stock (sin stock se muestra tachado, "
             "pero se puede elegir); on_order en un encargue o un agotado que pasó a encargue."
+        )
+    )
+    inquiries: list[Inquiry] = Field(
+        description=(
+            "La consulta por este talle, una por canal ofrecido (WhatsApp primero), con el "
+            "mensaje y el link ya armados. Vacía si la tienda no cargó canales."
         )
     )
 

@@ -9,7 +9,6 @@ volver a los valores del seed, ``make reset``.
 
 import tomllib
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,11 +19,12 @@ from app.modules.media.placeholder import placeholder_image
 from app.modules.media.service import store_home_slide
 from app.modules.settings import repository
 from app.modules.settings.models import SETTINGS_ROW_ID, HomeSlide, StoreSettings
+from app.modules.settings.schemas import ContactChannels
 from app.modules.settings.service import check_slide_count
 
 
 class SettingsSeed(BaseModel):
-    contact_channels: dict[str, dict[str, Any]] = {}
+    contact_channels: ContactChannels = ContactChannels()
     how_to_buy_md: str = ""
     faq_md: str = ""
     on_order_notice: str = ""
@@ -42,7 +42,11 @@ async def apply_settings_seed(session: AsyncSession, seed: SettingsSeed) -> bool
     """Crea la fila de configuración con los valores del seed. Devuelve True si la creó."""
     if await repository.get_store_settings(session) is not None:
         return False
-    store_settings = StoreSettings(id=SETTINGS_ROW_ID, **seed.model_dump())
+    store_settings = StoreSettings(
+        id=SETTINGS_ROW_ID,
+        **seed.model_dump(exclude={"contact_channels"}),
+        contact_channels=seed.contact_channels.model_dump(exclude_none=True),
+    )
     repository.add(session, store_settings)
     await repository.flush(session)
     return True
