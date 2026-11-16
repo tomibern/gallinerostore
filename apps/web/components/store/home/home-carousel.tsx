@@ -32,6 +32,8 @@ type Props = {
   // Textos ya resueltos en el servidor: el diccionario no viaja al navegador.
   labels: {
     region: string;
+    role: string;
+    slideRole: string;
     stop: string;
     start: string;
     picker: string;
@@ -69,7 +71,7 @@ export function HomeCarousel({ slides, title, text, labels }: Props) {
 
   return (
     <section
-      aria-roledescription="carousel"
+      aria-roledescription={labels.role}
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : labels.region}
       data-testid="home-carousel"
@@ -139,7 +141,7 @@ export function HomeCarousel({ slides, title, text, labels }: Props) {
               <div
                 key={slide.full}
                 role="group"
-                aria-roledescription="slide"
+                aria-roledescription={labels.slideRole}
                 aria-label={labels.slide[i]}
                 aria-hidden={!active}
                 data-index={i}

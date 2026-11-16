@@ -101,6 +101,8 @@ function HomeBlockCarousel({ block }: { block: HomeBlock }) {
       text={homeBlockText(block.key, "text")}
       labels={{
         region: t("home.carousel.label"),
+        role: t("home.carousel.role"),
+        slideRole: t("home.carousel.slideRole"),
         stop: t("home.carousel.stop"),
         start: t("home.carousel.start"),
         picker: t("home.carousel.picker"),

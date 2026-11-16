@@ -11,6 +11,8 @@ export const esAR = {
   "home.access.label": "Secciones",
   "home.featured.title": "Destacados",
   "home.carousel.label": "Fotos",
+  "home.carousel.role": "carrusel",
+  "home.carousel.slideRole": "foto",
   "home.carousel.stop": "Detener fotos",
   "home.carousel.start": "Reanudar fotos",
   "home.carousel.picker": "Elegir foto",
