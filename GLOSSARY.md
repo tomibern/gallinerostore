@@ -81,7 +81,7 @@ _Evitar_: pedido, orden, compra, lead
 Consulta sin producto, para pedidos especiales.
 
 **Mensaje prearmado**:
-Texto con producto, código, talle, disponibilidad (en stock, sin stock, por encargue o agotado por encargue) y link que la web prepara para abrir la conversación. En WhatsApp viaja dentro del link; en Instagram se muestra para que la persona lo copie si quiere.
+Texto con producto, código, talle, disponibilidad (en stock, sin stock, por encargue o agotado por encargue) y link que arma la API (ADR 0005), a partir de las plantillas de la tienda, para abrir la conversación. En WhatsApp viaja dentro del link; en Instagram se muestra para que la persona lo copie si quiere.
 
 **Canal de contacto**:
 Destino de una consulta: WhatsApp o Instagram, configurable por cliente.

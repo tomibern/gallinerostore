@@ -10,3 +10,7 @@ El mensaje prearmado es lógica de negocio: plantillas de `settings.message_temp
 ## Consequences
 
 La respuesta del detalle crece con talles × canales (con 6 talles y 2 canales, 12 mensajes: consultar exige elegir talle). Si se suma un canal o un talle, el detalle trae más mensajes sin cambios en la web.
+
+## Nota (#31)
+
+Un talle nuevo no cambia la web, pero un canal nuevo sí: la web decide el comportamiento por canal (WhatsApp es un link con el texto; Instagram abre la hoja con el mensaje para copiar) y cada canal necesita su texto en el diccionario. Lo que no cambia es el mensaje: la web nunca lo arma.
