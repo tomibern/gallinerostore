@@ -4,6 +4,10 @@ from pydantic import BaseModel, Field
 
 from app.modules.catalog.models import Availability, ProductSort, Section, SizeStatus
 
+# Productos por página del listado, y el tope de seguridad de un pedido.
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
+
 
 class ImageOut(BaseModel):
     full: str = Field(description="Ruta de la imagen completa (lado mayor 1600 px), bajo /media.")
@@ -29,9 +33,10 @@ class ProductListItem(BaseModel):
 
 
 class ProductFilters(BaseModel):
-    """Query string del listado. Varios valores de un filtro se suman (O) y filtros
-    distintos se cruzan (Y). Un filtro que no aplica se ignora y un valor que no
-    existe deja el listado vacío, así un link compartido nunca da error."""
+    """Query string del listado: filtros, orden y página. Varios valores de un filtro
+    se suman (O) y filtros distintos se cruzan (Y). Un filtro que no aplica se ignora
+    y un valor que no existe deja el listado vacío, así un link compartido nunca da
+    error. La página se pide con ``limit`` y ``offset`` sobre un orden estable."""
 
     section: Section | None = Field(default=None, description="Solo los productos de esa sección.")
     featured: bool = Field(
@@ -56,6 +61,13 @@ class ProductFilters(BaseModel):
         ),
     )
     sort: ProductSort = Field(default=ProductSort.MANUAL, description="Orden del listado.")
+    limit: int = Field(
+        default=DEFAULT_PAGE_SIZE,
+        ge=1,
+        le=MAX_PAGE_SIZE,
+        description="Cuántos productos traer como máximo.",
+    )
+    offset: int = Field(default=0, ge=0, description="Cuántos productos saltear desde el inicio.")
 
 
 class FacetValue(BaseModel):
@@ -85,8 +97,12 @@ class ProductFacets(BaseModel):
 
 
 class ProductList(BaseModel):
-    items: list[ProductListItem]
-    facets: ProductFacets
+    items: list[ProductListItem] = Field(description="La página pedida.")
+    has_more: bool = Field(description="Si hay más productos después de esta página.")
+    total: int = Field(description="Productos que cumplen los filtros, en todas las páginas.")
+    facets: ProductFacets = Field(
+        description="Calculadas sobre todo el listado filtrado, no sobre la página."
+    )
 
 
 class NamedRef(BaseModel):

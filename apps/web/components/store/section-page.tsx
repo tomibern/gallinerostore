@@ -1,10 +1,17 @@
 import { getSectionListing, getStore, type Section } from "@/lib/api";
-import { hasFilters, parseListing, type SearchParams } from "@/lib/listing";
+import { listingPageSize } from "@/lib/env";
+import {
+  hasFilters,
+  listingHref,
+  parseListing,
+  parsePages,
+  type SearchParams,
+} from "@/lib/listing";
 import { t, type TextKey } from "@/lib/texts";
 
 import { DiagonalBand } from "./diagonal-band";
 import { ListingFilters, SortOptions } from "./listing-filters";
-import { ProductCard } from "./product-card";
+import { ProductGrid } from "./product-grid";
 
 export const SECTION_PATHS: Record<Section, string> = { stock: "/stock", on_order: "/encargue" };
 
@@ -19,7 +26,7 @@ export function sectionTitle(section: Section): string {
 
 // Listado de una sección: encabezado, filtros (chips arriba en el celular,
 // barra lateral en escritorio), orden y grilla de tarjetas (2 columnas en el
-// celular, 3 o 4 en escritorio). Filtros y orden salen de la URL.
+// celular, 3 o 4 en escritorio). Filtros, orden y páginas cargadas salen de la URL.
 export async function SectionPage({
   section,
   searchParams,
@@ -29,7 +36,12 @@ export async function SectionPage({
 }) {
   const listing = parseListing(searchParams);
   const pathname = SECTION_PATHS[section];
-  const [store, result] = await Promise.all([getStore(), getSectionListing(section, listing)]);
+  const pageSize = listingPageSize();
+  // Todas las páginas que pide la URL en un pedido (5 × 20 entra en el tope de la API).
+  const [store, result] = await Promise.all([
+    getStore(),
+    getSectionListing(section, listing, parsePages(searchParams) * pageSize),
+  ]);
   const heading = HEADINGS[section];
 
   return (
@@ -57,9 +69,9 @@ export async function SectionPage({
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p aria-live="polite" data-testid="product-count" className="text-sm text-muted">
-                {result.items.length === 1
+                {result.total === 1
                   ? t("listing.count.one")
-                  : t("listing.count.other", { count: result.items.length })}
+                  : t("listing.count.other", { count: result.total })}
               </p>
               <SortOptions pathname={pathname} listing={listing} />
             </div>
@@ -68,14 +80,17 @@ export async function SectionPage({
                 {hasFilters(listing) ? t("listing.empty") : t("section.empty")}
               </p>
             ) : (
-              <ul
-                data-testid="products"
-                className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4"
-              >
-                {result.items.map((product) => (
-                  <ProductCard key={product.code} product={product} store={store} />
-                ))}
-              </ul>
+              <ProductGrid
+                // Otro filtro u orden es otro listado: arranca de cero.
+                key={listingHref(pathname, listing)}
+                section={section}
+                pathname={pathname}
+                listing={listing}
+                pageSize={pageSize}
+                total={result.total}
+                initial={{ items: result.items, hasMore: result.has_more }}
+                store={store}
+              />
             )}
           </div>
         </div>

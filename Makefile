@@ -84,7 +84,7 @@ test: migrate-test ## Corre todos los tests de la API y la web
 	cd $(API) && uv run pytest
 	npm test -w @catalog/web
 
-e2e: ## Test de punta a punta con Playwright (con `make dev` y `make seed` corriendo)
+e2e: ## Test de punta a punta con Playwright (con `LISTING_PAGE_SIZE=3 make dev` y `make seed` corriendo)
 	npm run test:e2e -w @catalog/web
 
 lint: ## Revisa estilo y tipos de la API y la web (lo mismo que la CI)

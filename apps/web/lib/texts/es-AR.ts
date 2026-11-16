@@ -53,6 +53,10 @@ export const esAR = {
   "listing.count.one": "1 producto",
   "listing.count.other": "{count} productos",
   "listing.empty": "No hay productos con estos filtros.",
+  "listing.loadMore": "Ver más",
+  "listing.loading": "Cargando más productos…",
+  "listing.loadError": "No se pudieron cargar más productos. Probá de nuevo.",
+  "listing.shown": "Mostrando {shown} de {total} productos",
 
   // Disponibilidad de un producto
   "availability.in_stock": "En stock",

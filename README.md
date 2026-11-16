@@ -68,6 +68,12 @@ Con `make dev` y `make seed` corriendo, el test de punta a punta (Playwright, es
 make e2e
 ```
 
+Los tests del scroll infinito necesitan más de una página de productos, y el seed tiene pocos. Para que no se salteen, levantá la web con páginas más chicas (`LISTING_PAGE_SIZE`, de 1 a 20; 20 por defecto):
+
+```bash
+LISTING_PAGE_SIZE=3 make dev
+```
+
 La primera vez hay que bajar el navegador: `npx playwright install chromium`.
 
 - Web: <http://localhost:3000>

@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { cardCodes, cards, loadAll } from "./listing-pages";
+
 type FacetValue = { value: string; name: string; count: number };
 type ApiListing = {
   items: { code: string }[];
@@ -10,20 +12,19 @@ type ApiListing = {
 
 // Filtros y orden del listado en celular y escritorio. No conocen los datos del
 // cliente: eligen valores de las facetas que publica la API y comparan la grilla
-// con lo que devuelve la API para la misma query string.
+// con lo que devuelve la API para la misma query string (todas las páginas).
 
 async function apiListing(page: Page, query: string): Promise<ApiListing> {
-  const response = await page.request.get(`/api/products?${query}`);
+  const response = await page.request.get(`/api/products?${query}&limit=100`);
   expect(response.ok()).toBe(true);
   return (await response.json()) as ApiListing;
 }
 
 async function expectCards(page: Page, codes: string[]) {
-  const cards = page.locator("[data-testid=products] > li");
-  await expect(cards).toHaveCount(codes.length);
-  await expect(cards.evaluateAll((items) => items.map((li) => li.dataset.code))).resolves.toEqual(
-    codes,
-  );
+  await expect(cards(page).first()).toBeVisible();
+  await loadAll(page);
+  await expect(cards(page)).toHaveCount(codes.length);
+  expect(await cardCodes(page)).toEqual(codes);
 }
 
 function chip(page: Page, filter: string, name: string) {
@@ -156,7 +157,8 @@ test("sin resultados muestra un estado vacío y deja limpiar los filtros", async
   await expect(page.getByTestId("products")).toHaveCount(0);
 
   await page.getByRole("link", { name: "Limpiar filtros" }).click();
-  await expect(page).toHaveURL(/\/stock$/);
+  // Sin filtros (con las páginas que se hayan cargado solas).
+  await expect(page).toHaveURL(/\/stock(\?paginas=\d+)?$/);
   const all = await apiListing(page, "section=stock");
   await expectCards(
     page,

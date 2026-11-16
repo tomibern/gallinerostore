@@ -284,8 +284,22 @@ export interface components {
         };
         /** ProductList */
         ProductList: {
-            /** Items */
+            /**
+             * Items
+             * @description La página pedida.
+             */
             items: components["schemas"]["ProductListItem"][];
+            /**
+             * Has More
+             * @description Si hay más productos después de esta página.
+             */
+            has_more: boolean;
+            /**
+             * Total
+             * @description Productos que cumplen los filtros, en todas las páginas.
+             */
+            total: number;
+            /** @description Calculadas sobre todo el listado filtrado, no sobre la página. */
             facets: components["schemas"]["ProductFacets"];
         };
         /** ProductListItem */
@@ -475,6 +489,10 @@ export interface operations {
                 size?: string[];
                 /** @description Orden del listado. */
                 sort?: components["schemas"]["ProductSort"];
+                /** @description Cuántos productos traer como máximo. */
+                limit?: number;
+                /** @description Cuántos productos saltear desde el inicio. */
+                offset?: number;
             };
             header?: never;
             path?: never;
