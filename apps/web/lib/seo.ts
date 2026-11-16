@@ -90,18 +90,13 @@ export function productMetadata(product: ProductDetail, store: PublicStore): Met
   const path = productPath(product.code);
   const description = productDescription(product, store);
   const cover = product.images[0];
+  const metadata = pageMetadata(store, { path, title: product.name, description });
+  if (!cover) return metadata;
   return {
-    title: product.name,
-    description,
-    alternates: { canonical: path },
+    ...metadata,
     openGraph: {
-      ...baseOpenGraph(store),
-      url: path,
-      title: product.name,
-      description,
-      ...(cover && {
-        images: [{ url: cover.full, width: cover.width, height: cover.height, alt: cover.alt }],
-      }),
+      ...metadata.openGraph,
+      images: [{ url: cover.full, width: cover.width, height: cover.height, alt: cover.alt }],
     },
   };
 }
