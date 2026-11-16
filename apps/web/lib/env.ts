@@ -1,4 +1,4 @@
-import { pageSize } from "./listing";
+import { parsePageSize } from "./listing";
 
 // URL con la que el servidor de Next llega a la API (nunca la usa el navegador).
 // Es una función para leer la variable recién cuando se necesita: next.config
@@ -18,5 +18,5 @@ export function mediaInternalUrl(): string {
 // Productos por página del listado (20 por defecto). El e2e lo baja para tener
 // varias páginas con pocos productos: LISTING_PAGE_SIZE=3 make dev.
 export function listingPageSize(): number {
-  return pageSize(process.env.LISTING_PAGE_SIZE);
+  return parsePageSize(process.env.LISTING_PAGE_SIZE);
 }

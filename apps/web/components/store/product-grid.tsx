@@ -7,8 +7,9 @@ import { getListingPage } from "@/lib/browser-api";
 import {
   appendPage,
   listingHref,
+  MAX_PAGES,
   PAGES_PARAM,
-  pagesToLoad,
+  pagesLoaded,
   parsePages,
   type Listing,
 } from "@/lib/listing";
@@ -90,19 +91,19 @@ export function ProductGrid({
   const sentinel = useRef<HTMLDivElement>(null);
   const scrollAfterLoad = useRef<number | null>(null);
 
-  /** Suma una página a lo cargado, la recuerda por URL y pone `paginas` en la URL. */
-  function remember(page: ProductList): Loaded {
+  /**
+   * Suma una página a lo cargado, la recuerda por URL y pone `paginas` en la URL
+   * (hasta MAX_PAGES: lo que el servidor reconstruye en una recarga).
+   */
+  function addPage(page: ProductList): Loaded {
     const items = appendPage(loaded.items, page.items);
     const next = { items, hasMore: page.has_more };
-    const url = listingHref(pathname, listing, pagesToLoad(items.length, pageSize));
+    const pages = Math.min(pagesLoaded(items.length, pageSize), MAX_PAGES);
+    const url = listingHref(pathname, listing, pages);
     loadedByUrl.set(url, { ...next, listing: base });
     // Si mientras tanto se fue a otro listado, la URL ya no es la de este.
     if (currentListing() === base) window.history.replaceState(window.history.state, "", url);
     return next;
-  }
-
-  function fetchMore(limit: number): Promise<ProductList> {
-    return getListingPage(section, listing, { offset: loaded.items.length, limit });
   }
 
   async function load(limit: number) {
@@ -110,9 +111,14 @@ export function ProductGrid({
     busy.current = true;
     setStatus("loading");
     try {
-      setLoaded(remember(await fetchMore(limit)));
+      const page = await getListingPage(section, listing, {
+        offset: loaded.items.length,
+        limit,
+      });
+      setLoaded(addPage(page));
       setStatus("idle");
     } catch {
+      scrollAfterLoad.current = null;
       setStatus("error");
     } finally {
       busy.current = false;
@@ -129,19 +135,17 @@ export function ProductGrid({
     if (missing <= 0 || !loaded.hasMore) return;
     const { scrollY } = (window.history.state ?? {}) as { scrollY?: unknown };
     if (typeof scrollY === "number") scrollAfterLoad.current = scrollY;
-    busy.current = true;
-    fetchMore(missing)
-      .then((page) => setLoaded(remember(page)))
-      .catch(() => setStatus("error"))
-      .finally(() => {
-        busy.current = false;
-      });
+    void load(missing);
   });
 
   useEffect(() => {
-    restore();
+    // Después del primer render: el respaldo cambia el estado (cargando).
+    const timer = window.setTimeout(restore, 0);
     window.addEventListener("pagehide", saveScroll);
-    return () => window.removeEventListener("pagehide", saveScroll);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", saveScroll);
+    };
   }, []);
 
   useEffect(() => {

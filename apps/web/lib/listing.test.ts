@@ -4,8 +4,8 @@ import {
   appendPage,
   listingHref,
   MAX_PAGES,
-  pageSize,
-  pagesToLoad,
+  parsePageSize,
+  pagesLoaded,
   parseListing,
   parsePages,
   toggleFilter,
@@ -53,30 +53,30 @@ describe("listingHref con páginas", () => {
   });
 });
 
-describe("pageSize", () => {
+describe("parsePageSize", () => {
   it("es 20 por defecto", () => {
-    expect(pageSize(undefined)).toBe(20);
+    expect(parsePageSize(undefined)).toBe(20);
   });
 
   it("lee un entero entre 1 y 20", () => {
-    expect(pageSize("3")).toBe(3);
+    expect(parsePageSize("3")).toBe(3);
   });
 
   it.each(["0", "abc", "21", "-1"])("vuelve a 20 con «%s»", (value) => {
-    expect(pageSize(value)).toBe(20);
+    expect(parsePageSize(value)).toBe(20);
   });
 });
 
-describe("pagesToLoad", () => {
+describe("pagesLoaded", () => {
   it("cuenta las páginas que entran en los productos cargados", () => {
-    expect(pagesToLoad(20, 20)).toBe(1);
-    expect(pagesToLoad(40, 20)).toBe(2);
+    expect(pagesLoaded(20, 20)).toBe(1);
+    expect(pagesLoaded(40, 20)).toBe(2);
     // La última página puede venir incompleta.
-    expect(pagesToLoad(45, 20)).toBe(3);
+    expect(pagesLoaded(45, 20)).toBe(3);
   });
 
   it("nunca es menos de 1", () => {
-    expect(pagesToLoad(0, 20)).toBe(1);
+    expect(pagesLoaded(0, 20)).toBe(1);
   });
 });
 

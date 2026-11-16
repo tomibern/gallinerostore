@@ -90,7 +90,7 @@ function positiveInt(value: string | undefined): number | null {
 }
 
 /** Productos por página: un entero entre 1 y 20 (de LISTING_PAGE_SIZE), o 20. */
-export function pageSize(value: string | undefined): number {
+export function parsePageSize(value: string | undefined): number {
   const n = positiveInt(value);
   return n !== null && n <= DEFAULT_PAGE_SIZE ? n : DEFAULT_PAGE_SIZE;
 }
@@ -102,7 +102,7 @@ export function parsePages(params: SearchParams): number {
 }
 
 /** En cuántas páginas entran los productos cargados (la última puede estar incompleta). */
-export function pagesToLoad(loaded: number, size: number): number {
+export function pagesLoaded(loaded: number, size: number): number {
   return Math.max(1, Math.ceil(loaded / size));
 }
 
