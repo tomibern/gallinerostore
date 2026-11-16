@@ -43,13 +43,12 @@ export function InquiryButtons({ channels, inquiries, labels, onInquiry, short =
       <div className="flex gap-2">
         {channels.map((channel) => {
           const inquiry = inquiries?.find((i) => i.channel === channel);
-          const name = labels.channels[channel];
-          const long = name.long;
+          const { short: name, long } = labels.channels[channel];
           const text = short ? (
-            name.short
+            name
           ) : (
             <>
-              <span className="md:hidden">{name.short}</span>
+              <span className="md:hidden">{name}</span>
               <span className="hidden md:inline">{long}</span>
             </>
           );

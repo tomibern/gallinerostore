@@ -27,3 +27,9 @@ export function instagramSheetLabels(): InquiryButtonsLabels["sheet"] {
     close: t("inquiry.sheet.close"),
   };
 }
+
+// Los textos de un caso: la acción arriba de los botones y los botones por canal
+// (que pueden decir otra acción, como «Consultar» cuando todavía falta el talle).
+export function caseLabels(action: string, buttonAction = action) {
+  return { action, channels: channelLabels(buttonAction) };
+}

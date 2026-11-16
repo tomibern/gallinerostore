@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { AvailabilityBadge } from "@/components/store/availability-badge";
 import { ProductGallery } from "@/components/store/product-gallery";
-import { channelLabels, instagramSheetLabels } from "@/components/store/inquiry-labels";
+import { caseLabels, instagramSheetLabels } from "@/components/store/inquiry-labels";
 import { ProductInquiry } from "@/components/store/product-inquiry";
 import { getProduct, getStore, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
@@ -19,14 +19,11 @@ const SIZE_STATUSES: SizeStatus[] = ["in_stock", "out_of_stock", "on_order"];
 // Textos de los botones de consulta según el estado del talle elegido («idle»: sin talle).
 function inquiryLabels() {
   const statuses = Object.fromEntries(
-    SIZE_STATUSES.map((status) => {
-      const action = t(`inquiry.action.${status}`);
-      return [status, { action, channels: channelLabels(action) }];
-    }),
-  ) as Record<SizeStatus, { action: string; channels: ReturnType<typeof channelLabels> }>;
+    SIZE_STATUSES.map((status) => [status, caseLabels(t(`inquiry.action.${status}`))]),
+  ) as Record<SizeStatus, ReturnType<typeof caseLabels>>;
   return {
     ...statuses,
-    idle: { action: t("inquiry.action.idle"), channels: channelLabels(t("inquiry.channel.idle")) },
+    idle: caseLabels(t("inquiry.action.idle"), t("inquiry.channel.idle")),
     sheet: instagramSheetLabels(),
   };
 }

@@ -4,7 +4,8 @@ import { t } from "@/lib/texts";
 import { InquiryButtons } from "./inquiry-buttons";
 import { channelLabels, instagramSheetLabels } from "./inquiry-labels";
 
-// Dónde está: el registro de consultas y los e2e lo distinguen por esto.
+// Dónde está. Los e2e lo distinguen por esto, y el registro de consultas generales
+// (que lleva la página) lo va a poder usar.
 export type GeneralInquiryPlacement = "listing" | "not-found" | "how-to-buy" | "footer";
 
 type Props = {

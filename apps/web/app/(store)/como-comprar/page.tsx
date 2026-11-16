@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   description: t("howToBuy.description"),
 };
 
-// «Cómo comprar»: pagos, envíos, entregas y encargues (Markdown que edita el admin)
-// y las preguntas frecuentes como acordeón, y al final la consulta general. El layout ya resolvió que la tienda
-// responde; getStore() reusa ese pedido.
+// «Cómo comprar»: pagos, envíos, entregas y encargues (Markdown que edita el admin),
+// las preguntas frecuentes como acordeón y, al final, la consulta general. El layout
+// ya resolvió que la tienda responde; getStore() reusa ese pedido.
 export default async function HowToBuyPage() {
   const store = await getStore();
   const howToBuy = store?.how_to_buy_md.trim() ?? "";

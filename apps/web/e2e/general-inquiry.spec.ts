@@ -11,6 +11,7 @@ const PLACEMENTS = [
   { path: "/stock", placement: "listing" },
   { path: "/encargue", placement: "listing" },
   { path: "/no-existe/tampoco", placement: "not-found" },
+  { path: "/p/no-existe-tampoco", placement: "not-found" },
   { path: "/como-comprar", placement: "how-to-buy" },
   { path: "/", placement: "footer" },
 ];

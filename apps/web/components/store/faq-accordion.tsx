@@ -8,8 +8,9 @@ import { StoreMarkdown } from "./store-markdown";
 export function FaqAccordion({ faq }: { faq: FaqItem[] }) {
   return (
     <div className="divide-y divide-border border-y border-border">
-      {faq.map(({ question, answer_md }) => (
-        <details key={question} name="faq" className="group">
+      {faq.map(({ question, answer_md }, index) => (
+        // La misma pregunta puede estar dos veces: el índice la distingue.
+        <details key={`${index}-${question}`} name="faq" className="group">
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 [&::-webkit-details-marker]:hidden">
             <h3 className="font-display text-lg font-semibold">{question}</h3>
             <span
