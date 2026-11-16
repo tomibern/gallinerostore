@@ -95,19 +95,25 @@ async def test_seeding_twice_replaces_the_story_instead_of_duplicating_it(
     ]
 
 
-async def test_seed_rejects_a_milestone_without_year(
-    settings: Settings, db_session: AsyncSession, storage: ObjectStorage
+@pytest.mark.parametrize(
+    "milestone",
+    [
+        StoryItemSeed(kind="milestone", title="Debut", body="Se estrenó en un amistoso."),
+        StoryItemSeed(kind="milestone", year=1999, title="Debut"),
+    ],
+    ids=["sin año", "sin anécdota"],
+)
+async def test_seed_rejects_a_milestone_without_year_or_anecdote(
+    milestone: StoryItemSeed, settings: Settings, db_session: AsyncSession, storage: ObjectStorage
 ) -> None:
     seed = load_seed(FIXTURES / "seed.toml")
     product = next(p for p in seed.products if p.slug == "remera-completa")
-    without_year = product.model_copy(
-        update={"story": [StoryItemSeed(kind="milestone", title="Debut")]}
-    )
+    incomplete = product.model_copy(update={"story": [milestone]})
 
-    with pytest.raises(SeedError, match="«remera-completa».*año"):
+    with pytest.raises(SeedError, match="«remera-completa».*año o anécdota"):
         await apply_seed(
             db_session,
-            seed.model_copy(update={"products": [without_year]}),
+            seed.model_copy(update={"products": [incomplete]}),
             settings.store_config,
             storage,
         )

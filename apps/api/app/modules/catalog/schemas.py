@@ -135,7 +135,7 @@ class ProductSizeOut(BaseModel):
 
 class StoryItemOut(BaseModel):
     """Un ítem de la historia del producto. Cada tipo usa los campos a su manera:
-    un hito (figurita) muestra año y título y, al darse vuelta, la anécdota en
+    un hito (una tarjeta) muestra año y título y, al darse vuelta, la anécdota en
     ``body``; una cifra es el valor en ``title`` y su leyenda en ``body``; un dato
     curioso es el dato en ``title``, seguido de ``body`` si lo tiene."""
 

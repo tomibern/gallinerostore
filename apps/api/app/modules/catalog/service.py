@@ -55,6 +55,20 @@ def check_category_depth(slug: str, depth: int) -> None:
         )
 
 
+class IncompleteMilestoneError(ValueError):
+    """Un hito de la historia necesita año y anécdota: se muestra con año y título y,
+    al darse vuelta, cuenta la anécdota."""
+
+
+def check_story_item(slug: str, kind: StoryItemKind, year: int | None, body: str | None) -> None:
+    """Valida un ítem de la historia. El admin la va a reusar al cargar la historia."""
+    if kind is StoryItemKind.MILESTONE and (year is None or not body):
+        raise IncompleteMilestoneError(
+            f"Un hito de «{slug}» no tiene año o anécdota: un hito muestra el año y el "
+            f"título, y al darse vuelta cuenta la anécdota."
+        )
+
+
 class OnOrderWithSizesError(ValueError):
     """Un encargue no tiene talles propios: se pide en cualquiera del grupo de su categoría."""
 
@@ -246,7 +260,7 @@ async def _size_statuses(
 _STORY_KIND_ORDER = {kind: position for position, kind in enumerate(StoryItemKind)}
 
 
-def story(items: Sequence[ProductStoryItem]) -> list[StoryItemOut]:
+def _story_out(items: Sequence[ProductStoryItem]) -> list[StoryItemOut]:
     """La historia agrupada por tipo; dentro del tipo, en el orden en que llega."""
     ordered = sorted(items, key=lambda item: _STORY_KIND_ORDER[item.kind])
     return [
@@ -296,5 +310,5 @@ async def published_product(
         images=[_image_out(image, media_base_url) for image in product.images],
         sizes=sizes,
         on_order_notice=contact.on_order_notice if section is Section.ON_ORDER else None,
-        story=story(product.story_items) if features.product_story else [],
+        story=_story_out(product.story_items) if features.product_story else [],
     )

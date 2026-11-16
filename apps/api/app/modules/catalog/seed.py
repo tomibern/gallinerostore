@@ -132,7 +132,7 @@ async def apply_seed(
     _check_categories(seed.categories)
     _check_single_default_collection(seed.collections)
     _check_on_order_sizes(seed.products)
-    _check_story_milestones(seed.products)
+    _check_story_items(seed.products)
 
     lookups = SeedLookups(sizes=await _upsert_sizes(session, seed.sizes))
     for position, category in enumerate(seed.categories):
@@ -178,14 +178,13 @@ def _check_on_order_sizes(products: list[ProductSeed]) -> None:
             raise SeedError(str(error)) from error
 
 
-def _check_story_milestones(products: list[ProductSeed]) -> None:
+def _check_story_items(products: list[ProductSeed]) -> None:
     for product in products:
         for item in product.story:
-            if item.kind is StoryItemKind.MILESTONE and item.year is None:
-                raise SeedError(
-                    f"El hito «{item.title}» de «{product.slug}» no tiene año: "
-                    f"una figurita muestra el año y el título."
-                )
+            try:
+                service.check_story_item(product.slug, item.kind, item.year, item.body)
+            except service.IncompleteMilestoneError as error:
+                raise SeedError(str(error)) from error
 
 
 def _check_single_default_collection(collections: list[CollectionSeed]) -> None:
