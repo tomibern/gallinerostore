@@ -2,7 +2,13 @@
 
 from pydantic import BaseModel, Field
 
-from app.modules.catalog.models import Availability, ProductSort, Section, SizeStatus
+from app.modules.catalog.models import (
+    Availability,
+    ProductSort,
+    Section,
+    SizeStatus,
+    StoryItemKind,
+)
 from app.modules.settings.schemas import Inquiry
 
 # Productos por página del listado, y el tope de seguridad de un pedido.
@@ -127,6 +133,18 @@ class ProductSizeOut(BaseModel):
     )
 
 
+class StoryItemOut(BaseModel):
+    """Un ítem de la historia del producto. Cada tipo usa los campos a su manera:
+    un hito (figurita) muestra año y título y, al darse vuelta, la anécdota en
+    ``body``; una cifra es el valor en ``title`` y su leyenda en ``body``; un dato
+    curioso es el dato en ``title``, seguido de ``body`` si lo tiene."""
+
+    kind: StoryItemKind
+    year: int | None = Field(description="Año del hito; null en cifras y datos curiosos.")
+    title: str
+    body: str | None
+
+
 class ProductDetail(BaseModel):
     code: str = Field(
         description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
@@ -155,5 +173,12 @@ class ProductDetail(BaseModel):
         description=(
             "Aviso de encargue que edita el admin. Solo en un encargue o un agotado que pasó "
             "a encargue, y null si no está cargado."
+        )
+    )
+    story: list[StoryItemOut] = Field(
+        description=(
+            "Historia del producto: hitos, después cifras y al final datos curiosos, cada "
+            "tipo en su orden de carga. Vacía si el producto no tiene o si la función "
+            "product_story está apagada (entonces la sección no se muestra)."
         )
     )

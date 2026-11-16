@@ -170,6 +170,11 @@ class Product(Base):
         cascade="all, delete-orphan",
         order_by="ProductImage.sort_order",
     )
+    # En el orden de carga; el service los agrupa por tipo.
+    story_items: Mapped[list["ProductStoryItem"]] = relationship(
+        cascade="all, delete-orphan",
+        order_by="(ProductStoryItem.sort_order, ProductStoryItem.id)",
+    )
 
 
 class ProductSize(Base):
