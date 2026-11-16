@@ -115,8 +115,7 @@ test.describe("títulos por página", () => {
       expect(description ?? "").not.toBe("");
     }
     expect(new Set(pages.map((p) => p.title)).size).toBe(pages.length);
-    // La 404 hereda la descripción de la tienda; las demás son distintas entre sí.
-    expect(new Set(pages.slice(0, 3).map((p) => p.description)).size).toBe(3);
+    expect(new Set(pages.map((p) => p.description)).size).toBe(pages.length);
   });
 });
 

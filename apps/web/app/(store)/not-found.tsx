@@ -7,7 +7,10 @@ import { t } from "@/lib/texts";
 
 const SECTIONS: Section[] = ["stock", "on_order"];
 
-export const metadata: Metadata = { title: t("notFound.title") };
+export const metadata: Metadata = {
+  title: t("notFound.title"),
+  description: t("notFound.text"),
+};
 
 // 404 de la tienda, con encabezado y pie: un producto oculto, archivado o que no
 // existe, y cualquier URL sin ruta (ver [...rest]). Lleva a las secciones.
