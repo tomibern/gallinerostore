@@ -27,3 +27,11 @@ body {
   color: var(--color-text);
   font-family: var(--font-body);
 }
+
+/* En el celular, los botones de consulta del detalle quedan fijos abajo: el final de
+   la página (el pie) no tiene que quedar tapado. */
+@media (width < 48rem) {
+  body:has([data-testid="inquiry-actions"]) {
+    padding-bottom: 8rem;
+  }
+}
