@@ -7,7 +7,8 @@ import type { ProductDetail } from "@/lib/api";
 
 type Props = {
   images: ProductDetail["images"];
-  labels: { gallery: string; pick: string };
+  // pick: un texto por foto, en el mismo orden («Ver foto 1»…).
+  labels: { gallery: string; pick: string[] };
 };
 
 // Galería del detalle: una fila con scroll-snap (en el celular se desliza con el
@@ -53,7 +54,7 @@ export function ProductGallery({ images, labels }: Props) {
             <li key={image.thumb} className="shrink-0">
               <button
                 type="button"
-                aria-label={labels.pick.replace("{n}", String(index + 1))}
+                aria-label={labels.pick[index]}
                 onClick={() => show(index)}
                 className="block size-16 cursor-pointer overflow-hidden rounded-sm border border-border md:size-20"
               >

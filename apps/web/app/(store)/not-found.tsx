@@ -1,13 +1,10 @@
 import Link from "next/link";
 
-import { sectionTitle } from "@/components/store/section-page";
+import { SECTION_PATHS, sectionTitle } from "@/components/store/section-page";
 import type { Section } from "@/lib/api";
 import { t } from "@/lib/texts";
 
-const SECTIONS: { href: string; section: Section }[] = [
-  { href: "/stock", section: "stock" },
-  { href: "/encargue", section: "on_order" },
-];
+const SECTIONS: Section[] = ["stock", "on_order"];
 
 // 404 de la tienda, con encabezado y pie: un producto oculto, archivado o que no
 // existe, y cualquier URL sin ruta (ver [...rest]). Lleva a las secciones.
@@ -17,10 +14,10 @@ export default function StoreNotFound() {
       <h1 className="font-display text-3xl font-bold md:text-4xl">{t("notFound.title")}</h1>
       <p className="text-muted">{t("notFound.text")}</p>
       <nav aria-label={t("notFound.sections")} className="mt-4 flex flex-col gap-3 sm:flex-row">
-        {SECTIONS.map(({ href, section }) => (
+        {SECTIONS.map((section) => (
           <Link
-            key={href}
-            href={href}
+            key={section}
+            href={SECTION_PATHS[section]}
             className="font-display rounded-md bg-primary px-5 py-3 font-semibold tracking-wide text-primary-contrast uppercase hover:bg-primary-strong"
           >
             {sectionTitle(section)}

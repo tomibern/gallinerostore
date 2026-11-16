@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { ProductDetail, SizeStatus } from "@/lib/api";
+import type { ProductDetail } from "@/lib/api";
 
 type Props = {
   sizes: ProductDetail["sizes"];
@@ -10,12 +10,13 @@ type Props = {
     legend: string;
     choose: string;
     outOfStock: string;
-    // Con {size} sin reemplazar: se completa con el talle elegido.
-    status: Record<SizeStatus, string>;
+    // La línea de estado de cada talle, por etiqueta («Talle M · en stock»).
+    status: Record<string, string>;
   };
 };
 
-// Consulta del detalle: el selector de talle y su línea de estado. El estado de
+// Consulta del detalle: por ahora, el selector de talle y su línea de estado; el
+// talle elegido vive acá para que los botones de Consultar se sumen al lado. El estado de
 // cada talle ya viene calculado de la API; acá solo se elige. Con talle único,
 // viene elegido. Los sin stock se ven tachados, pero se pueden elegir.
 export function ProductInquiry({ sizes, labels }: Props) {
@@ -63,7 +64,7 @@ export function ProductInquiry({ sizes, labels }: Props) {
         data-status={size?.status ?? ""}
         className={`text-sm ${size?.status === "out_of_stock" ? "text-error" : "text-muted"}`}
       >
-        {size ? labels.status[size.status].replace("{size}", size.label) : labels.choose}
+        {size ? labels.status[size.label] : labels.choose}
       </p>
     </div>
   );

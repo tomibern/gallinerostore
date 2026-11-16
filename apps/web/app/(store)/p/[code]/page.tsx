@@ -45,7 +45,10 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
     <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-2 md:gap-12 md:px-16 md:py-10">
       <ProductGallery
         images={product.images}
-        labels={{ gallery: t("product.gallery.label"), pick: t("product.gallery.pick") }}
+        labels={{
+          gallery: t("product.gallery.label"),
+          pick: product.images.map((_, index) => t("product.gallery.pick", { n: index + 1 })),
+        }}
       />
 
       <div className="flex flex-col gap-5">
@@ -72,11 +75,12 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
             legend: t("product.size.legend"),
             choose: t("product.size.choose"),
             outOfStock: t("product.size.outOfStock"),
-            status: {
-              in_stock: t("product.size.status.in_stock"),
-              out_of_stock: t("product.size.status.out_of_stock"),
-              on_order: t("product.size.status.on_order"),
-            },
+            status: Object.fromEntries(
+              product.sizes.map(({ label, status }) => [
+                label,
+                t(`product.size.status.${status}`, { size: label }),
+              ]),
+            ),
           }}
         />
 
