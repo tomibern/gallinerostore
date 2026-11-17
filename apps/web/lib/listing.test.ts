@@ -8,7 +8,7 @@ import {
   pagesLoaded,
   parseListing,
   parsePages,
-  searchFields,
+  filterAndSortFields,
   toggleFilter,
   withoutFilters,
   withoutSearch,
@@ -152,7 +152,7 @@ describe("búsqueda", () => {
       sort: "newest",
       paginas: "3",
     });
-    expect(searchFields(listing)).toEqual([
+    expect(filterAndSortFields(listing)).toEqual([
       ["category", "remeras"],
       ["category", "abrigos"],
       ["size", "M"],
@@ -161,6 +161,6 @@ describe("búsqueda", () => {
   });
 
   it("el orden por defecto no va en el formulario", () => {
-    expect(searchFields(parseListing({ sort: "manual" }))).toEqual([]);
+    expect(filterAndSortFields(parseListing({ sort: "manual" }))).toEqual([]);
   });
 });

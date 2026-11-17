@@ -5,7 +5,7 @@ import {
   listingHref,
   MAX_SEARCH_LENGTH,
   SEARCH_PARAM,
-  searchFields,
+  filterAndSortFields,
   withoutSearch,
   type Listing,
 } from "@/lib/listing";
@@ -33,7 +33,7 @@ export function ListingSearch({ pathname, listing }: { pathname: string; listing
           enterKeyHint="search"
           className="h-11 min-w-0 flex-1 rounded-sm border border-border bg-surface px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:text-sm"
         />
-        {searchFields(listing).map(([name, value]) => (
+        {filterAndSortFields(listing).map(([name, value]) => (
           <input key={`${name}=${value}`} type="hidden" name={name} value={value} />
         ))}
         <button

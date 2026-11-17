@@ -1,7 +1,7 @@
 // Búsqueda, filtros, orden y páginas del listado. Todo vive en la query string (así
 // un listado filtrado se comparte). Búsqueda, filtros y orden se pasan tal cual a
-// GET /products;
-// `paginas` dice cuántas páginas cargó el navegador, para reconstruirlas al volver.
+// GET /products; `paginas` dice cuántas páginas cargó el navegador, para
+// reconstruirlas al volver.
 
 import type { Schemas } from "@catalog/api-client";
 
@@ -21,7 +21,8 @@ export const SORTS = [
 export type Listing = Record<FilterName, string[]> & { q?: string; sort?: Sort };
 
 export const SEARCH_PARAM = "q";
-// El largo máximo que acepta la API: lo que sobra se corta en vez de dar error.
+// El largo máximo que acepta la API (MAX_SEARCH_LENGTH en catalog/schemas.py, y
+// maxLength de `q` en el OpenAPI): lo que sobra se corta en vez de dar error.
 export const MAX_SEARCH_LENGTH = 100;
 
 export type SearchParams = Record<string, string | string[] | undefined>;
@@ -59,7 +60,7 @@ export function hasFilters(listing: Listing): boolean {
 export function listingHref(pathname: string, listing: Listing, pages = 1): string {
   const query = new URLSearchParams();
   if (listing.q) query.set(SEARCH_PARAM, listing.q);
-  for (const [name, value] of searchFields(listing)) query.append(name, value);
+  for (const [name, value] of filterAndSortFields(listing)) query.append(name, value);
   if (pages > 1) query.set(PAGES_PARAM, String(pages));
   const search = query.toString();
   return search ? `${pathname}?${search}` : pathname;
@@ -92,7 +93,7 @@ export function withoutSearch(listing: Listing): Listing {
  * filtros y orden, para que buscar no los pierda. Sin `paginas`: una búsqueda nueva
  * arranca en la primera página.
  */
-export function searchFields(listing: Listing): [string, string][] {
+export function filterAndSortFields(listing: Listing): [string, string][] {
   const fields: [string, string][] = [];
   for (const name of FILTERS) for (const value of listing[name]) fields.push([name, value]);
   if (listing.sort && listing.sort !== "manual") fields.push(["sort", listing.sort]);
