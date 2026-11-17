@@ -13,7 +13,7 @@ export default async function AdminLoginPage({
   const [{ next }, store] = await Promise.all([searchParams, getStore()]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]">
+    <div className="flex min-h-dvh flex-col bg-panel">
       <DiagonalBand className="h-3 shrink-0" />
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-6">
         <div className="flex flex-col items-center gap-3 text-center">

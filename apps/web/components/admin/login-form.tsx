@@ -52,7 +52,7 @@ export function LoginForm({ next }: { next: string | null }) {
   return (
     <form
       onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-col gap-4 bg-surface px-5 py-6 shadow-[0_8px_24px_rgb(110_18_25/0.12)]"
+      className="flex flex-col gap-4 bg-surface px-5 py-6 shadow-[0_8px_24px_color-mix(in_srgb,var(--color-accent)_12%,transparent)]"
     >
       <Label>
         {t("admin.login.email")}

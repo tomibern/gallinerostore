@@ -18,6 +18,8 @@
   --color-on-accent-muted: #c9c9cf;
   --color-ok: #1f7a3d;
   --color-error: #c62828;
+  /* Fondo del panel del admin: un tinte del primario de la marca. */
+  --color-panel: color-mix(in srgb, var(--color-primary) 8%, white);
   --font-display: system-ui, sans-serif;
   --font-body: system-ui, sans-serif;
 }

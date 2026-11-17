@@ -70,6 +70,5 @@ async def log_out(
     token: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> None:
     """Corta la sesión (si había) y borra la cookie."""
-    if token:
-        await service.log_out(session, token)
+    await service.log_out(session, token)
     clear_session_cookie(request, response)

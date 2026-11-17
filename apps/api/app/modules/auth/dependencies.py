@@ -7,7 +7,7 @@ anti-CSRF.
   sitio no puede mandar headers propios; con ``SameSite=Lax``, alcanza.
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Cookie, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,32 +21,35 @@ SESSION_COOKIE = "admin_session"
 CSRF_HEADER = "X-Requested-With"
 
 
+def _cookie_options(request: Request) -> dict[str, Any]:
+    """Cookie httpOnly del mismo sitio (ADR 0003), segura cuando el sitio va por HTTPS."""
+    return {
+        "path": "/",
+        "httponly": True,
+        "samesite": "lax",
+        "secure": get_settings(request).site_url.startswith("https://"),
+    }
+
+
 def set_session_cookie(
     request: Request, response: Response, open_session: service.OpenSession
 ) -> None:
-    """Cookie httpOnly del mismo sitio (ADR 0003). Sin «Mantener la sesión» es de sesión
-    del navegador; con el tilde, dura lo mismo que la sesión. Segura cuando el sitio va
-    por HTTPS."""
+    """Sin «Mantener la sesión» es una cookie de sesión del navegador; con el tilde, dura lo
+    mismo que la sesión."""
     response.set_cookie(
         SESSION_COOKIE,
         open_session.token,
         max_age=(
             int(service.PERSISTENT_SESSION_TTL.total_seconds()) if open_session.persistent else None
         ),
-        path="/",
-        httponly=True,
-        samesite="lax",
-        secure=get_settings(request).site_url.startswith("https://"),
+        **_cookie_options(request),
     )
 
 
 def clear_session_cookie(request: Request, response: Response) -> None:
     response.delete_cookie(
         SESSION_COOKIE,
-        path="/",
-        httponly=True,
-        samesite="lax",
-        secure=get_settings(request).site_url.startswith("https://"),
+        **_cookie_options(request),
     )
 
 

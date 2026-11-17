@@ -116,8 +116,10 @@ async def current_session(session: AsyncSession, token: str, now: datetime) -> O
     return OpenSession(admin.email, token, admin_session.persistent, admin_session.expires_at)
 
 
-async def log_out(session: AsyncSession, token: str) -> None:
-    """Corta la sesión de ese token, si existe."""
+async def log_out(session: AsyncSession, token: str | None) -> None:
+    """Corta la sesión de ese token, si había una."""
+    if not token:
+        return
     found = await repository.session_by_token_hash(session, _token_hash(token))
     if found is not None:
         await repository.delete_session(session, found[0].id)

@@ -117,7 +117,7 @@ export function AdminShell({
 
   return (
     <AdminContext.Provider value={session.admin}>
-      <div className="flex min-h-dvh bg-bg md:bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]">
+      <div className="flex min-h-dvh bg-bg md:bg-panel">
         {/* Escritorio: barra lateral */}
         <aside className="hidden w-60 shrink-0 flex-col gap-1 bg-accent py-5 text-on-accent-muted md:flex">
           <div className="flex items-center gap-2.5 px-4 pb-5">
@@ -150,7 +150,7 @@ export function AdminShell({
             target="_blank"
             className="flex min-h-12 items-center px-4 font-semibold hover:text-on-accent"
           >
-            {t("admin.nav.store")} ↗
+            {t("admin.nav.store")} <span aria-hidden="true">↗</span>
           </Link>
           <LogOutButton className="flex min-h-12 items-center px-4 text-left font-semibold hover:text-on-accent" />
         </aside>
