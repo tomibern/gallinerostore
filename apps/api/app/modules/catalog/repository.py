@@ -205,6 +205,7 @@ async def published_product_by_code(
         .options(
             selectinload(Product.images),
             selectinload(Product.sizes).joinedload(ProductSize.size),
+            selectinload(Product.story_items),
             joinedload(Product.category),
             joinedload(Product.collection),
             joinedload(Product.version),
@@ -321,7 +322,11 @@ async def products_with_slug(session: AsyncSession, slug: str) -> Sequence[Produ
     stmt = (
         select(Product)
         .where(Product.slug == slug)
-        .options(selectinload(Product.sizes), selectinload(Product.tags))
+        .options(
+            selectinload(Product.sizes),
+            selectinload(Product.tags),
+            selectinload(Product.story_items),
+        )
     )
     return (await session.scalars(stmt)).all()
 

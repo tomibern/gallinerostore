@@ -106,6 +106,15 @@ price = 2100000
 tags = ["alternativa"]
 sizes = { S = true, M = true, L = true, XL = true }
 photos = 3
+# Historia intercalada a propósito: el detalle la devuelve por tipo y, dentro
+# del tipo, en este orden.
+story = [
+  { kind = "fun_fact", title = "Se diseñó en una servilleta", body = "Y la servilleta se perdió." },
+  { kind = "milestone", year = 2001, title = "Primer campeonato", body = "Ganó de visitante." },
+  { kind = "stat", title = "3", body = "títulos" },
+  { kind = "milestone", year = 1999, title = "Debut", body = "Se estrenó en un amistoso." },
+  { kind = "stat", title = "120", body = "partidos" },
+]
 
 [[products]]
 slug = "campera-en-stock"

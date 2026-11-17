@@ -23,8 +23,10 @@ from app.modules.catalog.models import (
     ProductImage,
     ProductSize,
     ProductStatus,
+    ProductStoryItem,
     SaleMode,
     Size,
+    StoryItemKind,
     Tag,
     Version,
 )
@@ -64,6 +66,13 @@ class TagSeed(BaseModel):
     slug: str
 
 
+class StoryItemSeed(BaseModel):
+    kind: StoryItemKind
+    year: int | None = None
+    title: str
+    body: str | None = None
+
+
 class ProductSeed(BaseModel):
     # En el seed el slug identifica al producto (todavía no tiene código).
     slug: str
@@ -84,6 +93,8 @@ class ProductSeed(BaseModel):
     sizes: dict[str, bool] = {}
     # Fotos de prueba que se generan si el producto no tiene ninguna (para ver la galería).
     photos: int = Field(default=1, ge=1)
+    # Historia del producto, en orden de carga (el detalle la agrupa por tipo).
+    story: list[StoryItemSeed] = []
 
 
 class CatalogSeed(BaseModel):
@@ -121,6 +132,7 @@ async def apply_seed(
     _check_categories(seed.categories)
     _check_single_default_collection(seed.collections)
     _check_on_order_sizes(seed.products)
+    _check_story_items(seed.products)
 
     lookups = SeedLookups(sizes=await _upsert_sizes(session, seed.sizes))
     for position, category in enumerate(seed.categories):
@@ -164,6 +176,15 @@ def _check_on_order_sizes(products: list[ProductSeed]) -> None:
             service.check_on_order_sizes(product.slug, product.sale_mode, product.sizes.keys())
         except service.OnOrderWithSizesError as error:
             raise SeedError(str(error)) from error
+
+
+def _check_story_items(products: list[ProductSeed]) -> None:
+    for product in products:
+        for item in product.story:
+            try:
+                service.check_story_item(product.slug, item.kind, item.year, item.body)
+            except service.IncompleteMilestoneError as error:
+                raise SeedError(str(error)) from error
 
 
 def _check_single_default_collection(collections: list[CollectionSeed]) -> None:
@@ -272,6 +293,17 @@ async def _upsert_product(
             size_id=_resolve_size(lookups, category, label, seed.slug).id, in_stock=in_stock
         )
         for label, in_stock in seed.sizes.items()
+    ]
+    # Se reemplaza entera: repetir el seed no duplica y el orden es el del archivo.
+    product.story_items = [
+        ProductStoryItem(
+            kind=item.kind,
+            year=item.year,
+            title=item.title,
+            body=item.body,
+            sort_order=position,
+        )
+        for position, item in enumerate(seed.story)
     ]
     await repository.flush(session)
     if not await repository.has_images(session, product.id):

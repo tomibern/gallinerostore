@@ -11,9 +11,11 @@ from app.modules.catalog.models import (
     Category,
     Product,
     ProductImage,
+    ProductStoryItem,
     SaleMode,
     Section,
     SizeStatus,
+    StoryItemKind,
     Version,
 )
 from app.modules.catalog.repository import Filter, ListingQuery
@@ -28,6 +30,7 @@ from app.modules.catalog.schemas import (
     ProductList,
     ProductListItem,
     ProductSizeOut,
+    StoryItemOut,
 )
 from app.modules.settings import service as settings_service
 from app.modules.settings.models import MessageCase
@@ -49,6 +52,20 @@ def check_category_depth(slug: str, depth: int) -> None:
         raise CategoryTooDeepError(
             f"La categoría «{slug}» quedaría en el nivel {depth}: "
             f"las categorías admiten como máximo dos niveles."
+        )
+
+
+class IncompleteMilestoneError(ValueError):
+    """Un hito de la historia necesita año y anécdota: se muestra con año y título y,
+    al darse vuelta, cuenta la anécdota."""
+
+
+def check_story_item(slug: str, kind: StoryItemKind, year: int | None, body: str | None) -> None:
+    """Valida un ítem de la historia. El admin la va a reusar al cargar la historia."""
+    if kind is StoryItemKind.MILESTONE and (year is None or not body):
+        raise IncompleteMilestoneError(
+            f"Un hito de «{slug}» no tiene año o anécdota: un hito muestra el año y el "
+            f"título, y al darse vuelta cuenta la anécdota."
         )
 
 
@@ -246,6 +263,19 @@ async def _size_statuses(
     ]
 
 
+# Orden de los tipos en la sección: el de declaración del enum.
+_STORY_KIND_ORDER = {kind: position for position, kind in enumerate(StoryItemKind)}
+
+
+def _story_out(items: Sequence[ProductStoryItem]) -> list[StoryItemOut]:
+    """La historia agrupada por tipo; dentro del tipo, en el orden en que llega."""
+    ordered = sorted(items, key=lambda item: _STORY_KIND_ORDER[item.kind])
+    return [
+        StoryItemOut(kind=item.kind, year=item.year, title=item.title, body=item.body)
+        for item in ordered
+    ]
+
+
 async def published_product(
     session: AsyncSession, store: StoreConfig, media_base_url: str, site_url: str, code: str
 ) -> ProductDetail | None:
@@ -287,4 +317,5 @@ async def published_product(
         images=[_image_out(image, media_base_url) for image in product.images],
         sizes=sizes,
         on_order_notice=contact.on_order_notice if section is Section.ON_ORDER else None,
+        story=_story_out(product.story_items) if features.product_story else [],
     )
