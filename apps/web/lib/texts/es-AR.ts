@@ -132,6 +132,34 @@ export const esAR = {
   "notFound.title": "No encontramos esta página",
   "notFound.text": "Puede que el producto ya no esté publicado o que el link esté mal escrito.",
   "notFound.sections": "Seguí recorriendo",
+
+  // Panel del admin
+  "admin.meta.title": "Panel",
+  "admin.panel.label": "Panel",
+  "admin.unavailable": "No pudimos conectar con el panel. Revisá tu conexión y probá de nuevo.",
+  "admin.retry": "Probar de nuevo",
+  "admin.nav.label": "Secciones del panel",
+  "admin.nav.products": "Productos",
+  "admin.nav.metrics": "Métricas",
+  "admin.nav.content": "Contenido y ajustes",
+  "admin.nav.contentShort": "Contenido",
+  "admin.nav.store": "Ver tienda",
+  "admin.nav.logOut": "Cerrar sesión",
+  "admin.empty": "Todavía no hay nada acá.",
+  "admin.account.title": "Cuenta",
+  "admin.account.signedInAs": "Entraste como {email}.",
+
+  // Login del admin
+  "admin.login.title": "Panel de {store}",
+  "admin.login.subtitle": "Solo para el administrador",
+  "admin.login.email": "Email",
+  "admin.login.password": "Contraseña",
+  "admin.login.remember": "Mantener la sesión iniciada en este dispositivo",
+  "admin.login.submit": "Entrar",
+  "admin.login.submitting": "Entrando…",
+  "admin.login.invalid": "Email o contraseña incorrectos.",
+  "admin.login.tooMany": "Demasiados intentos. Esperá 15 minutos y probá de nuevo.",
+  "admin.login.error": "No pudimos conectar. Revisá tu conexión y probá de nuevo.",
 } as const satisfies Record<string, string>;
 
 export type TextKey = keyof typeof esAR;

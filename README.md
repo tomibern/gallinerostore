@@ -62,6 +62,8 @@ make seed
 
 Se puede correr las veces que haga falta: actualiza lo que ya existe sin duplicar. Cada producto sin fotos recibe una imagen de prueba, subida al almacenamiento y servida en `/media`.
 
+Si `.env` tiene `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` (están en `.env.example`), el seed también crea un admin de prueba para entrar al panel en <http://localhost:3000/admin>. El e2e entra con él.
+
 Con `make dev` y `make seed` corriendo, el test de punta a punta (Playwright, escritorio y celular):
 
 ```bash
@@ -75,7 +77,7 @@ LISTING_PAGE_SIZE=3 RATE_LIMIT_ENABLED=false E2E_ENDPOINTS=true make dev
 ```
 
 - `LISTING_PAGE_SIZE` (de 1 a 20; 20 por defecto): los tests del scroll infinito necesitan más de una página de productos, y el seed tiene pocos.
-- `RATE_LIMIT_ENABLED=false`: todo el e2e sale de la misma IP y pasaría el límite de frecuencia de los eventos.
+- `RATE_LIMIT_ENABLED=false`: todo el e2e sale de la misma IP y pasaría el límite de frecuencia de los eventos y el de intentos fallidos de login.
 - `E2E_ENDPOINTS=true`: habilita `GET /e2e/events`, con el que el e2e verifica que una visita y una consulta quedaron guardadas. Nunca en producción.
 
 La primera vez hay que bajar el navegador: `npx playwright install chromium`.

@@ -91,6 +91,10 @@ class Settings(BaseSettings):
     # Endpoints de solo lectura para verificar los e2e (por ejemplo, los eventos de una
     # sesión). Nunca en producción.
     e2e_endpoints: bool = False
+    # Admin de prueba que crea el seed de desarrollo. Nunca en producción: la cuenta real
+    # se crea con su propio comando.
+    seed_admin_email: str | None = None
+    seed_admin_password: str | None = None
     store_config_path: Path = REPO_ROOT / "config" / "store.toml"
     seed_path: Path = REPO_ROOT / "config" / "seed.toml"
 
