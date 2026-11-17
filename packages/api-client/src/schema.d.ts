@@ -103,10 +103,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Current Admin
+         * @description El admin de la sesión actual.
+         */
+        get: operations["current_admin_admin_session_get"];
+        put?: never;
+        /**
+         * Log In
+         * @description Abre una sesión y pone la cookie. El error no dice si falló el email o la contraseña.
+         */
+        post: operations["log_in_admin_session_post"];
+        /**
+         * Log Out
+         * @description Corta la sesión (si había) y borra la cookie.
+         */
+        delete: operations["log_out_admin_session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminOut */
+        AdminOut: {
+            /** Email */
+            email: string;
+        };
         /**
          * Availability
          * @description Disponibilidad del producto de cara al cliente, ya calculada.
@@ -304,6 +337,19 @@ export interface components {
              * @description WhatsApp: wa.me con el mensaje en el texto. Instagram: el chat (ig.me) sin texto, porque no lo acepta; el mensaje se muestra aparte para copiarlo.
              */
             url: string;
+        };
+        /** LoginIn */
+        LoginIn: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /**
+             * Remember
+             * @description «Mantener la sesión iniciada»: 30 días renovables en vez de hasta cerrar el navegador.
+             * @default false
+             */
+            remember: boolean;
         };
         /** NamedRef */
         NamedRef: {
@@ -812,6 +858,124 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    current_admin_admin_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOut"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_in_admin_session_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOut"];
+                };
+            };
+            /** @description Email o contraseña incorrectos. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Demasiados intentos fallidos: hay que esperar 15 minutos. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    log_out_admin_session_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

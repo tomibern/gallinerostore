@@ -15,6 +15,7 @@ from app.core.config import REPO_ROOT, Settings, get_store_config
 from app.core.db import get_session
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
+from app.modules.auth.login_attempts import login_attempts
 from app.modules.catalog.seed import apply_seed, load_seed
 from app.modules.events.rate_limit import limiter
 from app.modules.settings.seed import SettingsSeed, apply_settings_seed, load_settings_seed
@@ -92,12 +93,15 @@ async def app(settings: Settings) -> AsyncIterator[FastAPI]:
 
 @pytest.fixture(autouse=True)
 def rate_limit() -> Iterator[None]:
-    """El límite de frecuencia guarda sus contadores en el proceso: cada test arranca
-    con el cupo entero y con el límite prendido."""
+    """Los límites de frecuencia (eventos e intentos de login) guardan sus contadores en
+    el proceso: cada test arranca con el cupo entero y con los límites prendidos."""
     limiter.reset()
+    login_attempts.reset()
     yield
     limiter.enabled = True
     limiter.reset()
+    login_attempts.enabled = True
+    login_attempts.reset()
 
 
 @pytest.fixture

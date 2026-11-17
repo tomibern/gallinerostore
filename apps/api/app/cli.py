@@ -1,7 +1,8 @@
 """Tareas de mantenimiento: ``uv run python -m app.cli <comando>``.
 
 - ``ensure-bucket``: crea el bucket de imágenes si no existe y le da lectura pública.
-- ``seed``: carga los datos iniciales del cliente (idempotente).
+- ``seed``: carga los datos iniciales del cliente (idempotente) y, en desarrollo, el
+  admin de prueba de ``SEED_ADMIN_EMAIL`` y ``SEED_ADMIN_PASSWORD``.
 - ``openapi``: imprime el OpenAPI de la API (lo usa ``make gen-client``).
 """
 
@@ -15,6 +16,7 @@ from app.core.config import Settings
 from app.core.db import create_engine
 from app.core.storage import ObjectStorage, allow_public_read, create_s3_client, ensure_bucket
 from app.main import create_app
+from app.modules.auth.service import ensure_admin
 from app.modules.catalog.seed import apply_seed, load_seed
 from app.modules.settings.seed import (
     apply_home_slides_seed,
@@ -55,6 +57,12 @@ async def _seed(settings: Settings) -> None:
             if skipped:
                 blocks = ", ".join(sorted(skipped))
                 print(f"Bloques de la home con fotos, no se modificaron: {blocks}")
+            if settings.seed_admin_email and settings.seed_admin_password:
+                created = await ensure_admin(
+                    session, settings.seed_admin_email, settings.seed_admin_password
+                )
+                state = "creado" if created else "ya existía, no se modificó"
+                print(f"Admin de prueba {settings.seed_admin_email}: {state}")
     finally:
         await engine.dispose()
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")

@@ -31,6 +31,7 @@ DISCOVERY_TABLES = {
     "events",
     "settings",
     "admins",
+    "admin_sessions",
 }
 
 

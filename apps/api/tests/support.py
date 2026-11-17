@@ -12,7 +12,7 @@ from app.main import create_app
 
 def http_client(app: FastAPI) -> httpx.AsyncClient:
     """Cliente HTTP que le habla a la app en memoria, como lo haría la web."""
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test")
 
 
 @asynccontextmanager
