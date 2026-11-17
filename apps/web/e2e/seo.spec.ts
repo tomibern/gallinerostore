@@ -119,6 +119,84 @@ test.describe("títulos por página", () => {
   });
 });
 
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Lo que queda en el <head> después de que corre el JS (#55). El HTML del servidor
+// ya trae el título correcto y el navegador puede pisarlo al renderizar: por eso
+// se espera al <h1> del 404, que lo dibuja el render del cliente, y se compara
+// contra sus textos (los mismos del diccionario que usa la metadata del 404).
+async function expectNotFoundHead(page: Page, storeName: string) {
+  const main = page.getByRole("main");
+  const heading = main.getByRole("heading", { level: 1 });
+  await expect(heading).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  const title = (await heading.textContent())!;
+  const text = (await main.locator("h1 + p").textContent())!;
+
+  await expect(page).not.toHaveTitle(storeName);
+  await expect(page).toHaveTitle(
+    new RegExp(`^${escapeRegExp(title)}.*${escapeRegExp(storeName)}$`),
+  );
+  const description = page.locator('head meta[name="description"]');
+  await expect(description).toHaveCount(1);
+  await expect(description).toHaveAttribute("content", text);
+  await expect(page.locator('head meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+}
+
+test.describe("títulos en el navegador", () => {
+  for (const path of ["/p/no-existe-999", "/no-existe/tampoco"]) {
+    test(`${path} conserva título y descripción del 404 después de hidratar`, async ({
+      page,
+      request,
+    }) => {
+      const store = (await (await request.get("/api/store")).json()) as ApiStore;
+
+      const response = await page.goto(path);
+
+      expect(response?.status()).toBe(404);
+      await expectNotFoundHead(page, store.name);
+    });
+  }
+
+  test("navegar del lado del cliente a una URL inexistente muestra el título del 404", async ({
+    page,
+    request,
+  }) => {
+    const store = (await (await request.get("/api/store")).json()) as ApiStore;
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // window.next.router no es API pública, pero es la única forma de navegar
+    // sin recargar a una URL que ningún link de la tienda apunta.
+    await page.evaluate(() =>
+      (window as unknown as { next: { router: { push(href: string): void } } }).next.router.push(
+        "/no-existe/tampoco",
+      ),
+    );
+
+    await expect(page).toHaveURL("/no-existe/tampoco");
+    await expectNotFoundHead(page, store.name);
+  });
+
+  test("el detalle de un producto conserva su título después de hidratar", async ({
+    page,
+    request,
+  }) => {
+    const [code] = await publishedCodes(request);
+    const product = (await (
+      await request.get(`/api/products/${code.toLowerCase()}`)
+    ).json()) as ApiDetail;
+
+    await page.goto(`/p/${code.toLowerCase()}`);
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(product.name);
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveTitle(new RegExp(`^${escapeRegExp(product.name)}`));
+  });
+});
+
 test.describe("sitemap y robots", () => {
   // No dependen del dispositivo: alcanza con correrlos una vez.
   test.skip(({ isMobile }) => isMobile, "igual en celular y escritorio");
