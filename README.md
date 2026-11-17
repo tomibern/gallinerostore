@@ -68,11 +68,15 @@ Con `make dev` y `make seed` corriendo, el test de punta a punta (Playwright, es
 make e2e
 ```
 
-Los tests del scroll infinito necesitan más de una página de productos, y el seed tiene pocos. Para que no se salteen, levantá la web con páginas más chicas (`LISTING_PAGE_SIZE`, de 1 a 20; 20 por defecto):
+Para que ningún test se saltee, levantá todo así:
 
 ```bash
-LISTING_PAGE_SIZE=3 make dev
+LISTING_PAGE_SIZE=3 RATE_LIMIT_ENABLED=false E2E_ENDPOINTS=true make dev
 ```
+
+- `LISTING_PAGE_SIZE` (de 1 a 20; 20 por defecto): los tests del scroll infinito necesitan más de una página de productos, y el seed tiene pocos.
+- `RATE_LIMIT_ENABLED=false`: todo el e2e sale de la misma IP y pasaría el límite de frecuencia de los eventos.
+- `E2E_ENDPOINTS=true`: habilita `GET /e2e/events`, con el que el e2e verifica que una visita y una consulta quedaron guardadas. Nunca en producción.
 
 La primera vez hay que bajar el navegador: `npx playwright install chromium`.
 
