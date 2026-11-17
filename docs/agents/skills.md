@@ -22,7 +22,7 @@ Sin `/clear` ni `/compact` hasta terminar los tickets: el grill, la spec y los t
 
 6. Por cada ticket libre de bloqueos, una **sesión nueva** con **`/implement #N`**. Esa misma sesión:
    - crea la rama `feat/<n>-<slug>` desde `main`;
-   - construye con **`/tdd`** en las costuras acordadas en la spec;
+   - construye todo el ticket y recién al final escribe sus tests, una sola vez, en las costuras acordadas en la spec;
    - cierra con **`/code-review`** (estándares y spec) y corrige lo que encuentre;
    - corre `make lint`, `make test` (y `make e2e` si toca la web), commitea por funcionalidad y abre la PR con **`/pr`** y `Closes #N`.
 7. La persona revisa la PR y la mergea. Los tickets sin bloqueos entre sí pueden ir en sesiones paralelas.
