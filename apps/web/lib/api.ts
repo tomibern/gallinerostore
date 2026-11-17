@@ -17,6 +17,7 @@ import {
   type ProductList,
   type ProductListItem,
   type PublicStore,
+  type StoryItemOut,
 } from "@catalog/api-client";
 
 import { apiInternalUrl } from "./env";
@@ -36,6 +37,7 @@ export type {
   ProductList,
   ProductListItem,
   PublicStore,
+  StoryItemOut,
 };
 export type Section = ProductListItem["section"];
 export type Availability = ProductListItem["availability"];

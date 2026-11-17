@@ -1,6 +1,7 @@
-// Filtros, orden y páginas del listado. Todo vive en la query string (así un
-// listado filtrado se comparte). Filtros y orden se pasan tal cual a GET /products;
-// `paginas` dice cuántas páginas cargó el navegador, para reconstruirlas al volver.
+// Búsqueda, filtros, orden y páginas del listado. Todo vive en la query string (así
+// un listado filtrado se comparte). Búsqueda, filtros y orden se pasan tal cual a
+// GET /products; `paginas` dice cuántas páginas cargó el navegador, para
+// reconstruirlas al volver.
 
 import type { Schemas } from "@catalog/api-client";
 
@@ -17,7 +18,12 @@ export const SORTS = [
   "price_desc",
 ] as const satisfies readonly Sort[];
 
-export type Listing = Record<FilterName, string[]> & { sort?: Sort };
+export type Listing = Record<FilterName, string[]> & { q?: string; sort?: Sort };
+
+export const SEARCH_PARAM = "q";
+// El largo máximo que acepta la API (MAX_SEARCH_LENGTH en catalog/schemas.py, y
+// maxLength de `q` en el OpenAPI): lo que sobra se corta en vez de dar error.
+export const MAX_SEARCH_LENGTH = 100;
 
 export type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -26,10 +32,13 @@ function toArray(value: string | string[] | undefined): string[] {
   return Array.isArray(value) ? value : [value];
 }
 
-/** Lo que pide la URL. Un orden desconocido se descarta (no rompe el listado). */
+/** Lo que pide la URL. Un orden desconocido se descarta y una búsqueda vacía no
+ * cuenta (no rompen el listado). */
 export function parseListing(params: SearchParams): Listing {
   const sort = SORTS.find((s) => s === toArray(params.sort)[0]);
+  const q = toArray(params[SEARCH_PARAM])[0]?.trim().slice(0, MAX_SEARCH_LENGTH);
   return {
+    ...(q && { q }),
     category: toArray(params.category),
     version: toArray(params.version),
     collection: toArray(params.collection),
@@ -50,8 +59,8 @@ export function hasFilters(listing: Listing): boolean {
  */
 export function listingHref(pathname: string, listing: Listing, pages = 1): string {
   const query = new URLSearchParams();
-  for (const name of FILTERS) for (const value of listing[name]) query.append(name, value);
-  if (listing.sort && listing.sort !== "manual") query.set("sort", listing.sort);
+  if (listing.q) query.set(SEARCH_PARAM, listing.q);
+  for (const [name, value] of filterAndSortFields(listing)) query.append(name, value);
   if (pages > 1) query.set(PAGES_PARAM, String(pages));
   const search = query.toString();
   return search ? `${pathname}?${search}` : pathname;
@@ -70,8 +79,25 @@ export function withSort(listing: Listing, sort: Sort): Listing {
   return { ...listing, sort };
 }
 
+/** Saca los filtros; la búsqueda y el orden quedan. */
 export function withoutFilters(listing: Listing): Listing {
-  return { ...parseListing({}), sort: listing.sort };
+  return { ...parseListing({}), q: listing.q, sort: listing.sort };
+}
+
+export function withoutSearch(listing: Listing): Listing {
+  return { ...listing, q: undefined };
+}
+
+/**
+ * Lo que el formulario de búsqueda manda además de `q` (como campos ocultos):
+ * filtros y orden, para que buscar no los pierda. Sin `paginas`: una búsqueda nueva
+ * arranca en la primera página.
+ */
+export function filterAndSortFields(listing: Listing): [string, string][] {
+  const fields: [string, string][] = [];
+  for (const name of FILTERS) for (const value of listing[name]) fields.push([name, value]);
+  if (listing.sort && listing.sort !== "manual") fields.push(["sort", listing.sort]);
+  return fields;
 }
 
 // --- Páginas ------------------------------------------------------------------

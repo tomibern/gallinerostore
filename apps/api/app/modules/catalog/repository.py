@@ -56,12 +56,14 @@ class Filter(StrEnum):
 @dataclass(frozen=True)
 class ListingQuery:
     """Qué productos publicados se listan. Los filtros ya vienen limpios (el service
-    saca los que no aplican); un filtro sin valores no filtra."""
+    saca los que no aplican); un filtro sin valores no filtra. ``search`` son las
+    palabras que se buscan: todas tienen que aparecer, en el nombre o en el código."""
 
     section: Section | None
     sold_out_goes_on_order: bool
     featured: bool = False
     filters: Mapping[Filter, Sequence[str]] = field(default_factory=dict)
+    search: Sequence[str] = ()
 
 
 def _facet_model(facet: Filter) -> type[Version | Collection | Tag]:
@@ -106,8 +108,25 @@ def _filter_condition(name: Filter, values: Sequence[str]) -> ColumnElement[bool
             )
 
 
+def _escape_like(text: str) -> str:
+    """El texto tal cual dentro de un patrón de LIKE: sin comodines."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _search_condition(word: str) -> ColumnElement[bool]:
+    """La palabra en el nombre o en el código, sin distinguir mayúsculas ni acentos."""
+    pattern = func.unaccent(f"%{_escape_like(word)}%")
+    return or_(
+        *(
+            func.unaccent(column).ilike(pattern, escape="\\")
+            for column in (Product.name, Product.code)
+        )
+    )
+
+
 def _conditions(query: ListingQuery, *, skip: Filter | None = None) -> list[ColumnElement[bool]]:
-    """Publicado, de la sección, destacado si se pide y con cada filtro (se cruzan: Y).
+    """Publicado, de la sección, destacado si se pide, con cada filtro y cada palabra
+    de la búsqueda (se cruzan: Y).
     ``skip`` deja uno afuera: cada faceta se cuenta sin su propio filtro, para poder
     sumar valores."""
     conditions: list[ColumnElement[bool]] = [Product.status == ProductStatus.PUBLISHED]
@@ -121,6 +140,7 @@ def _conditions(query: ListingQuery, *, skip: Filter | None = None) -> list[Colu
         for name, values in query.filters.items()
         if values and name is not skip
     )
+    conditions.extend(_search_condition(word) for word in query.search)
     return conditions
 
 
@@ -185,6 +205,7 @@ async def published_product_by_code(
         .options(
             selectinload(Product.images),
             selectinload(Product.sizes).joinedload(ProductSize.size),
+            selectinload(Product.story_items),
             joinedload(Product.category),
             joinedload(Product.collection),
             joinedload(Product.version),
@@ -301,7 +322,11 @@ async def products_with_slug(session: AsyncSession, slug: str) -> Sequence[Produ
     stmt = (
         select(Product)
         .where(Product.slug == slug)
-        .options(selectinload(Product.sizes), selectinload(Product.tags))
+        .options(
+            selectinload(Product.sizes),
+            selectinload(Product.tags),
+            selectinload(Product.story_items),
+        )
     )
     return (await session.scalars(stmt)).all()
 

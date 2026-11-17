@@ -2,12 +2,20 @@
 
 from pydantic import BaseModel, Field
 
-from app.modules.catalog.models import Availability, ProductSort, Section, SizeStatus
+from app.modules.catalog.models import (
+    Availability,
+    ProductSort,
+    Section,
+    SizeStatus,
+    StoryItemKind,
+)
 from app.modules.settings.schemas import Inquiry
 
 # Productos por página del listado, y el tope de seguridad de un pedido.
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
+# Largo máximo del texto que se busca.
+MAX_SEARCH_LENGTH = 100
 
 
 class ImageOut(BaseModel):
@@ -34,7 +42,7 @@ class ProductListItem(BaseModel):
 
 
 class ProductFilters(BaseModel):
-    """Query string del listado: filtros, orden y página. Varios valores de un filtro
+    """Query string del listado: búsqueda, filtros, orden y página. Varios valores de un filtro
     se suman (O) y filtros distintos se cruzan (Y). Un filtro que no aplica se ignora
     y un valor que no existe deja el listado vacío, así un link compartido nunca da
     error. La página se pide con ``limit`` y ``offset`` sobre un orden estable."""
@@ -59,6 +67,14 @@ class ProductFilters(BaseModel):
         description=(
             "Etiquetas de talle disponible (en cualquier grupo de talles). "
             "Solo filtra en la sección En stock."
+        ),
+    )
+    q: str | None = Field(
+        default=None,
+        max_length=MAX_SEARCH_LENGTH,
+        description=(
+            "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. "
+            "Cada palabra tiene que aparecer en el nombre o en el código."
         ),
     )
     sort: ProductSort = Field(default=ProductSort.MANUAL, description="Orden del listado.")
@@ -127,6 +143,18 @@ class ProductSizeOut(BaseModel):
     )
 
 
+class StoryItemOut(BaseModel):
+    """Un ítem de la historia del producto. Cada tipo usa los campos a su manera:
+    un hito (una tarjeta) muestra año y título y, al darse vuelta, la anécdota en
+    ``body``; una cifra es el valor en ``title`` y su leyenda en ``body``; un dato
+    curioso es el dato en ``title``, seguido de ``body`` si lo tiene."""
+
+    kind: StoryItemKind
+    year: int | None = Field(description="Año del hito; null en cifras y datos curiosos.")
+    title: str
+    body: str | None
+
+
 class ProductDetail(BaseModel):
     code: str = Field(
         description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
@@ -155,5 +183,12 @@ class ProductDetail(BaseModel):
         description=(
             "Aviso de encargue que edita el admin. Solo en un encargue o un agotado que pasó "
             "a encargue, y null si no está cargado."
+        )
+    )
+    story: list[StoryItemOut] = Field(
+        description=(
+            "Historia del producto: hitos, después cifras y al final datos curiosos, cada "
+            "tipo en su orden de carga. Vacía si el producto no tiene o si la función "
+            "product_story está apagada (entonces la sección no se muestra)."
         )
     )

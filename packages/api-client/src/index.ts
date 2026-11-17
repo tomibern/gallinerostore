@@ -33,3 +33,5 @@ export type EventIn =
   | Schemas["ProductView"]
   | Schemas["ContactClick"]
   | Schemas["GeneralContactClick"];
+export type StoryItemOut = Schemas["StoryItemOut"];
+export type StoryItemKind = Schemas["StoryItemKind"];

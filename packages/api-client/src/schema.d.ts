@@ -387,6 +387,11 @@ export interface components {
              * @description Aviso de encargue que edita el admin. Solo en un encargue o un agotado que pasó a encargue, y null si no está cargado.
              */
             on_order_notice: string | null;
+            /**
+             * Story
+             * @description Historia del producto: hitos, después cifras y al final datos curiosos, cada tipo en su orden de carga. Vacía si el producto no tiene o si la función product_story está apagada (entonces la sección no se muestra).
+             */
+            story: components["schemas"]["StoryItemOut"][];
         };
         /**
          * ProductFacets
@@ -595,6 +600,31 @@ export interface components {
              */
             product_story: boolean;
         };
+        /**
+         * StoryItemKind
+         * @description Tipo de ítem de la historia del producto.
+         * @enum {string}
+         */
+        StoryItemKind: "milestone" | "stat" | "fun_fact";
+        /**
+         * StoryItemOut
+         * @description Un ítem de la historia del producto. Cada tipo usa los campos a su manera:
+         *     un hito (una tarjeta) muestra año y título y, al darse vuelta, la anécdota en
+         *     ``body``; una cifra es el valor en ``title`` y su leyenda en ``body``; un dato
+         *     curioso es el dato en ``title``, seguido de ``body`` si lo tiene.
+         */
+        StoryItemOut: {
+            kind: components["schemas"]["StoryItemKind"];
+            /**
+             * Year
+             * @description Año del hito; null en cifras y datos curiosos.
+             */
+            year: number | null;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -674,6 +704,8 @@ export interface operations {
                 tag?: string[];
                 /** @description Etiquetas de talle disponible (en cualquier grupo de talles). Solo filtra en la sección En stock. */
                 size?: string[];
+                /** @description Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código. */
+                q?: string | null;
                 /** @description Orden del listado. */
                 sort?: components["schemas"]["ProductSort"];
                 /** @description Cuántos productos traer como máximo. */

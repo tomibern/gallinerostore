@@ -6,6 +6,7 @@ import { ProductGallery } from "@/components/store/product-gallery";
 import { caseLabels, instagramSheetLabels } from "@/components/store/inquiry-labels";
 import { ProductInquiry } from "@/components/store/product-inquiry";
 import { RecordView } from "@/components/store/record-view";
+import { ProductStory } from "@/components/store/product-story";
 import { getProduct, getStore, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { productMetadata, productPath } from "@/lib/seo";
@@ -31,7 +32,8 @@ function inquiryLabels() {
   };
 }
 
-// Detalle del producto: galería, datos, aviso de encargue, selector de talle y consulta.
+// Detalle del producto: galería, datos, aviso de encargue, selector de talle, consulta
+// e historia del producto.
 // El código en la URL va en minúsculas; en mayúsculas redirige (una sola URL por
 // producto). Si el producto no existe o no está publicado, la 404 de la tienda.
 export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
@@ -120,6 +122,17 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
           </dl>
         )}
       </div>
+
+      <ProductStory
+        story={product.story}
+        labels={{
+          title: t("product.story.title"),
+          hint: t("product.story.hint"),
+          milestones: t("product.story.milestones"),
+          stats: t("product.story.stats"),
+          funFact: t("product.story.funFact"),
+        }}
+      />
     </main>
   );
 }

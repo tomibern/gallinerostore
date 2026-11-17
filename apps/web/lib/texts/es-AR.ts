@@ -61,6 +61,11 @@ export const esAR = {
   "listing.count.one": "1 producto",
   "listing.count.other": "{count} productos",
   "listing.empty": "No hay productos con estos filtros.",
+  "listing.search.label": "Buscar en esta sección",
+  "listing.search.placeholder": "Buscar por nombre o código",
+  "listing.search.submit": "Buscar",
+  "listing.search.clear": "Borrar búsqueda",
+  "listing.search.empty": "No encontramos productos para «{q}».",
   "listing.loadMore": "Ver más",
   "listing.loading": "Cargando más productos…",
   "listing.loadError": "No se pudieron cargar más productos. Probá de nuevo.",
@@ -74,6 +79,10 @@ export const esAR = {
 
   // Producto
   "product.story.title": "Historia del producto",
+  "product.story.hint": "Tocá cada tarjeta para darla vuelta.",
+  "product.story.milestones": "Hitos",
+  "product.story.stats": "En números",
+  "product.story.funFact": "¿Sabías que…?",
   "product.unavailable": "No pudimos cargar el producto. Probá de nuevo en un rato.",
   "product.category": "Categoría",
   "product.version": "Versión",
