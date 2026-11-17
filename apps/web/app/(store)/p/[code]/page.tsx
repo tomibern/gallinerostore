@@ -14,6 +14,9 @@ import { t } from "@/lib/texts";
 
 export async function generateMetadata({ params }: PageProps<"/p/[code]">): Promise<Metadata> {
   const [store, result] = await Promise.all([getStore(), getProduct((await params).code)]);
+  // Igual que la página: sin esto, la metadata que viaja al navegador es la del
+  // layout y el 404 pierde su título al renderizar en el cliente (#55).
+  if (result.status === "not_found") notFound();
   if (result.status !== "ok") return {};
   return store ? productMetadata(result.product, store) : { title: result.product.name };
 }
