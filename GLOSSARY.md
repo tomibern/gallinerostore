@@ -53,14 +53,14 @@ Atributo libre, varios por producto (Titular, Alternativa, Arquero…), usado co
 Monto único por producto, en la moneda de la tienda. No varía por talle.
 
 **Destacado**:
-Producto que el admin elige mostrar en la home.
+Producto que el admin elige mostrar en la home, en el orden que él decide. Solo se ve si está publicado: ocultarlo mantiene la marca y el lugar; archivarlo se los quita.
 
 **Bloque de la home**:
 Sección de la home con título, texto y un carrusel de hasta 4 fotos. La tienda lo declara por clave en su configuración; los textos salen del diccionario y las fotos las carga el admin.
 _Evitar_: banner, slider
 
 **Estado**:
-Ciclo de vida del producto: borrador → publicado ↔ oculto → archivado. Solo un borrador se puede borrar; un producto que se publicó alguna vez se archiva.
+Ciclo de vida del producto: borrador → publicado ↔ oculto → archivado. Nada vuelve a borrador, así que un borrador es un producto que nunca se publicó: es lo único que se puede borrar. Un producto que se publicó alguna vez se archiva. Un archivado no está en la tienda; se puede desarchivar y vuelve como oculto.
 _Evitar_: visible/invisible
 
 **Código**:
@@ -89,6 +89,18 @@ Destino de una consulta: WhatsApp o Instagram, configurable por cliente.
 **Evento**:
 Registro anónimo de interés: visita a una página, visita al detalle de un producto, consulta o consulta general.
 _Evitar_: tracking, analytics (para esto)
+
+**Visita**:
+Una persona viendo una página o el detalle de un producto en un día: varias recargas de la misma sesión ese día son una sola visita. Las visitas del admin con su sesión iniciada no cuentan.
+_Evitar_: vista, impresión, página vista
+
+**Tasa de consulta**:
+Consultas de un producto dividido sus visitas al detalle, en un período.
+_Evitar_: conversión (la web no ve ventas)
+
+**Origen**:
+De dónde llegó la visita, según el `utm_source` del link (bio, historia…). Sin etiqueta, es «directo / otros».
+_Evitar_: fuente, referrer
 
 ## Sistema
 
