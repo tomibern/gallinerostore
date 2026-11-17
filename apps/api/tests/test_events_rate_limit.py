@@ -84,7 +84,7 @@ async def test_without_trusted_proxies_x_forwarded_for_is_ignored(
 
 
 async def test_invalid_events_do_not_use_up_the_limit(client: httpx.AsyncClient) -> None:
-    """slowapi cuenta después de validar el cuerpo; un 422 no guarda nada."""
+    """slowapi cuenta después de validar el cuerpo; un cuerpo inválido no guarda nada."""
     for _ in range(LIMIT):
         response = await client.post("/events", json={"type": "nada"})
         assert response.status_code == 422

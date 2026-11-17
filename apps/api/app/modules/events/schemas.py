@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from app.modules.events.models import Device, Page
+from app.modules.events.models import Device, EventType, Page
 from app.modules.settings.models import Channel
 
 # Al azar en el navegador: 16 bytes en hexadecimal. No identifica a nadie.
@@ -66,10 +66,10 @@ EventIn = Annotated[
 class EventOut(BaseModel):
     """Un evento guardado, para verificar los e2e."""
 
-    type: str
+    type: EventType
     product_code: str | None
     channel: Channel | None
     size: str | None
-    page: str | None
+    page: Page | None
     source: str | None
-    device: str | None
+    device: Device | None

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import StoreConfig
 from app.modules.catalog import service as catalog_service
 from app.modules.events import repository
-from app.modules.events.models import Event, EventType
+from app.modules.events.models import Device, Event, EventType, Page
 from app.modules.events.schemas import (
     ContactClick,
     EventIn,
@@ -64,9 +64,9 @@ async def for_session(session: AsyncSession, session_id: str) -> list[EventOut]:
             product_code=code,
             channel=event.channel,
             size=size,
-            page=event.page,
+            page=Page(event.page) if event.page else None,
             source=event.source,
-            device=event.device,
+            device=Device(event.device) if event.device else None,
         )
         for event, code, size in await repository.for_session(session, session_id)
     ]

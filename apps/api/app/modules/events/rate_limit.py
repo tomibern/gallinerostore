@@ -41,8 +41,8 @@ def client_ip(request: Request) -> str:
 
 # Todo explícito: slowapi también lee variables RATELIMIT_* del entorno y un .env del
 # directorio de trabajo. Los contadores viven en el proceso (un solo worker).
-# Cuenta después de validar el cuerpo: un evento inválido (422) no usa cupo, pero
-# tampoco guarda nada.
+# Cuenta después de validar el cuerpo: un cuerpo inválido (422 de validación) no usa
+# cupo, pero tampoco guarda nada. Un producto o talle inexistente (también 422) sí lo usa.
 limiter = Limiter(
     key_func=client_ip,
     storage_uri="memory://",
