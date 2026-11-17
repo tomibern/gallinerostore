@@ -146,16 +146,11 @@ test.describe("sitemap y robots", () => {
     }
   });
 
-  for (const path of ["/", "/stock", "/encargue"]) {
+  for (const path of ["/", "/stock", "/encargue", "/como-comprar"]) {
     test(`la página fija ${path} del sitemap existe`, async ({ request }) => {
       expect((await request.get(path)).status()).toBe(200);
     });
   }
-
-  // «Cómo comprar» la crea #32: hasta que se mergee, esta URL da 404.
-  test.fixme("la página fija /como-comprar del sitemap existe", async ({ request }) => {
-    expect((await request.get("/como-comprar")).status()).toBe(200);
-  });
 
   test("robots.txt excluye el admin y la API y apunta al sitemap", async ({ request }) => {
     const response = await request.get("/robots.txt");
