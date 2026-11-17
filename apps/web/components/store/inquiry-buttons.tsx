@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import type { Channel, Inquiry } from "@/lib/api";
-import { type EventFields, pageFromPath, trackEvent } from "@/lib/events";
+import { type EventFields, pageFromPath, recordEvent } from "@/lib/events";
 
 import { InstagramSheet, type InstagramSheetLabels } from "./instagram-sheet";
 
@@ -17,7 +17,7 @@ export type InquiryButtonsLabels = {
 
 // Qué consulta registrar al abrir el chat (datos, no una función: la consulta general
 // se arma en el servidor). Sin `page`, la consulta general toma la de la ruta.
-export type InquiryTrack =
+export type InquiryEvent =
   | Omit<Extract<EventFields, { type: "contact_click" }>, "channel">
   | (Omit<Extract<EventFields, { type: "general_contact_click" }>, "channel" | "page"> & {
       page?: Extract<EventFields, { type: "general_contact_click" }>["page"];
@@ -31,10 +31,8 @@ type Props = {
   // consultar y los botones quedan deshabilitados.
   inquiries: Inquiry[] | null;
   labels: InquiryButtonsLabels;
-  // Al abrir el chat de un canal (lo usa el registro de consultas).
-  onInquiry?: (channel: Channel) => void;
   // La consulta que se registra al abrir el chat (#34).
-  track?: InquiryTrack;
+  inquiryEvent?: InquiryEvent;
   // Siempre el nombre corto a la vista (donde falta lugar, como el pie); el
   // completo queda para lectores de pantalla.
   short?: boolean;
@@ -50,8 +48,7 @@ export function InquiryButtons({
   channels,
   inquiries,
   labels,
-  onInquiry,
-  track,
+  inquiryEvent,
   short = false,
 }: Props) {
   const [sheet, setSheet] = useState<Inquiry | null>(null);
@@ -60,11 +57,10 @@ export function InquiryButtons({
 
   // Cuenta al tocar el link que abre el chat, no al abrir la hoja de Instagram.
   const inquire = (channel: Channel) => {
-    if (track?.type === "contact_click") trackEvent({ ...track, channel });
-    if (track?.type === "general_contact_click") {
-      trackEvent({ ...track, channel, page: track.page ?? pageFromPath(pathname) });
+    if (inquiryEvent?.type === "contact_click") recordEvent({ ...inquiryEvent, channel });
+    if (inquiryEvent?.type === "general_contact_click") {
+      recordEvent({ ...inquiryEvent, channel, page: inquiryEvent.page ?? pageFromPath(pathname) });
     }
-    onInquiry?.(channel);
   };
 
   return (

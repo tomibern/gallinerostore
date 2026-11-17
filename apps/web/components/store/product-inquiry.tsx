@@ -81,7 +81,7 @@ export function ProductInquiry({ productCode, sizes, labels }: Props) {
         inquiries={size ? size.inquiries : null}
         status={size?.status}
         labels={{ ...labels.inquiry[size?.status ?? "idle"], sheet: labels.inquiry.sheet }}
-        track={
+        inquiryEvent={
           size ? { type: "contact_click", product_code: productCode, size: size.label } : undefined
         }
       />

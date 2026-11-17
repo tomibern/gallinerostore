@@ -33,7 +33,7 @@ export function GeneralInquiry({
       channels={inquiries.map((inquiry) => inquiry.channel)}
       inquiries={inquiries}
       // La página sale de la ruta; en el 404 la ruta puede ser cualquiera.
-      track={{
+      inquiryEvent={{
         type: "general_contact_click",
         ...(placement === "not-found" && { page: "not_found" }),
       }}

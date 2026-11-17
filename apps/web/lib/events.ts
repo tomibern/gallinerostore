@@ -7,6 +7,8 @@ import type { Device, EventIn, Page } from "@catalog/api-client";
 // Sin utm_source en la URL de entrada.
 export const DIRECT_SOURCE = "directo";
 const MAX_SOURCE_LENGTH = 60;
+// Por Next, que lo reenvía a la API (ADR 0003).
+const EVENTS_URL = "/api/events";
 const SESSION_KEY = "events.session";
 const SOURCE_KEY = "events.source";
 // El mismo `md` de Tailwind que separa el diseño de celular del de escritorio.
@@ -14,7 +16,7 @@ const WIDE_SCREEN = "(min-width: 48rem)";
 
 type KeyValueStore = Pick<Storage, "getItem" | "setItem">;
 
-// Los campos que pone cada evento; los de la visita los agrega `trackEvent`.
+// Los campos que pone cada evento; los de la visita los agrega `recordEvent`.
 type VisitFields = "session_id" | "source" | "device";
 export type EventFields = EventIn extends infer E
   ? E extends EventIn
@@ -91,14 +93,14 @@ export function postEvent(event: EventIn): void {
   const body = JSON.stringify(event);
   try {
     // Un Blob JSON: un string viajaría como text/plain y la API no lo leería.
-    if (navigator.sendBeacon?.("/api/events", new Blob([body], { type: "application/json" }))) {
+    if (navigator.sendBeacon?.(EVENTS_URL, new Blob([body], { type: "application/json" }))) {
       return;
     }
   } catch {
     // Probamos con fetch.
   }
   try {
-    fetch("/api/events", {
+    fetch(EVENTS_URL, {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json" },
@@ -111,8 +113,17 @@ export function postEvent(event: EventIn): void {
 
 const visit = createVisit(() => window.sessionStorage);
 
+/** Fija el origen con la URL de entrada, aunque esa página no registre una visita (404). */
+export function startVisit(): void {
+  try {
+    visit(window.location.search);
+  } catch {
+    // Nunca rompe la página.
+  }
+}
+
 /** Registra un evento de esta visita. Solo en el navegador (efectos y clics). */
-export function trackEvent(fields: EventFields): void {
+export function recordEvent(fields: EventFields): void {
   try {
     const device = deviceFor(window.matchMedia(WIDE_SCREEN).matches);
     postEvent({ ...fields, ...visit(window.location.search), device } as EventIn);

@@ -134,6 +134,16 @@ test("el origen de la entrada se guarda para toda la visita", async ({ page }) =
   await expectEvent(page, { type: "page_view", page: "how_to_buy", source: "historia" });
 });
 
+test("el origen se toma de la URL de entrada aunque sea un 404", async ({ page }) => {
+  await page.goto("/no-existe?utm_source=perdido");
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem("events.source")))
+    .toBe("perdido");
+
+  await page.goto("/");
+  await expectEvent(page, { type: "page_view", page: "home", source: "perdido" });
+});
+
 test("la consulta general registra el canal y la página", async ({ page, context }) => {
   const store = (await (await page.request.get("/api/store")).json()) as {
     general_inquiries: ApiInquiry[];
