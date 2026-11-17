@@ -26,17 +26,25 @@ test("buscar por código encuentra el producto y la URL lo refleja", async ({ pa
   const [product] = (await apiListing(page, "section=stock")).items;
   test.skip(!product, "No hay productos en stock");
 
-  await page.goto("/stock");
-  await search(page, product.code.toLowerCase());
+  const code = product.code.toLowerCase();
 
-  await expect(page).toHaveURL(new RegExp(`[?&]q=${product.code.toLowerCase()}(&|$)`));
-  await expect(cards(page)).toHaveCount(1);
-  expect(await cardCodes(page)).toEqual([product.code]);
+  await page.goto("/stock");
+  await search(page, code);
+
+  await expect(page).toHaveURL((url) => url.searchParams.get("q") === code);
+  // Es por subcadena: otro código (o nombre) puede contenerlo. Se compara con la API.
+  const expected = (await apiListing(page, `section=stock&q=${encodeURIComponent(code)}`)).items;
+  const codes = expected.map((p) => p.code);
+  expect(codes).toContain(product.code);
+  await expect(cards(page).first()).toBeVisible();
+  await loadAll(page);
+  expect(await cardCodes(page)).toEqual(codes);
 
   // Recargar muestra lo mismo y la caja conserva el texto.
   await page.reload();
-  expect(await cardCodes(page)).toEqual([product.code]);
-  await expect(page.getByRole("searchbox")).toHaveValue(product.code.toLowerCase());
+  await loadAll(page);
+  expect(await cardCodes(page)).toEqual(codes);
+  await expect(page.getByRole("searchbox")).toHaveValue(code);
 });
 
 test("buscar por nombre muestra lo mismo que la API, y los filtros conservan la búsqueda", async ({
@@ -49,6 +57,8 @@ test("buscar por nombre muestra lo mismo que la API, y los filtros conservan la 
 
   await page.goto("/stock");
   await search(page, word);
+  // Hasta que no navega, la grilla es la de antes (sin búsqueda).
+  await expect(page).toHaveURL((url) => url.searchParams.get("q") === word);
 
   const expected = await apiListing(page, `section=stock&q=${encodeURIComponent(word)}`);
   expect(expected.items.map((p) => p.code)).toContain(product.code);
