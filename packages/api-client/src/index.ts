@@ -6,8 +6,8 @@ import type { components, paths } from "./schema";
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
-export function createApiClient(baseUrl: string) {
-  return createClient<paths>({ baseUrl });
+export function createApiClient(baseUrl: string, headers?: Record<string, string>) {
+  return createClient<paths>({ baseUrl, headers });
 }
 
 export type Schemas = components["schemas"];
@@ -35,3 +35,5 @@ export type EventIn =
   | Schemas["GeneralContactClick"];
 export type StoryItemOut = Schemas["StoryItemOut"];
 export type StoryItemKind = Schemas["StoryItemKind"];
+export type AdminOut = Schemas["AdminOut"];
+export type LoginIn = Schemas["LoginIn"];
