@@ -8,9 +8,9 @@ Implement the work described by the user in the spec or tickets.
 
 If the user passes a ticket reference, fetch it from the issue tracker and state its title before starting. If the reference is ambiguous, ask.
 
-Call the Skill tool with "tdd" where possible, at pre-agreed seams.
+Build the whole piece of work first. Then write its tests once, at the end, at the seams agreed in the spec.
 
-Run typechecking regularly, single test files regularly, and the full test suite once at the end.
+Run typechecking regularly while building, and the tests once at the end: first the new test files, then the full test suite.
 
 Once done, call the Skill tool with "code-review" to review the work.
 

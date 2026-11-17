@@ -21,7 +21,7 @@ Monorepo:
 - **Capas en la API.** Cada módulo de dominio (`catalog`, `media`, `auth`, `events`, `metrics`, `settings`) tiene router → service → repository. Los routers no tienen lógica.
 - **Migraciones.** Nunca se edita una migración de Alembic ya commiteada; siempre se crea una nueva.
 - **Textos fuera de los componentes.** Los textos de UI salen del diccionario (es-AR por defecto).
-- **Tests primero** cuando se agrega comportamiento (`/tdd`): pytest + httpx en la API, Vitest + Playwright en la web.
+- **Todo comportamiento nuevo llega con tests**, escritos al terminar el ticket: pytest + httpx en la API, Vitest + Playwright en la web. `/tdd` para bugs y reglas delicadas.
 - **Sin atribución de Claude** en commits ni PRs: nada de `Co-Authored-By: Claude` ni "Generated with Claude Code". El hook `commit-msg` de pre-commit (`scripts/strip-claude-attribution.sh`) lo quita si se cuela.
 
 ## Idioma
@@ -38,7 +38,7 @@ Documentación, issues, textos de UI, comentarios y docstrings en español riopl
 Skills de [mattpocock/skills](https://github.com/mattpocock/skills) copiadas en `.claude/skills/`. Flujo completo en `docs/agents/skills.md`; en corto:
 
 - **Pensar, una vez por funcionalidad y en una sola sesión**: `/research` si hace falta → `/grill-with-docs` → `/prototype` si hace falta → `/to-spec` → `/to-tickets`. El ticket es el plan.
-- **Construir, un ticket por sesión nueva**: `/implement #N` (rama propia, `/tdd`, `/code-review`, lint y tests, PR con `/pr`).
+- **Construir, un ticket por sesión nueva**: `/implement #N` (rama propia, construir y testear al final, `/code-review`, lint y tests, PR con `/pr`).
 - **Cerrar la funcionalidad**: `/retro`.
 
 ### Issue tracker
