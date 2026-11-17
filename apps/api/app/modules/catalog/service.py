@@ -283,6 +283,8 @@ async def offered_product(
     product, section, _ = row
     sizes = await _offered_sizes(session, product, section)
     return OfferedProduct(id=product.id, size_ids={size.label: size.id for size, _ in sizes})
+
+
 # Orden de los tipos en la sección: el de declaración del enum.
 _STORY_KIND_ORDER = {kind: position for position, kind in enumerate(StoryItemKind)}
 
