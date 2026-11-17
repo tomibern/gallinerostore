@@ -7,6 +7,8 @@ import type { ProductDetail, SizeStatus } from "@/lib/api";
 import { InquiryActions, type InquiryActionsLabels } from "./inquiry-actions";
 
 type Props = {
+  // Para registrar la consulta (#34).
+  productCode: string;
   sizes: ProductDetail["sizes"];
   labels: {
     legend: string;
@@ -25,7 +27,7 @@ type Props = {
 // consulta. El estado de cada talle y sus mensajes ya vienen armados de la API; acá
 // solo se elige. Con talle único, viene elegido. Los sin stock se ven tachados, pero
 // se pueden elegir (y consultar su disponibilidad).
-export function ProductInquiry({ sizes, labels }: Props) {
+export function ProductInquiry({ productCode, sizes, labels }: Props) {
   const [chosen, setChosen] = useState<string | null>(sizes.length === 1 ? sizes[0].label : null);
   const size = sizes.find((s) => s.label === chosen);
   // Todos los talles ofrecen los mismos canales.
@@ -79,6 +81,9 @@ export function ProductInquiry({ sizes, labels }: Props) {
         inquiries={size ? size.inquiries : null}
         status={size?.status}
         labels={{ ...labels.inquiry[size?.status ?? "idle"], sheet: labels.inquiry.sheet }}
+        track={
+          size ? { type: "contact_click", product_code: productCode, size: size.label } : undefined
+        }
       />
     </div>
   );

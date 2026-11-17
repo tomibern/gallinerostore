@@ -5,6 +5,7 @@ import { DiagonalBand } from "@/components/store/diagonal-band";
 import { HomeCarousel } from "@/components/store/home/home-carousel";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreLogo } from "@/components/store/store-logo";
+import { TrackView } from "@/components/store/track-view";
 import { getFeatured, getStore, type HomeBlock } from "@/lib/api";
 import { pageMetadata } from "@/lib/seo";
 import { homeBlockText, t, type TextKey } from "@/lib/texts";
@@ -37,6 +38,7 @@ export default async function Home() {
 
   return (
     <main>
+      <TrackView event={{ type: "page_view", page: "home" }} />
       <section className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-12 md:flex-row md:items-center md:gap-8 md:px-16 md:py-20">
         <StoreLogo className="size-24 md:size-40" />
         <div className="flex flex-col items-start gap-3">

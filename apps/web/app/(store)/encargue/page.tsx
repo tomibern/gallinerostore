@@ -1,4 +1,5 @@
 import { SectionPage, sectionMetadata } from "@/components/store/section-page";
+import { TrackView } from "@/components/store/track-view";
 import type { SearchParams } from "@/lib/listing";
 
 export function generateMetadata() {
@@ -10,5 +11,10 @@ export default async function OnOrderPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  return <SectionPage section="on_order" searchParams={await searchParams} />;
+  return (
+    <>
+      <TrackView event={{ type: "page_view", page: "on_order" }} />
+      <SectionPage section="on_order" searchParams={await searchParams} />
+    </>
+  );
 }

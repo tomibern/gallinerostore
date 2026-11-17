@@ -5,6 +5,7 @@ import { AvailabilityBadge } from "@/components/store/availability-badge";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { caseLabels, instagramSheetLabels } from "@/components/store/inquiry-labels";
 import { ProductInquiry } from "@/components/store/product-inquiry";
+import { TrackView } from "@/components/store/track-view";
 import { getProduct, getStore, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { productMetadata, productPath } from "@/lib/seo";
@@ -60,6 +61,7 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
 
   return (
     <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-2 md:gap-12 md:px-16 md:py-10">
+      <TrackView event={{ type: "product_view", product_code: product.code }} />
       <ProductGallery
         images={product.images}
         labels={{
@@ -87,6 +89,7 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
         )}
 
         <ProductInquiry
+          productCode={product.code}
           sizes={product.sizes}
           labels={{
             legend: t("product.size.legend"),
