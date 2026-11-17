@@ -92,6 +92,29 @@ async def test_migrations_go_up_down_and_up_cleanly(scratch_database_url: str) -
     assert await _table_names(scratch_database_url) >= DISCOVERY_TABLES
 
 
+async def _extensions(database_url: str) -> set[str]:
+    engine = create_async_engine(database_url)
+    try:
+        async with engine.connect() as conn:
+            rows = await conn.execute(text("SELECT extname FROM pg_extension"))
+            return {row.extname for row in rows}
+    finally:
+        await engine.dispose()
+
+
+async def test_search_extension_comes_and_goes_with_the_migrations(
+    scratch_database_url: str,
+) -> None:
+    # La búsqueda sin acentos usa unaccent: la instala una migración y la bajada la saca.
+    config = _alembic(scratch_database_url)
+
+    await anyio.to_thread.run_sync(command.upgrade, config, "head")
+    assert "unaccent" in await _extensions(scratch_database_url)
+
+    await anyio.to_thread.run_sync(command.downgrade, config, "base")
+    assert "unaccent" not in await _extensions(scratch_database_url)
+
+
 async def test_events_store_no_personal_data(settings: Settings) -> None:
     # Producto, canal, talle, origen, dispositivo, sesión anónima, página y fecha.
     # Nada que identifique a una persona (IP, user agent, email, teléfono, nombre).

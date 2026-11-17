@@ -8,7 +8,11 @@ import {
   pagesLoaded,
   parseListing,
   parsePages,
+  filterAndSortFields,
   toggleFilter,
+  withoutFilters,
+  withoutSearch,
+  withSort,
 } from "./listing";
 
 describe("parsePages", () => {
@@ -97,5 +101,66 @@ describe("appendPage", () => {
       item("B"),
       item("C"),
     ]);
+  });
+});
+
+describe("búsqueda", () => {
+  it("lee q recortada", () => {
+    expect(parseListing({ q: "  remera  " }).q).toBe("remera");
+  });
+
+  it.each([undefined, "", "   "])("sin texto no hay búsqueda (%s)", (value) => {
+    expect(parseListing({ q: value }).q).toBeUndefined();
+  });
+
+  it("toma la primera si viene repetida", () => {
+    expect(parseListing({ q: ["uno", "dos"] }).q).toBe("uno");
+  });
+
+  it("corta al largo máximo que acepta la API", () => {
+    expect(parseListing({ q: "a".repeat(150) }).q).toHaveLength(100);
+  });
+
+  it("va primero en la URL, con filtros, orden y páginas", () => {
+    const listing = parseListing({ q: "remera básica", category: "remeras", sort: "newest" });
+    expect(listingHref("/stock", listing, 2)).toBe(
+      "/stock?q=remera+b%C3%A1sica&category=remeras&sort=newest&paginas=2",
+    );
+  });
+
+  it("los filtros y el orden la conservan", () => {
+    const listing = parseListing({ q: "remera" });
+    expect(listingHref("/stock", toggleFilter(listing, "tag", "titular"))).toBe(
+      "/stock?q=remera&tag=titular",
+    );
+    expect(listingHref("/stock", withSort(listing, "price_asc"))).toBe(
+      "/stock?q=remera&sort=price_asc",
+    );
+  });
+
+  it("limpiar filtros la conserva y borrar la búsqueda conserva los filtros", () => {
+    const listing = parseListing({ q: "remera", tag: "titular", sort: "newest" });
+    expect(listingHref("/stock", withoutFilters(listing))).toBe("/stock?q=remera&sort=newest");
+    expect(listingHref("/stock", withoutSearch(listing))).toBe("/stock?tag=titular&sort=newest");
+  });
+
+  it("el formulario manda filtros y orden como campos ocultos, sin q ni páginas", () => {
+    const listing = parseListing({
+      q: "remera",
+      category: ["remeras", "abrigos"],
+      size: "M",
+      sort: "newest",
+      paginas: "3",
+    });
+    expect(filterAndSortFields(listing)).toEqual([
+      ["category", "remeras"],
+      ["category", "abrigos"],
+      ["size", "M"],
+      ["sort", "newest"],
+    ]);
+  });
+
+  it("el orden por defecto no va en el formulario", () => {
+    expect(filterAndSortFields(parseListing({ sort: "manual" }))).toEqual([]);
   });
 });
