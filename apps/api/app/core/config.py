@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Request
-from pydantic import AfterValidator, BaseModel, StringConstraints
+from pydantic import AfterValidator, BaseModel, Field, StringConstraints
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Raíz del monorepo en desarrollo. En la imagen de Docker no existe esa
@@ -82,6 +82,15 @@ class Settings(BaseSettings):
     # Dirección pública del sitio, para los links que salen de la API (por ejemplo,
     # el del producto en el mensaje prearmado). Cambia por entorno, no por cliente.
     site_url: str = "http://localhost:3000"
+    # Proxies de confianza delante de la API que agregan la IP del visitante al final de
+    # X-Forwarded-For (ADR 0006). Con 0 se usa la dirección de la conexión.
+    trusted_proxy_hops: int = Field(default=1, ge=0)
+    # Límite de frecuencia de los eventos. Se apaga para el e2e, que manda todo desde
+    # la misma IP.
+    rate_limit_enabled: bool = True
+    # Endpoints de solo lectura para verificar los e2e (por ejemplo, los eventos de una
+    # sesión). Nunca en producción.
+    e2e_endpoints: bool = False
     store_config_path: Path = REPO_ROOT / "config" / "store.toml"
     seed_path: Path = REPO_ROOT / "config" / "seed.toml"
 

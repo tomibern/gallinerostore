@@ -17,6 +17,25 @@ class EventType(StrEnum):
     GENERAL_CONTACT_CLICK = "general_contact_click"  # consulta general
 
 
+class Device(StrEnum):
+    """Por el ancho de la pantalla, no por el modelo ni el navegador."""
+
+    MOBILE = "mobile"
+    DESKTOP = "desktop"
+
+
+class Page(StrEnum):
+    """Página de una visita o de una consulta general. Identificadores estables, no las
+    rutas: cambiar una ruta no rompe las métricas."""
+
+    HOME = "home"
+    STOCK = "stock"
+    ON_ORDER = "on_order"
+    HOW_TO_BUY = "how_to_buy"
+    PRODUCT = "product"  # solo consultas generales (el pie del detalle)
+    NOT_FOUND = "not_found"  # solo consultas generales
+
+
 class Event(Base):
     """Un evento anónimo. Nada que identifique a una persona: ni IP, ni user agent, ni
     datos de contacto. ``session_id`` es un identificador al azar que sirve para no

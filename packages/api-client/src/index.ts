@@ -25,3 +25,11 @@ export type SizeStatus = Schemas["SizeStatus"];
 export type Inquiry = Schemas["Inquiry"];
 export type Channel = Schemas["Channel"];
 export type FaqItem = Schemas["FaqItem"];
+export type Device = Schemas["Device"];
+export type Page = Schemas["Page"];
+// El cuerpo de POST /events: la unión de los cuatro tipos (el OpenAPI no le da nombre).
+export type EventIn =
+  | Schemas["PageView"]
+  | Schemas["ProductView"]
+  | Schemas["ContactClick"]
+  | Schemas["GeneralContactClick"];

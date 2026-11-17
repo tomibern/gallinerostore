@@ -82,6 +82,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Event
+         * @description Registra una visita o una consulta, sin cookies ni datos personales. La IP solo
+         *     cuenta para el límite de frecuencia: no se guarda.
+         */
+        post: operations["record_event_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -118,6 +139,33 @@ export interface components {
          * @enum {string}
          */
         Channel: "whatsapp" | "instagram";
+        /**
+         * ContactClick
+         * @description Consulta por un producto: se tocó el link que abre el chat.
+         */
+        ContactClick: {
+            /** Session Id */
+            session_id: string;
+            /** Source */
+            source: string;
+            device: components["schemas"]["Device"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "contact_click";
+            /** Product Code */
+            product_code: string;
+            channel: components["schemas"]["Channel"];
+            /** Size */
+            size: string;
+        };
+        /**
+         * Device
+         * @description Por el ancho de la pantalla, no por el modelo ni el navegador.
+         * @enum {string}
+         */
+        Device: "mobile" | "desktop";
         /** FacetValue */
         FacetValue: {
             /**
@@ -148,6 +196,24 @@ export interface components {
              * @description La respuesta, en Markdown.
              */
             answer_md: string;
+        };
+        /**
+         * GeneralContactClick
+         * @description Consulta general: se tocó el link que abre el chat, desde esa página.
+         */
+        GeneralContactClick: {
+            /** Session Id */
+            session_id: string;
+            /** Source */
+            source: string;
+            device: components["schemas"]["Device"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "general_contact_click";
+            channel: components["schemas"]["Channel"];
+            page: components["schemas"]["Page"];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -245,6 +311,34 @@ export interface components {
             slug: string;
             /** Name */
             name: string;
+        };
+        /**
+         * Page
+         * @description Página de una visita o de una consulta general. Identificadores estables, no las
+         *     rutas: cambiar una ruta no rompe las métricas.
+         * @enum {string}
+         */
+        Page: "home" | "stock" | "on_order" | "how_to_buy" | "product" | "not_found";
+        /**
+         * PageView
+         * @description Visita a la home, a un listado o a «Cómo comprar».
+         */
+        PageView: {
+            /** Session Id */
+            session_id: string;
+            /** Source */
+            source: string;
+            device: components["schemas"]["Device"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "page_view";
+            /**
+             * Page
+             * @enum {string}
+             */
+            page: "home" | "stock" | "on_order" | "how_to_buy";
         };
         /** ProductDetail */
         ProductDetail: {
@@ -385,6 +479,24 @@ export interface components {
          * @enum {string}
          */
         ProductSort: "manual" | "newest" | "price_asc" | "price_desc";
+        /**
+         * ProductView
+         * @description Visita al detalle de un producto.
+         */
+        ProductView: {
+            /** Session Id */
+            session_id: string;
+            /** Source */
+            source: string;
+            device: components["schemas"]["Device"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "product_view";
+            /** Product Code */
+            product_code: string;
+        };
         /**
          * PublicStore
          * @description Lo que la web necesita saber de la tienda. Nada secreto.
@@ -630,6 +742,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    record_event_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageView"] | components["schemas"]["ProductView"] | components["schemas"]["ContactClick"] | components["schemas"]["GeneralContactClick"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Demasiados eventos desde la misma IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

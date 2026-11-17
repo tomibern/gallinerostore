@@ -270,6 +270,67 @@
           }
         }
       }
+    },
+    "/events": {
+      "post": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Record Event",
+        "description": "Registra una visita o una consulta, sin cookies ni datos personales. La IP solo\ncuenta para el límite de frecuencia: no se guarda.",
+        "operationId": "record_event_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PageView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ProductView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ContactClick"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GeneralContactClick"
+                  }
+                ],
+                "title": "Event",
+                "discriminator": {
+                  "propertyName": "type",
+                  "mapping": {
+                    "page_view": "#/components/schemas/PageView",
+                    "product_view": "#/components/schemas/ProductView",
+                    "contact_click": "#/components/schemas/ContactClick",
+                    "general_contact_click": "#/components/schemas/GeneralContactClick"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "429": {
+            "description": "Demasiados eventos desde la misma IP."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -332,6 +393,66 @@
         "title": "Channel",
         "description": "Canal de contacto: por donde se consulta (y se registra la consulta)."
       },
+      "ContactClick": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Session Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "type": {
+            "type": "string",
+            "const": "contact_click",
+            "title": "Type"
+          },
+          "product_code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Product Code"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "size": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Size"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "source",
+          "device",
+          "type",
+          "product_code",
+          "channel",
+          "size"
+        ],
+        "title": "ContactClick",
+        "description": "Consulta por un producto: se tocó el link que abre el chat."
+      },
+      "Device": {
+        "type": "string",
+        "enum": [
+          "mobile",
+          "desktop"
+        ],
+        "title": "Device",
+        "description": "Por el ancho de la pantalla, no por el modelo ni el navegador."
+      },
       "FacetValue": {
         "properties": {
           "value": {
@@ -377,6 +498,47 @@
         ],
         "title": "FaqItem",
         "description": "Una pregunta frecuente: cada encabezado ``##`` de las preguntas abre una."
+      },
+      "GeneralContactClick": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Session Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "type": {
+            "type": "string",
+            "const": "general_contact_click",
+            "title": "Type"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "source",
+          "device",
+          "type",
+          "channel",
+          "page"
+        ],
+        "title": "GeneralContactClick",
+        "description": "Consulta general: se tocó el link que abre el chat, desde esa página."
       },
       "HTTPValidationError": {
         "properties": {
@@ -558,6 +720,63 @@
           "name"
         ],
         "title": "NamedRef"
+      },
+      "Page": {
+        "type": "string",
+        "enum": [
+          "home",
+          "stock",
+          "on_order",
+          "how_to_buy",
+          "product",
+          "not_found"
+        ],
+        "title": "Page",
+        "description": "Página de una visita o de una consulta general. Identificadores estables, no las\nrutas: cambiar una ruta no rompe las métricas."
+      },
+      "PageView": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Session Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "type": {
+            "type": "string",
+            "const": "page_view",
+            "title": "Type"
+          },
+          "page": {
+            "type": "string",
+            "enum": [
+              "home",
+              "stock",
+              "on_order",
+              "how_to_buy"
+            ],
+            "title": "Page"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "source",
+          "device",
+          "type",
+          "page"
+        ],
+        "title": "PageView",
+        "description": "Visita a la home, a un listado o a «Cómo comprar»."
       },
       "ProductDetail": {
         "properties": {
@@ -869,6 +1088,46 @@
         ],
         "title": "ProductSort",
         "description": "Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."
+      },
+      "ProductView": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Session Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "type": {
+            "type": "string",
+            "const": "product_view",
+            "title": "Type"
+          },
+          "product_code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Product Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "source",
+          "device",
+          "type",
+          "product_code"
+        ],
+        "title": "ProductView",
+        "description": "Visita al detalle de un producto."
       },
       "PublicStore": {
         "properties": {
