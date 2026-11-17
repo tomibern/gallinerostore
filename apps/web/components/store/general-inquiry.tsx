@@ -4,8 +4,7 @@ import { t } from "@/lib/texts";
 import { InquiryButtons } from "./inquiry-buttons";
 import { channelLabels, instagramSheetLabels } from "./inquiry-labels";
 
-// Dónde está. Los e2e lo distinguen por esto, y el registro de consultas generales
-// (que lleva la página) lo va a poder usar.
+// Dónde está. Los e2e lo distinguen por esto, y en el 404 da la página de la consulta.
 export type GeneralInquiryPlacement = "listing" | "not-found" | "how-to-buy" | "footer";
 
 type Props = {
@@ -33,6 +32,11 @@ export function GeneralInquiry({
       short={variant === "compact"}
       channels={inquiries.map((inquiry) => inquiry.channel)}
       inquiries={inquiries}
+      // La página sale de la ruta; en el 404 la ruta puede ser cualquiera.
+      inquiryEvent={{
+        type: "general_contact_click",
+        ...(placement === "not-found" && { page: "not_found" }),
+      }}
       labels={{
         channels: channelLabels(t("inquiry.channel.idle")),
         sheet: instagramSheetLabels(),

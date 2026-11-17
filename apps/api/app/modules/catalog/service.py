@@ -1,6 +1,7 @@
 """Reglas de negocio del catálogo (sección, disponibilidad, encargues, categorías y código)."""
 
 from collections.abc import Collection, Mapping, Sequence
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +15,7 @@ from app.modules.catalog.models import (
     ProductStoryItem,
     SaleMode,
     Section,
+    Size,
     SizeStatus,
     StoryItemKind,
     Version,
@@ -248,19 +250,39 @@ def message_case(product_availability: Availability, status: SizeStatus) -> Mess
     return MessageCase.STOCK
 
 
-async def _size_statuses(
+async def _offered_sizes(
     session: AsyncSession, product: Product, section: Section
-) -> list[tuple[str, SizeStatus]]:
+) -> list[tuple[Size, SizeStatus]]:
     """En Por encargue, todos los talles del grupo de la categoría (aunque un agotado
     tenga los suyos); en stock, los propios con su estado. Siempre en el orden del grupo."""
     if section is Section.ON_ORDER:
         group = await repository.sizes_in_group(session, product.category.size_group)
-        return [(size.label, SizeStatus.ON_ORDER) for size in group]
+        return [(size, SizeStatus.ON_ORDER) for size in group]
     own = sorted(product.sizes, key=lambda ps: (ps.size.sort_order, ps.size.id))
     return [
-        (ps.size.label, SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK)
-        for ps in own
+        (ps.size, SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK) for ps in own
     ]
+
+
+@dataclass(frozen=True)
+class OfferedProduct:
+    """Un producto del catálogo público y los talles que ofrece (etiqueta → id)."""
+
+    id: int
+    size_ids: dict[str, int]
+
+
+async def offered_product(
+    session: AsyncSession, store: StoreConfig, code: str
+) -> OfferedProduct | None:
+    """El producto publicado con ese código y los mismos talles que muestra su detalle,
+    o None si no está en el catálogo público."""
+    row = await repository.published_product_by_code(session, code, store.features.on_order)
+    if row is None:
+        return None
+    product, section, _ = row
+    sizes = await _offered_sizes(session, product, section)
+    return OfferedProduct(id=product.id, size_ids={size.label: size.id for size, _ in sizes})
 
 
 # Orden de los tipos en la sección: el de declaración del enum.
@@ -292,14 +314,14 @@ async def published_product(
     link = product_url(site_url, product.code)
     sizes = [
         ProductSizeOut(
-            label=label,
+            label=size.label,
             status=status,
             inquiries=contact.inquiries(
                 message_case(product_availability, status),
-                {"product": product.name, "code": product.code, "size": label, "link": link},
+                {"product": product.name, "code": product.code, "size": size.label, "link": link},
             ),
         )
-        for label, status in await _size_statuses(session, product, section)
+        for size, status in await _offered_sizes(session, product, section)
     ]
     return ProductDetail(
         code=product.code,

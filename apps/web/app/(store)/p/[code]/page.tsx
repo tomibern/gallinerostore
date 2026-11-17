@@ -5,6 +5,7 @@ import { AvailabilityBadge } from "@/components/store/availability-badge";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { caseLabels, instagramSheetLabels } from "@/components/store/inquiry-labels";
 import { ProductInquiry } from "@/components/store/product-inquiry";
+import { RecordView } from "@/components/store/record-view";
 import { ProductStory } from "@/components/store/product-story";
 import { getProduct, getStore, type SizeStatus } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
@@ -62,6 +63,7 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
 
   return (
     <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-2 md:gap-12 md:px-16 md:py-10">
+      <RecordView event={{ type: "product_view", product_code: product.code }} />
       <ProductGallery
         images={product.images}
         labels={{
@@ -89,6 +91,7 @@ export default async function ProductPage({ params }: PageProps<"/p/[code]">) {
         )}
 
         <ProductInquiry
+          productCode={product.code}
           sizes={product.sizes}
           labels={{
             legend: t("product.size.legend"),

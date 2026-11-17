@@ -4,6 +4,7 @@ import { DiagonalBand } from "@/components/store/diagonal-band";
 import { FaqAccordion } from "@/components/store/faq-accordion";
 import { GeneralInquiry } from "@/components/store/general-inquiry";
 import { StoreMarkdown } from "@/components/store/store-markdown";
+import { RecordView } from "@/components/store/record-view";
 import { getStore } from "@/lib/api";
 import { t } from "@/lib/texts";
 
@@ -25,6 +26,7 @@ export default async function HowToBuyPage() {
 
   return (
     <main>
+      <RecordView event={{ type: "page_view", page: "how_to_buy" }} />
       <header className="bg-primary text-primary-contrast">
         <div className="mx-auto flex max-w-3xl flex-col gap-1 px-4 py-6 md:py-10">
           <h1 className="font-display text-4xl leading-none font-bold uppercase md:text-6xl">

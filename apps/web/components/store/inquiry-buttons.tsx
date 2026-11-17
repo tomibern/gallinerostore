@@ -1,8 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import type { Channel, Inquiry } from "@/lib/api";
+import { type EventFields, pageFromPath, recordEvent } from "@/lib/events";
 
 import { InstagramSheet, type InstagramSheetLabels } from "./instagram-sheet";
 
@@ -13,6 +15,14 @@ export type InquiryButtonsLabels = {
   sheet: InstagramSheetLabels;
 };
 
+// Qué consulta registrar al abrir el chat (datos, no una función: la consulta general
+// se arma en el servidor). Sin `page`, la consulta general toma la de la ruta.
+export type InquiryEvent =
+  | Omit<Extract<EventFields, { type: "contact_click" }>, "channel">
+  | (Omit<Extract<EventFields, { type: "general_contact_click" }>, "channel" | "page"> & {
+      page?: Extract<EventFields, { type: "general_contact_click" }>["page"];
+    });
+
 type Props = {
   // Los canales que ofrece la tienda, en orden: se muestran aunque no se pueda
   // consultar todavía. Sin canales, no hay botones.
@@ -21,8 +31,8 @@ type Props = {
   // consultar y los botones quedan deshabilitados.
   inquiries: Inquiry[] | null;
   labels: InquiryButtonsLabels;
-  // Al abrir el chat de un canal (lo usa el registro de consultas).
-  onInquiry?: (channel: Channel) => void;
+  // La consulta que se registra al abrir el chat (#34).
+  inquiryEvent?: InquiryEvent;
   // Siempre el nombre corto a la vista (donde falta lugar, como el pie); el
   // completo queda para lectores de pantalla.
   short?: boolean;
@@ -34,9 +44,24 @@ const BUTTON =
 // Un botón por canal, sin posición propia (la pone quien lo usa). WhatsApp es un
 // link común a wa.me con el mensaje: abre la app sin JavaScript ni esperas.
 // Instagram abre la hoja con el mensaje visible.
-export function InquiryButtons({ channels, inquiries, labels, onInquiry, short = false }: Props) {
+export function InquiryButtons({
+  channels,
+  inquiries,
+  labels,
+  inquiryEvent,
+  short = false,
+}: Props) {
   const [sheet, setSheet] = useState<Inquiry | null>(null);
+  const pathname = usePathname();
   if (channels.length === 0) return null;
+
+  // Cuenta al tocar el link que abre el chat, no al abrir la hoja de Instagram.
+  const inquire = (channel: Channel) => {
+    if (inquiryEvent?.type === "contact_click") recordEvent({ ...inquiryEvent, channel });
+    if (inquiryEvent?.type === "general_contact_click") {
+      recordEvent({ ...inquiryEvent, channel, page: inquiryEvent.page ?? pageFromPath(pathname) });
+    }
+  };
 
   return (
     <>
@@ -80,7 +105,7 @@ export function InquiryButtons({ channels, inquiries, labels, onInquiry, short =
                 rel="noopener noreferrer"
                 aria-label={long}
                 data-channel={channel}
-                onClick={() => onInquiry?.(channel)}
+                onClick={() => inquire(channel)}
                 className={style}
               >
                 {text}
@@ -106,7 +131,7 @@ export function InquiryButtons({ channels, inquiries, labels, onInquiry, short =
         inquiry={sheet}
         labels={labels.sheet}
         onClose={() => setSheet(null)}
-        onOpenChat={() => onInquiry?.("instagram")}
+        onOpenChat={() => inquire("instagram")}
       />
     </>
   );

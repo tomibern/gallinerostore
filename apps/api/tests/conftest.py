@@ -16,6 +16,7 @@ from app.core.db import get_session
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.catalog.seed import apply_seed, load_seed
+from app.modules.events.rate_limit import limiter
 from app.modules.settings.seed import SettingsSeed, apply_settings_seed, load_settings_seed
 from tests.isolation import (
     checkout_name,
@@ -87,6 +88,16 @@ async def app(settings: Settings) -> AsyncIterator[FastAPI]:
         finally:
             await session.close()
             await outer.rollback()
+
+
+@pytest.fixture(autouse=True)
+def rate_limit() -> Iterator[None]:
+    """El límite de frecuencia guarda sus contadores en el proceso: cada test arranca
+    con el cupo entero y con el límite prendido."""
+    limiter.reset()
+    yield
+    limiter.enabled = True
+    limiter.reset()
 
 
 @pytest.fixture

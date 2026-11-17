@@ -2,7 +2,7 @@
 
 import type { Channel, Inquiry, SizeStatus } from "@/lib/api";
 
-import { InquiryButtons, type InquiryButtonsLabels } from "./inquiry-buttons";
+import { InquiryButtons, type InquiryButtonsLabels, type InquiryEvent } from "./inquiry-buttons";
 
 export type InquiryActionsLabels = InquiryButtonsLabels & {
   // El caso arriba de los botones («Consultar disponibilidad») o la pista sin talle.
@@ -17,13 +17,13 @@ type Props = {
   // Para la etiqueta del caso (in_stock, out_of_stock, on_order…).
   status?: SizeStatus;
   labels: InquiryActionsLabels;
-  // Al abrir el chat de un canal (lo usa el registro de consultas).
-  onInquiry?: (channel: Channel) => void;
+  // La consulta que se registra al abrir el chat (#34).
+  inquiryEvent?: InquiryEvent;
 };
 
 // Consulta del detalle: el caso y los botones por canal. En el celular quedan fijos
 // abajo; en escritorio, en su lugar.
-export function InquiryActions({ channels, inquiries, status, labels, onInquiry }: Props) {
+export function InquiryActions({ channels, inquiries, status, labels, inquiryEvent }: Props) {
   if (channels.length === 0) return null;
 
   return (
@@ -42,7 +42,7 @@ export function InquiryActions({ channels, inquiries, status, labels, onInquiry 
         channels={channels}
         inquiries={inquiries}
         labels={labels}
-        onInquiry={onInquiry}
+        inquiryEvent={inquiryEvent}
       />
     </div>
   );

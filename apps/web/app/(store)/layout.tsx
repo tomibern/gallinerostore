@@ -1,3 +1,4 @@
+import { RecordVisit } from "@/components/store/record-view";
 import { StoreFooter } from "@/components/store/store-footer";
 import { StoreHeader } from "@/components/store/store-header";
 import { getStore } from "@/lib/api";
@@ -19,6 +20,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <RecordVisit />
       <StoreHeader storeName={store.name} />
       <div className="flex-1">{children}</div>
       <StoreFooter storeName={store.name} inquiries={store.general_inquiries} />

@@ -1,4 +1,5 @@
 import { SectionPage, sectionMetadata } from "@/components/store/section-page";
+import { RecordView } from "@/components/store/record-view";
 import type { SearchParams } from "@/lib/listing";
 
 export function generateMetadata() {
@@ -6,5 +7,10 @@ export function generateMetadata() {
 }
 
 export default async function StockPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  return <SectionPage section="stock" searchParams={await searchParams} />;
+  return (
+    <>
+      <RecordView event={{ type: "page_view", page: "stock" }} />
+      <SectionPage section="stock" searchParams={await searchParams} />
+    </>
+  );
 }
