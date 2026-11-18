@@ -36,6 +36,7 @@ from app.modules.catalog.schemas import (
 )
 from app.modules.settings import service as settings_service
 from app.modules.settings.models import MessageCase
+from app.modules.settings.schemas import MessagePreview, PreviewProduct
 
 MAX_CATEGORY_DEPTH = 2
 
@@ -238,6 +239,11 @@ def product_url(site_url: str, code: str) -> str:
     return site_url.rstrip("/") + PRODUCT_PATH.format(code=code.lower())
 
 
+def _message_values(product: Product, size: Size, link: str) -> dict[str, str]:
+    """Las variables de las plantillas (MessageVariable) para un talle de un producto."""
+    return {"product": product.name, "code": product.code, "size": size.label, "link": link}
+
+
 def message_case(product_availability: Availability, status: SizeStatus) -> MessageCase:
     """Qué plantilla usa la consulta por un talle. Un agotado con los encargues apagados
     tiene sus talles sin stock: pregunta por disponibilidad."""
@@ -285,6 +291,45 @@ async def offered_product(
     return OfferedProduct(id=product.id, size_ids={size.label: size.id for size, _ in sizes})
 
 
+# Cuántos productos publicados se miran para encontrar uno de cada caso en la vista
+# previa. Si ninguno es del caso, se usa el primero.
+_PREVIEW_CANDIDATES = 50
+
+
+async def _preview_sample(
+    session: AsyncSession, store: StoreConfig, case: MessageCase
+) -> tuple[Product, Size] | None:
+    """Un producto publicado real y un talle cuya consulta usa la plantilla de ese caso;
+    si no hay ninguno así, el primer talle del primer producto."""
+    rows = await repository.published_products_with_sizes(
+        session, store.features.on_order, limit=_PREVIEW_CANDIDATES
+    )
+    fallback: tuple[Product, Size] | None = None
+    for product, section, sold_out in rows:
+        product_availability = availability(section, sold_out)
+        for size, status in await _offered_sizes(session, product, section):
+            if message_case(product_availability, status) is case:
+                return product, size
+            fallback = fallback or (product, size)
+    return fallback
+
+
+async def message_preview(
+    session: AsyncSession, store: StoreConfig, site_url: str, case: MessageCase, template: str
+) -> MessagePreview:
+    """El mensaje que armaría la API con esa plantilla para un producto publicado real
+    (ADR 0005: la web nunca arma mensajes). La consulta general no lleva producto."""
+    sample = None if case is MessageCase.GENERAL else await _preview_sample(session, store, case)
+    if sample is None:
+        return MessagePreview(message=settings_service.render_message(template, {}), product=None)
+    product, size = sample
+    values = _message_values(product, size, product_url(site_url, product.code))
+    return MessagePreview(
+        message=settings_service.render_message(template, values),
+        product=PreviewProduct(code=product.code, name=product.name, size=size.label),
+    )
+
+
 # Orden de los tipos en la sección: el de declaración del enum.
 _STORY_KIND_ORDER = {kind: position for position, kind in enumerate(StoryItemKind)}
 
@@ -318,7 +363,7 @@ async def published_product(
             status=status,
             inquiries=contact.inquiries(
                 message_case(product_availability, status),
-                {"product": product.name, "code": product.code, "size": size.label, "link": link},
+                _message_values(product, size, link),
             ),
         )
         for size, status in await _offered_sizes(session, product, section)
