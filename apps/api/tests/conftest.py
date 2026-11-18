@@ -11,6 +11,7 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import get_now
 from app.core.config import REPO_ROOT, Settings, get_store_config
 from app.core.db import get_session
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
@@ -25,7 +26,7 @@ from tests.isolation import (
     isolated_database_url,
     prepare_database,
 )
-from tests.support import http_client
+from tests.support import Clock, http_client
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -102,6 +103,15 @@ def rate_limit() -> Iterator[None]:
     limiter.reset()
     login_attempts.enabled = True
     login_attempts.reset()
+
+
+@pytest.fixture
+def clock(app: FastAPI) -> Iterator[Clock]:
+    """«Ahora» fijo para la API (sesiones, eventos y métricas)."""
+    fixed = Clock()
+    app.dependency_overrides[get_now] = lambda: fixed.now
+    yield fixed
+    app.dependency_overrides.pop(get_now, None)
 
 
 @pytest.fixture

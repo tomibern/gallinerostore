@@ -1,38 +1,17 @@
 """Sesión del admin: entrar con email y contraseña, mantenerla y cerrarla (ADR 0008)."""
 
-from collections.abc import Iterator
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import httpx
-import pytest
-from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.clock import get_now
 from app.modules.auth.service import create_admin, ensure_admin
+from tests.support import Clock
 
 EMAIL = "admin@tienda.test"
 PASSWORD = "una-clave-larga"
 # Las escrituras del admin exigen este header (anti-CSRF).
 ADMIN_HEADERS = {"X-Requested-With": "fetch"}
-
-
-class Clock:
-    """La hora que ve la API en el test; se adelanta a mano."""
-
-    def __init__(self) -> None:
-        self.now = datetime(2026, 11, 17, 12, 0, tzinfo=UTC)
-
-    def advance(self, delta: timedelta) -> None:
-        self.now += delta
-
-
-@pytest.fixture
-def clock(app: FastAPI) -> Iterator[Clock]:
-    fixed = Clock()
-    app.dependency_overrides[get_now] = lambda: fixed.now
-    yield fixed
-    app.dependency_overrides.pop(get_now, None)
 
 
 async def _login(client: httpx.AsyncClient, **changes: object) -> httpx.Response:

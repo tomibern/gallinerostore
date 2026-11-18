@@ -5,6 +5,7 @@ anti-CSRF.
   sesión persistente.
 - ``AdminWrite``: además exige el header anti-CSRF (si no, 403). Un formulario de otro
   sitio no puede mandar headers propios; con ``SameSite=Lax``, alcanza.
+- ``FromAdmin``: no exige nada; dice si el pedido trae una sesión de admin vigente.
 """
 
 from typing import Annotated, Any
@@ -76,4 +77,17 @@ async def require_admin(
 
 
 AdminAccess = Annotated[service.OpenSession, Depends(require_admin)]
+
+
+async def optional_admin(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Now,
+    token: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
+) -> bool:
+    """Si el pedido trae una sesión de admin vigente. No exige nada: lo usan los
+    endpoints públicos que tratan distinto al admin."""
+    return token is not None and await service.current_session(session, token, now) is not None
+
+
+FromAdmin = Annotated[bool, Depends(optional_admin)]
 CsrfChecked = Depends(require_csrf_header)

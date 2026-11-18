@@ -1,5 +1,7 @@
 """Reglas de los eventos: a qué producto y talle apuntan, y si se guardan."""
 
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig
@@ -34,14 +36,23 @@ async def _product_and_size(
     return product.id, product.size_ids[size]
 
 
-async def record(session: AsyncSession, store: StoreConfig, event: EventIn) -> None:
-    """Guarda el evento sin nada que identifique a la persona. Con las métricas apagadas
-    lo valida igual, pero no lo guarda."""
+async def record(
+    session: AsyncSession,
+    store: StoreConfig,
+    event: EventIn,
+    *,
+    now: datetime,
+    from_admin: bool = False,
+) -> None:
+    """Guarda el evento sin nada que identifique a la persona. Con las métricas apagadas o
+    si lo manda el admin con su sesión, lo valida igual, pero no lo guarda."""
     row = Event(
         type=EventType(event.type),
         session_id=event.session_id,
         source=event.source,
         device=event.device,
+        # El reloj de la API (y no el de la base): los tests lo fijan para probar períodos.
+        created_at=now,
     )
     match event:
         case PageView(page=page) | GeneralContactClick(page=page):
@@ -52,7 +63,7 @@ async def record(session: AsyncSession, store: StoreConfig, event: EventIn) -> N
             row.product_id, row.size_id = await _product_and_size(session, store, code, size)
     if isinstance(event, ContactClick | GeneralContactClick):
         row.channel = event.channel
-    if store.features.metrics:
+    if store.features.metrics and not from_admin:
         await repository.save(session, row)
 
 

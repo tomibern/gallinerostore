@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from fastapi import FastAPI
@@ -21,3 +22,13 @@ async def client_for(settings: Settings) -> AsyncIterator[httpx.AsyncClient]:
     app = create_app(settings)
     async with app.router.lifespan_context(app), http_client(app) as client:
         yield client
+
+
+class Clock:
+    """La hora que ve la API en el test (fixture ``clock``); se fija o se adelanta a mano."""
+
+    def __init__(self) -> None:
+        self.now = datetime(2026, 11, 17, 12, 0, tzinfo=UTC)
+
+    def advance(self, delta: timedelta) -> None:
+        self.now += delta
