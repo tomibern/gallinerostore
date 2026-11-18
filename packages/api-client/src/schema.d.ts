@@ -94,7 +94,8 @@ export interface paths {
         /**
          * Record Event
          * @description Registra una visita o una consulta, sin cookies ni datos personales. La IP solo
-         *     cuenta para el límite de frecuencia: no se guarda.
+         *     cuenta para el límite de frecuencia: no se guarda. Con una sesión de admin vigente
+         *     responde igual pero no guarda nada: el admin no infla sus métricas.
          */
         post: operations["record_event_events_post"];
         delete?: never;
@@ -126,6 +127,28 @@ export interface paths {
          * @description Corta la sesión (si había) y borra la cookie.
          */
         delete: operations["log_out_admin_session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/metrics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Metrics Summary
+         * @description Visitas, consultas y tasa de consulta del período comparadas con el período
+         *     anterior de igual largo, el gráfico por hora (hoy) o por día, las consultas por canal y
+         *     el origen de las visitas. Las visitas del admin con su sesión no se guardan.
+         */
+        get: operations["metrics_summary_admin_metrics_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -172,6 +195,37 @@ export interface components {
          * @enum {string}
          */
         Channel: "whatsapp" | "instagram";
+        /** ChannelCount */
+        ChannelCount: {
+            channel: components["schemas"]["Channel"];
+            /** Inquiries */
+            inquiries: number;
+            /**
+             * Share
+             * @description Parte del total de consultas (de 0 a 1).
+             */
+            share: number | null;
+        };
+        /**
+         * ChartPoint
+         * @description Una barra del gráfico: un día, o una hora de hoy.
+         */
+        ChartPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Hour
+             * @description Hora del día (0 a 23) en el gráfico de hoy.
+             */
+            hour: number | null;
+            /** Visits */
+            visits: number;
+            /** Inquiries */
+            inquiries: number;
+        };
         /**
          * ContactClick
          * @description Consulta por un producto: se tocó el link que abre el chat.
@@ -192,6 +246,21 @@ export interface components {
             channel: components["schemas"]["Channel"];
             /** Size */
             size: string;
+        };
+        /**
+         * Count
+         * @description Un total del período comparado con el período anterior de igual largo.
+         */
+        Count: {
+            /** Current */
+            current: number;
+            /** Previous */
+            previous: number;
+            /**
+             * Change
+             * @description Cambio relativo contra el período anterior (0.25 es +25 %). Sin valor si el período anterior es cero.
+             */
+            change: number | null;
         };
         /**
          * Device
@@ -351,6 +420,22 @@ export interface components {
              */
             remember: boolean;
         };
+        /** MetricsSummary */
+        MetricsSummary: {
+            period: components["schemas"]["Period"];
+            visits: components["schemas"]["Count"];
+            inquiries: components["schemas"]["Count"];
+            rate: components["schemas"]["Rate"];
+            /** Chart */
+            chart: components["schemas"]["ChartPoint"][];
+            /** Channels */
+            channels: components["schemas"]["ChannelCount"][];
+            /**
+             * Sources
+             * @description Ordenados por visitas, de más a menos.
+             */
+            sources: components["schemas"]["SourceCount"][];
+        };
         /** NamedRef */
         NamedRef: {
             /** Slug */
@@ -386,6 +471,12 @@ export interface components {
              */
             page: "home" | "stock" | "on_order" | "how_to_buy";
         };
+        /**
+         * Period
+         * @description Períodos móviles que terminan ahora, en días de la tienda.
+         * @enum {string}
+         */
+        Period: "today" | "7d" | "30d";
         /** ProductDetail */
         ProductDetail: {
             /**
@@ -601,6 +692,19 @@ export interface components {
             faq: components["schemas"]["FaqItem"][];
         };
         /**
+         * Rate
+         * @description Tasa de consulta global: consultas de productos dividido visitas a detalles.
+         */
+        Rate: {
+            /**
+             * Current
+             * @description Sin valor si no hubo visitas a detalles.
+             */
+            current: number | null;
+            /** Previous */
+            previous: number | null;
+        };
+        /**
          * Section
          * @description Sección del catálogo público. Se calcula, no se guarda: un producto de stock
          *     agotado aparece en Por encargue.
@@ -613,6 +717,21 @@ export interface components {
          * @enum {string}
          */
         SizeStatus: "in_stock" | "out_of_stock" | "on_order";
+        /**
+         * SourceCount
+         * @description Origen de las visitas: el utm_source tal cual, o ninguno («directo / otros»).
+         */
+        SourceCount: {
+            /** Source */
+            source: string | null;
+            /** Visits */
+            visits: number;
+            /**
+             * Share
+             * @description Parte del total de visitas (de 0 a 1).
+             */
+            share: number;
+        };
         /** StoreFeatures */
         StoreFeatures: {
             /**
@@ -828,7 +947,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -963,6 +1084,46 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    metrics_summary_admin_metrics_summary_get: {
+        parameters: {
+            query?: {
+                period?: components["schemas"]["Period"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsSummary"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

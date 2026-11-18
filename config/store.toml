@@ -13,6 +13,8 @@ price_decimals = 0
 code_prefix = "GS"
 # Cómo se llama la colección en esta tienda (Equipo, Marca…).
 collection_label = "Equipo"
+# Zona horaria: define los días y las horas de las métricas («Hoy» es el hoy de la tienda).
+timezone = "America/Argentina/Buenos_Aires"
 
 [features]
 collections = true

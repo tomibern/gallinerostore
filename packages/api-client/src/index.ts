@@ -37,3 +37,5 @@ export type StoryItemOut = Schemas["StoryItemOut"];
 export type StoryItemKind = Schemas["StoryItemKind"];
 export type AdminOut = Schemas["AdminOut"];
 export type LoginIn = Schemas["LoginIn"];
+export type MetricsSummary = Schemas["MetricsSummary"];
+export type MetricsPeriod = Schemas["Period"];

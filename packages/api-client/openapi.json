@@ -296,9 +296,28 @@
           "events"
         ],
         "summary": "Record Event",
-        "description": "Registra una visita o una consulta, sin cookies ni datos personales. La IP solo\ncuenta para el límite de frecuencia: no se guarda.",
+        "description": "Registra una visita o una consulta, sin cookies ni datos personales. La IP solo\ncuenta para el límite de frecuencia: no se guarda. Con una sesión de admin vigente\nresponde igual pero no guarda nada: el admin no infla sus métricas.",
         "operationId": "record_event_events_post",
+        "parameters": [
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -316,7 +335,6 @@
                     "$ref": "#/components/schemas/GeneralContactClick"
                   }
                 ],
-                "title": "Event",
                 "discriminator": {
                   "propertyName": "type",
                   "mapping": {
@@ -325,11 +343,11 @@
                     "contact_click": "#/components/schemas/ContactClick",
                     "general_contact_click": "#/components/schemas/GeneralContactClick"
                   }
-                }
+                },
+                "title": "Event"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -524,6 +542,68 @@
           }
         }
       }
+    },
+    "/admin/metrics/summary": {
+      "get": {
+        "tags": [
+          "admin-metrics"
+        ],
+        "summary": "Metrics Summary",
+        "description": "Visitas, consultas y tasa de consulta del período comparadas con el período\nanterior de igual largo, el gráfico por hora (hoy) o por día, las consultas por canal y\nel origen de las visitas. Las visitas del admin con su sesión no se guardan.",
+        "operationId": "metrics_summary_admin_metrics_summary_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Period",
+              "default": "7d"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -599,6 +679,74 @@
         "title": "Channel",
         "description": "Canal de contacto: por donde se consulta (y se registra la consulta)."
       },
+      "ChannelCount": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "inquiries": {
+            "type": "integer",
+            "title": "Inquiries"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share",
+            "description": "Parte del total de consultas (de 0 a 1)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "inquiries",
+          "share"
+        ],
+        "title": "ChannelCount"
+      },
+      "ChartPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hour",
+            "description": "Hora del día (0 a 23) en el gráfico de hoy."
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits"
+          },
+          "inquiries": {
+            "type": "integer",
+            "title": "Inquiries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "hour",
+          "visits",
+          "inquiries"
+        ],
+        "title": "ChartPoint",
+        "description": "Una barra del gráfico: un día, o una hora de hoy."
+      },
       "ContactClick": {
         "properties": {
           "session_id": {
@@ -649,6 +797,38 @@
         ],
         "title": "ContactClick",
         "description": "Consulta por un producto: se tocó el link que abre el chat."
+      },
+      "Count": {
+        "properties": {
+          "current": {
+            "type": "integer",
+            "title": "Current"
+          },
+          "previous": {
+            "type": "integer",
+            "title": "Previous"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change",
+            "description": "Cambio relativo contra el período anterior (0.25 es +25 %). Sin valor si el período anterior es cero."
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "previous",
+          "change"
+        ],
+        "title": "Count",
+        "description": "Un total del período comparado con el período anterior de igual largo."
       },
       "Device": {
         "type": "string",
@@ -935,6 +1115,55 @@
         ],
         "title": "LoginIn"
       },
+      "MetricsSummary": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "visits": {
+            "$ref": "#/components/schemas/Count"
+          },
+          "inquiries": {
+            "$ref": "#/components/schemas/Count"
+          },
+          "rate": {
+            "$ref": "#/components/schemas/Rate"
+          },
+          "chart": {
+            "items": {
+              "$ref": "#/components/schemas/ChartPoint"
+            },
+            "type": "array",
+            "title": "Chart"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelCount"
+            },
+            "type": "array",
+            "title": "Channels"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceCount"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "Ordenados por visitas, de más a menos."
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "visits",
+          "inquiries",
+          "rate",
+          "chart",
+          "channels",
+          "sources"
+        ],
+        "title": "MetricsSummary"
+      },
       "NamedRef": {
         "properties": {
           "slug": {
@@ -1009,6 +1238,16 @@
         ],
         "title": "PageView",
         "description": "Visita a la home, a un listado o a «Cómo comprar»."
+      },
+      "Period": {
+        "type": "string",
+        "enum": [
+          "today",
+          "7d",
+          "30d"
+        ],
+        "title": "Period",
+        "description": "Períodos móviles que terminan ahora, en días de la tienda."
       },
       "ProductDetail": {
         "properties": {
@@ -1469,6 +1708,40 @@
         "title": "PublicStore",
         "description": "Lo que la web necesita saber de la tienda. Nada secreto."
       },
+      "Rate": {
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current",
+            "description": "Sin valor si no hubo visitas a detalles."
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "previous"
+        ],
+        "title": "Rate",
+        "description": "Tasa de consulta global: consultas de productos dividido visitas a detalles."
+      },
       "Section": {
         "type": "string",
         "enum": [
@@ -1487,6 +1760,38 @@
         ],
         "title": "SizeStatus",
         "description": "Estado de un talle en el detalle, ya calculado. Todos son elegibles."
+      },
+      "SourceCount": {
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share",
+            "description": "Parte del total de visitas (de 0 a 1)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "visits",
+          "share"
+        ],
+        "title": "SourceCount",
+        "description": "Origen de las visitas: el utm_source tal cual, o ninguno («directo / otros»)."
       },
       "StoreFeatures": {
         "properties": {

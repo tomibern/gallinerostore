@@ -10,6 +10,7 @@ import tomllib
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import Request
 from pydantic import AfterValidator, BaseModel, Field, StringConstraints
@@ -21,6 +22,14 @@ _HERE = Path(__file__).resolve()
 REPO_ROOT = _HERE.parents[4] if len(_HERE.parents) > 4 else _HERE.parents[-1]
 
 
+def _zone(name: str) -> str:
+    try:
+        ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError) as error:
+        raise ValueError(f"Zona horaria desconocida: «{name}»") from error
+    return name
+
+
 class StoreInfo(BaseModel):
     name: str
     brand: str
@@ -29,6 +38,12 @@ class StoreInfo(BaseModel):
     price_decimals: int
     code_prefix: str
     collection_label: str
+    # Zona horaria de la tienda (IANA): define los días y las horas de las métricas.
+    timezone: Annotated[str, AfterValidator(_zone)]
+
+    @property
+    def zone(self) -> ZoneInfo:
+        return ZoneInfo(self.timezone)
 
 
 class StoreFeatures(BaseModel):
