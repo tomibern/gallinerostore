@@ -20,8 +20,12 @@ from app.modules.catalog.models import (
     StoryItemKind,
     Version,
 )
-from app.modules.catalog.repository import Filter, ListingQuery
+from app.modules.catalog.repository import AdminListingQuery, Filter, ListingQuery
 from app.modules.catalog.schemas import (
+    AdminProductList,
+    AdminProductListItem,
+    AdminProductQuery,
+    AdminSizeOut,
     CategoryFacetValue,
     FacetValue,
     ImageOut,
@@ -264,6 +268,11 @@ async def _offered_sizes(
     if section is Section.ON_ORDER:
         group = await repository.sizes_in_group(session, product.category.size_group)
         return [(size, SizeStatus.ON_ORDER) for size in group]
+    return _own_sizes(product)
+
+
+def _own_sizes(product: Product) -> list[tuple[Size, SizeStatus]]:
+    """Los talles propios de un producto de stock, en el orden del grupo, con su estado."""
     own = sorted(product.sizes, key=lambda ps: (ps.size.sort_order, ps.size.id))
     return [
         (ps.size, SizeStatus.IN_STOCK if ps.in_stock else SizeStatus.OUT_OF_STOCK) for ps in own
@@ -385,4 +394,59 @@ async def published_product(
         sizes=sizes,
         on_order_notice=contact.on_order_notice if section is Section.ON_ORDER else None,
         story=_story_out(product.story_items) if features.product_story else [],
+    )
+
+
+# --- Admin ----------------------------------------------------------------------
+
+
+async def _admin_sizes(
+    session: AsyncSession, product: Product, groups: dict[str, Sequence[Size]]
+) -> list[AdminSizeOut]:
+    """Los talles que ve el admin. Se decide por el modo de venta, no por la sección: un
+    producto de stock agotado muestra los suyos tachados, aunque esté en Por encargue.
+    ``groups`` guarda los grupos ya leídos, para no repetir la consulta en la página."""
+    if product.sale_mode is SaleMode.ON_ORDER:
+        group = product.category.size_group
+        if group not in groups:
+            groups[group] = await repository.sizes_in_group(session, group)
+        return [
+            AdminSizeOut(label=size.label, status=SizeStatus.ON_ORDER) for size in groups[group]
+        ]
+    return [AdminSizeOut(label=size.label, status=status) for size, status in _own_sizes(product)]
+
+
+async def list_for_admin(
+    session: AsyncSession, store: StoreConfig, media_base_url: str, query: AdminProductQuery
+) -> AdminProductList:
+    """Una página del listado del admin: cualquier estado, con la sección y la
+    disponibilidad calculadas con la misma regla del catálogo público."""
+    listing = AdminListingQuery(
+        filter=query.filter,
+        sold_out_goes_on_order=store.features.on_order,
+        search=_search_words(query.q),
+    )
+    rows, has_more = await repository.admin_products(
+        session, listing, limit=query.limit, offset=query.offset
+    )
+    groups: dict[str, Sequence[Size]] = {}
+    items = [
+        AdminProductListItem(
+            code=product.code,
+            name=product.name,
+            price=product.price,
+            currency=store.store.currency,
+            status=product.status,
+            featured=product.featured,
+            section=product_section,
+            availability=availability(product_section, sold_out),
+            sizes=await _admin_sizes(session, product, groups),
+            cover=_image_out(product.images[0], media_base_url) if product.images else None,
+        )
+        for product, product_section, sold_out in rows
+    ]
+    return AdminProductList(
+        items=items,
+        has_more=has_more,
+        total=await repository.count_admin_products(session, listing),
     )

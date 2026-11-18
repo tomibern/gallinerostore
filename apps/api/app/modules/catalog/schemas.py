@@ -3,8 +3,10 @@
 from pydantic import BaseModel, Field
 
 from app.modules.catalog.models import (
+    AdminFilter,
     Availability,
     ProductSort,
+    ProductStatus,
     Section,
     SizeStatus,
     StoryItemKind,
@@ -192,3 +194,74 @@ class ProductDetail(BaseModel):
             "product_story está apagada (entonces la sección no se muestra)."
         )
     )
+
+
+# --- Admin ----------------------------------------------------------------------
+
+
+class AdminProductQuery(BaseModel):
+    """Query string del listado del admin: búsqueda, filtro y página."""
+
+    q: str | None = Field(
+        default=None,
+        max_length=MAX_SEARCH_LENGTH,
+        description=(
+            "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. "
+            "Cada palabra tiene que aparecer en el nombre o en el código."
+        ),
+    )
+    filter: AdminFilter = Field(
+        default=AdminFilter.ALL,
+        description=(
+            "all: todos menos los archivados. stock, on_order: los de esa sección (con la "
+            "misma regla del catálogo público). sold_out: los agotados. draft, hidden, "
+            "archived: los de ese estado. Salvo archived, ninguno trae archivados."
+        ),
+    )
+    limit: int = Field(
+        default=DEFAULT_PAGE_SIZE,
+        ge=1,
+        le=MAX_PAGE_SIZE,
+        description="Cuántos productos traer como máximo.",
+    )
+    offset: int = Field(default=0, ge=0, description="Cuántos productos saltear desde el inicio.")
+
+
+class AdminSizeOut(BaseModel):
+    label: str
+    status: SizeStatus = Field(
+        description=(
+            "En un producto de stock, in_stock u out_of_stock (se muestra tachado), aunque "
+            "esté agotado; en un encargue, on_order para todos los talles de su grupo."
+        )
+    )
+
+
+class AdminProductListItem(BaseModel):
+    code: str = Field(
+        description="Código permanente del producto: prefijo de la tienda y número (ABC-014)."
+    )
+    name: str
+    price: int = Field(description="Precio en la unidad menor de la moneda (centavos).")
+    currency: str
+    status: ProductStatus
+    featured: bool = Field(description="Si está destacado en la home.")
+    section: Section = Field(
+        description=(
+            "Sección donde aparece (o aparecería, si no está publicado), con la misma "
+            "regla del catálogo público."
+        )
+    )
+    availability: Availability = Field(
+        description="Disponibilidad con la regla del catálogo público: dice si está agotado."
+    )
+    sizes: list[AdminSizeOut] = Field(description="En el orden del grupo de talles.")
+    cover: ImageOut | None = Field(description="La primera imagen del producto, si tiene.")
+
+
+class AdminProductList(BaseModel):
+    items: list[AdminProductListItem] = Field(
+        description="La página pedida, del producto más nuevo al más viejo."
+    )
+    has_more: bool = Field(description="Si hay más productos después de esta página.")
+    total: int = Field(description="Productos que cumplen el filtro, en todas las páginas.")
