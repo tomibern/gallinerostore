@@ -27,7 +27,7 @@ install: ## Instala dependencias de Python y JS
 	cd $(API) && uv sync
 	npm install
 
-infra: ## Levanta Postgres y el almacenamiento S3 y espera a que estén sanos
+infra: ## Levanta Postgres, el almacenamiento S3 y Mailpit y espera a que estén sanos
 	docker compose up -d --wait
 
 storage: infra ## Crea el bucket de imágenes si no existe
@@ -67,6 +67,7 @@ migrate-test: test-db ## Aplica las migraciones a la base de tests
 
 dev: install migrate storage ## Levanta todo: infraestructura, API y web (Ctrl+C corta)
 	@echo "Web: http://localhost:3000  ·  en la red: http://$$(node -p "Object.values(require('os').networkInterfaces()).flat().find(n => n.family === 'IPv4' && !n.internal)?.address ?? 'localhost'"):3000"
+	@echo "Emails (Mailpit): http://localhost:$${MAILPIT_UI_PORT:-8025}"
 	@# Al cortar: se desactivan los traps y la shell ignora TERM antes de
 	@# avisarle al grupo, así la señal no vuelve a disparar el trap en bucle.
 	@trap 'trap - INT EXIT; trap "" TERM; kill 0 2>/dev/null; wait; exit 0' INT TERM EXIT; \

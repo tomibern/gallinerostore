@@ -1,4 +1,4 @@
-# Infraestructura de desarrollo: solo Postgres y almacenamiento S3 (RustFS).
+# Infraestructura de desarrollo: Postgres, almacenamiento S3 (RustFS) y Mailpit.
 # La API y la web corren en la máquina (`make dev`).
 name: catalog
 
@@ -34,6 +34,19 @@ services:
       - storage-data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:9000/health || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    # Recibe los emails que manda la API (SMTP en el 1025) y los muestra en su página
+    # (http://localhost:8025). No manda nada afuera.
+    image: axllent/mailpit:v1.28
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
       interval: 2s
       timeout: 3s
       retries: 30
