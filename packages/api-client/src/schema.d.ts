@@ -131,6 +131,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Admin Settings
+         * @description Contacto, mensajes prearmados y aviso de encargue, para editarlos.
+         */
+        get: operations["get_admin_settings_admin_settings_get"];
+        /**
+         * Put Admin Settings
+         * @description Guarda contacto, mensajes prearmados y aviso de encargue.
+         */
+        put: operations["put_admin_settings_admin_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/settings/message-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Message
+         * @description Arma el mensaje de una plantilla (sin guardarla) con un producto publicado real.
+         */
+        post: operations["preview_message_admin_settings_message_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -139,6 +183,41 @@ export interface components {
         AdminOut: {
             /** Email */
             email: string;
+        };
+        /**
+         * AdminSettings
+         * @description Lo que edita el admin en Contacto, con las variables que admite cada plantilla.
+         */
+        AdminSettings: {
+            /** @description Un canal en null (o sin cargar) no se ofrece en la tienda. */
+            contact_channels: components["schemas"]["ContactChannels"];
+            message_templates: components["schemas"]["MessageTemplates"];
+            /**
+             * On Order Notice
+             * @description El aviso general de demora y seña de los encargues. Vacío: no se muestra.
+             */
+            on_order_notice: string;
+            /**
+             * Message Variables
+             * @description Las variables que se pueden insertar en la plantilla de cada caso.
+             */
+            message_variables: {
+                [key: string]: components["schemas"]["MessageVariable"][];
+            };
+        };
+        /**
+         * AdminSettingsIn
+         * @description Lo que guarda la sección Contacto: canales, plantillas y aviso de encargue.
+         */
+        AdminSettingsIn: {
+            /** @description Un canal en null (o sin cargar) no se ofrece en la tienda. */
+            contact_channels: components["schemas"]["ContactChannels"];
+            message_templates: components["schemas"]["MessageTemplates"];
+            /**
+             * On Order Notice
+             * @description El aviso general de demora y seña de los encargues. Vacío: no se muestra.
+             */
+            on_order_notice: string;
         };
         /**
          * Availability
@@ -172,6 +251,14 @@ export interface components {
          * @enum {string}
          */
         Channel: "whatsapp" | "instagram";
+        /**
+         * ContactChannels
+         * @description Los datos de cada canal de contacto. Un canal sin datos no se ofrece.
+         */
+        ContactChannels: {
+            whatsapp?: components["schemas"]["WhatsAppContact"] | null;
+            instagram?: components["schemas"]["InstagramContact"] | null;
+        };
         /**
          * ContactClick
          * @description Consulta por un producto: se tocó el link que abre el chat.
@@ -338,6 +425,11 @@ export interface components {
              */
             url: string;
         };
+        /** InstagramContact */
+        InstagramContact: {
+            /** Username */
+            username: string;
+        };
         /** LoginIn */
         LoginIn: {
             /** Email */
@@ -351,6 +443,50 @@ export interface components {
              */
             remember: boolean;
         };
+        /**
+         * MessageCase
+         * @description Caso del mensaje prearmado: la clave de su plantilla en ``message_templates``.
+         * @enum {string}
+         */
+        MessageCase: "stock" | "out_of_stock" | "on_order" | "sold_out_on_order" | "general";
+        /**
+         * MessagePreview
+         * @description El mensaje armado por la API, como lo recibiría el chat (ADR 0005).
+         */
+        MessagePreview: {
+            /** Message */
+            message: string;
+            /** @description El producto publicado con el que se armó, o null en la consulta general (o si todavía no hay productos publicados). */
+            product: components["schemas"]["PreviewProduct"] | null;
+        };
+        /** MessagePreviewIn */
+        MessagePreviewIn: {
+            case: components["schemas"]["MessageCase"];
+            /** Template */
+            template: string;
+        };
+        /**
+         * MessageTemplates
+         * @description Las cinco plantillas de los mensajes prearmados, una por caso (MessageCase).
+         */
+        MessageTemplates: {
+            /** Stock */
+            stock: string;
+            /** Out Of Stock */
+            out_of_stock: string;
+            /** On Order */
+            on_order: string;
+            /** Sold Out On Order */
+            sold_out_on_order: string;
+            /** General */
+            general: string;
+        };
+        /**
+         * MessageVariable
+         * @description Una variable de las plantillas: se escribe entre llaves, por ejemplo ``{size}``.
+         * @enum {string}
+         */
+        MessageVariable: "product" | "code" | "size" | "link";
         /** NamedRef */
         NamedRef: {
             /** Slug */
@@ -385,6 +521,15 @@ export interface components {
              * @enum {string}
              */
             page: "home" | "stock" | "on_order" | "how_to_buy";
+        };
+        /** PreviewProduct */
+        PreviewProduct: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Size */
+            size: string;
         };
         /** ProductDetail */
         ProductDetail: {
@@ -684,6 +829,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** WhatsAppContact */
+        WhatsAppContact: {
+            /** Number */
+            number: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -976,6 +1126,128 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_admin_settings_admin_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSettings"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_admin_settings_admin_settings_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSettings"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_message_admin_settings_message_preview_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessagePreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessagePreview"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

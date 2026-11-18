@@ -524,6 +524,201 @@
           }
         }
       }
+    },
+    "/admin/settings": {
+      "get": {
+        "tags": [
+          "admin-settings"
+        ],
+        "summary": "Get Admin Settings",
+        "description": "Contacto, mensajes prearmados y aviso de encargue, para editarlos.",
+        "operationId": "get_admin_settings_admin_settings_get",
+        "parameters": [
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin-settings"
+        ],
+        "summary": "Put Admin Settings",
+        "description": "Guarda contacto, mensajes prearmados y aviso de encargue.",
+        "operationId": "put_admin_settings_admin_settings_put",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSettingsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``."
+          }
+        }
+      }
+    },
+    "/admin/settings/message-preview": {
+      "post": {
+        "tags": [
+          "admin-settings"
+        ],
+        "summary": "Preview Message",
+        "description": "Arma el mensaje de una plantilla (sin guardarla) con un producto publicado real.",
+        "operationId": "preview_message_admin_settings_message_preview_post",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessagePreviewIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagePreview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -540,6 +735,73 @@
           "email"
         ],
         "title": "AdminOut"
+      },
+      "AdminSettings": {
+        "properties": {
+          "contact_channels": {
+            "$ref": "#/components/schemas/ContactChannels",
+            "description": "Un canal en null (o sin cargar) no se ofrece en la tienda."
+          },
+          "message_templates": {
+            "$ref": "#/components/schemas/MessageTemplates"
+          },
+          "on_order_notice": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "On Order Notice",
+            "description": "El aviso general de demora y seña de los encargues. Vacío: no se muestra."
+          },
+          "message_variables": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/MessageVariable"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/MessageCase"
+            },
+            "type": "object",
+            "title": "Message Variables",
+            "description": "Las variables que se pueden insertar en la plantilla de cada caso."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contact_channels",
+          "message_templates",
+          "on_order_notice",
+          "message_variables"
+        ],
+        "title": "AdminSettings",
+        "description": "Lo que edita el admin en Contacto, con las variables que admite cada plantilla."
+      },
+      "AdminSettingsIn": {
+        "properties": {
+          "contact_channels": {
+            "$ref": "#/components/schemas/ContactChannels",
+            "description": "Un canal en null (o sin cargar) no se ofrece en la tienda."
+          },
+          "message_templates": {
+            "$ref": "#/components/schemas/MessageTemplates"
+          },
+          "on_order_notice": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "On Order Notice",
+            "description": "El aviso general de demora y seña de los encargues. Vacío: no se muestra."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contact_channels",
+          "message_templates",
+          "on_order_notice"
+        ],
+        "title": "AdminSettingsIn",
+        "description": "Lo que guarda la sección Contacto: canales, plantillas y aviso de encargue."
       },
       "Availability": {
         "type": "string",
@@ -598,6 +860,34 @@
         ],
         "title": "Channel",
         "description": "Canal de contacto: por donde se consulta (y se registra la consulta)."
+      },
+      "ContactChannels": {
+        "properties": {
+          "whatsapp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WhatsAppContact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstagramContact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ContactChannels",
+        "description": "Los datos de cada canal de contacto. Un canal sin datos no se ofrece."
       },
       "ContactClick": {
         "properties": {
@@ -909,6 +1199,20 @@
         "title": "Inquiry",
         "description": "Una consulta lista para usar: el mensaje prearmado y el link que abre el chat."
       },
+      "InstagramContact": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._]{1,30}$",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "InstagramContact"
+      },
       "LoginIn": {
         "properties": {
           "email": {
@@ -934,6 +1238,114 @@
           "password"
         ],
         "title": "LoginIn"
+      },
+      "MessageCase": {
+        "type": "string",
+        "enum": [
+          "stock",
+          "out_of_stock",
+          "on_order",
+          "sold_out_on_order",
+          "general"
+        ],
+        "title": "MessageCase",
+        "description": "Caso del mensaje prearmado: la clave de su plantilla en ``message_templates``."
+      },
+      "MessagePreview": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviewProduct"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El producto publicado con el que se armó, o null en la consulta general (o si todavía no hay productos publicados)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "product"
+        ],
+        "title": "MessagePreview",
+        "description": "El mensaje armado por la API, como lo recibiría el chat (ADR 0005)."
+      },
+      "MessagePreviewIn": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/MessageCase"
+          },
+          "template": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Template"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case",
+          "template"
+        ],
+        "title": "MessagePreviewIn"
+      },
+      "MessageTemplates": {
+        "properties": {
+          "stock": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Stock"
+          },
+          "out_of_stock": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Out Of Stock"
+          },
+          "on_order": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "On Order"
+          },
+          "sold_out_on_order": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Sold Out On Order"
+          },
+          "general": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "General"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stock",
+          "out_of_stock",
+          "on_order",
+          "sold_out_on_order",
+          "general"
+        ],
+        "title": "MessageTemplates",
+        "description": "Las cinco plantillas de los mensajes prearmados, una por caso (MessageCase)."
+      },
+      "MessageVariable": {
+        "type": "string",
+        "enum": [
+          "product",
+          "code",
+          "size",
+          "link"
+        ],
+        "title": "MessageVariable",
+        "description": "Una variable de las plantillas: se escribe entre llaves, por ejemplo ``{size}``."
       },
       "NamedRef": {
         "properties": {
@@ -1009,6 +1421,29 @@
         ],
         "title": "PageView",
         "description": "Visita a la home, a un listado o a «Cómo comprar»."
+      },
+      "PreviewProduct": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size": {
+            "type": "string",
+            "title": "Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "size"
+        ],
+        "title": "PreviewProduct"
       },
       "ProductDetail": {
         "properties": {
@@ -1616,6 +2051,20 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WhatsAppContact": {
+        "properties": {
+          "number": {
+            "type": "string",
+            "pattern": "^[0-9]{8,15}$",
+            "title": "Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number"
+        ],
+        "title": "WhatsAppContact"
       }
     }
   }

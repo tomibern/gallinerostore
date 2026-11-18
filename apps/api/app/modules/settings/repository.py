@@ -20,6 +20,10 @@ async def flush(session: AsyncSession) -> None:
     await session.flush()
 
 
+async def commit(session: AsyncSession) -> None:
+    await session.commit()
+
+
 async def slides_for_blocks(
     session: AsyncSession, blocks: Sequence[str], per_block: int
 ) -> Sequence[HomeSlide]:
