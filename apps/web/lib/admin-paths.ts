@@ -32,3 +32,8 @@ export function afterLoginPath(next: string | null | undefined): string {
   }
   return next;
 }
+
+/** El editor de un producto, por su código (en minúsculas, como en la tienda). */
+export function adminProductPath(code: string): string {
+  return `${ADMIN_HOME}/${code.toLowerCase()}`;
+}
