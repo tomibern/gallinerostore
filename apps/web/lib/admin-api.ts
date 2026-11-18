@@ -10,12 +10,22 @@ import {
   type LoginIn,
   type MessageCase,
   type MessagePreview,
+  type MetricsPeriod,
+  type MetricsSummary,
   type ValidationError,
 } from "@catalog/api-client";
 
 import { fieldErrors, type FieldErrors } from "./admin-settings";
 
-export type { AdminOut, AdminSettings, AdminSettingsIn, MessageCase, MessagePreview };
+export type {
+  AdminOut,
+  AdminSettings,
+  AdminSettingsIn,
+  MessageCase,
+  MessagePreview,
+  MetricsPeriod,
+  MetricsSummary,
+};
 
 export const CSRF_HEADERS = { "X-Requested-With": "fetch" };
 
@@ -47,6 +57,17 @@ export async function logIn(body: LoginIn): Promise<LoginResult> {
 /** Cierra la sesión (y borra la cookie). */
 export async function logOut(): Promise<void> {
   await api.DELETE("/admin/session");
+}
+
+/** El resumen de métricas del período, o null si la sesión ya no está vigente. */
+export async function getMetricsSummary(period: MetricsPeriod): Promise<MetricsSummary | null> {
+  const { data, response } = await api.GET("/admin/metrics/summary", {
+    params: { query: { period } },
+    cache: "no-store",
+  });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/metrics/summary respondió ${response.status}`);
 }
 
 /** Contacto, mensajes prearmados y aviso de encargue. Sin sesión, null. */

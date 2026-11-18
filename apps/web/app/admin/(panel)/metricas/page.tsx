@@ -1,10 +1,10 @@
-import { AdminPage } from "@/components/admin/admin-page";
-import { t } from "@/lib/texts";
+import { MetricsSummaryView } from "@/components/admin/metrics-summary";
+import { getStore } from "@/lib/api";
 
-export default function AdminMetricsPage() {
-  return (
-    <AdminPage title={t("admin.nav.metrics")}>
-      <p className="text-muted">{t("admin.empty")}</p>
-    </AdminPage>
-  );
+// Para formatear los números; sin la API, el idioma del diccionario.
+const FALLBACK_LOCALE = "es-AR";
+
+export default async function AdminMetricsPage() {
+  const store = await getStore();
+  return <MetricsSummaryView locale={store?.locale ?? FALLBACK_LOCALE} />;
 }

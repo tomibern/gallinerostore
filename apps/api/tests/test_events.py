@@ -5,6 +5,7 @@ desconocido, un campo de otro tipo, un producto que no está en el catálogo pú
 talle que el producto no ofrece. La IP no se guarda en ningún lado.
 """
 
+from datetime import timedelta
 from typing import Any
 
 import httpx
@@ -14,8 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_store_config
+from app.modules.auth.service import create_admin
 from app.modules.catalog.models import Product, Size
 from app.modules.events.models import Event
+from tests.support import Clock
 
 SESSION = "0123456789abcdef0123456789abcdef"
 
@@ -300,3 +303,57 @@ async def test_events_endpoint_for_e2e_is_not_in_the_openapi(client: httpx.Async
 
     assert "/events" in paths
     assert not any(path.startswith("/e2e") for path in paths)
+
+
+async def test_the_event_is_saved_at_the_time_of_the_api_clock(
+    client: httpx.AsyncClient, db_session: AsyncSession, clock: Clock
+) -> None:
+    """La hora la pone la API (no la base): así los tests de métricas fijan cuándo pasó."""
+    await client.post("/events", json=_event(type="page_view", page="home"))
+
+    [event] = await _saved(db_session)
+    assert event.created_at == clock.now
+
+
+async def _log_in_as_admin(client: httpx.AsyncClient, db_session: AsyncSession) -> None:
+    await create_admin(db_session, "admin@tienda.test", "una-clave-larga")
+    response = await client.post(
+        "/admin/session",
+        json={"email": "admin@tienda.test", "password": "una-clave-larga", "remember": False},
+        headers={"X-Requested-With": "fetch"},
+    )
+    assert response.status_code == 200
+
+
+async def test_events_sent_with_an_admin_session_answer_the_same_but_are_not_saved(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    """El admin revisando su tienda no infla sus métricas."""
+    await _log_in_as_admin(client, db_session)
+
+    response = await client.post("/events", json=_event(type="page_view", page="home"))
+
+    assert response.status_code == 204
+    assert await _saved(db_session) == []
+
+
+async def test_events_sent_with_an_admin_session_are_still_validated(
+    client: httpx.AsyncClient, db_session: AsyncSession
+) -> None:
+    await _log_in_as_admin(client, db_session)
+
+    response = await client.post("/events", json=_event(type="page_view", page="checkout"))
+
+    assert response.status_code == 422
+
+
+async def test_an_expired_admin_session_does_not_stop_events(
+    client: httpx.AsyncClient, db_session: AsyncSession, clock: Clock
+) -> None:
+    """Con la cookie de una sesión vencida, el evento es de un visitante más."""
+    await _log_in_as_admin(client, db_session)
+    clock.advance(timedelta(hours=25))
+
+    await client.post("/events", json=_event(type="page_view", page="home"))
+
+    assert len(await _saved(db_session)) == 1

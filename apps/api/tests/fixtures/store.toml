@@ -7,6 +7,8 @@ currency = "USD"
 price_decimals = 2
 code_prefix = "TP"
 collection_label = "Marca"
+# Sin horario de verano (UTC-3 todo el año): los tests calculan las horas a mano.
+timezone = "America/Montevideo"
 
 [features]
 collections = true

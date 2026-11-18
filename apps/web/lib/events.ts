@@ -4,7 +4,8 @@
 
 import type { Device, EventIn, Page } from "@catalog/api-client";
 
-// Sin utm_source en la URL de entrada.
+// Sin utm_source en la URL de entrada. Tiene que coincidir con DIRECT_SOURCE de la API
+// (app/modules/events/models.py): las métricas lo cuentan como «directo / otros».
 export const DIRECT_SOURCE = "directo";
 const MAX_SOURCE_LENGTH = 60;
 // Por Next, que lo reenvía a la API (ADR 0003).

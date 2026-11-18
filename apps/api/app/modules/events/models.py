@@ -9,6 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.models import Base, text_enum
 from app.modules.settings.models import Channel
 
+# Origen que manda la web cuando la URL de entrada no trae utm_source. Para las métricas
+# es lo mismo que no tener origen: «directo / otros». Tiene que coincidir con
+# DIRECT_SOURCE de apps/web/lib/events.ts.
+DIRECT_SOURCE = "directo"
+
 
 class EventType(StrEnum):
     PAGE_VIEW = "page_view"  # visita a la home o a un listado

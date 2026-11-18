@@ -5,8 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import Now
 from app.core.config import Settings, StoreConfig, get_settings, get_store_config
 from app.core.db import get_session
+from app.modules.auth.dependencies import FromAdmin
 from app.modules.events import service
 from app.modules.events.rate_limit import EVENTS_RATE_LIMIT, limiter
 from app.modules.events.schemas import EventIn, EventOut, SessionId
@@ -25,11 +27,14 @@ async def record_event(
     event: EventIn,
     session: Annotated[AsyncSession, Depends(get_session)],
     store: Annotated[StoreConfig, Depends(get_store_config)],
+    from_admin: FromAdmin,
+    now: Now,
 ) -> None:
     """Registra una visita o una consulta, sin cookies ni datos personales. La IP solo
-    cuenta para el límite de frecuencia: no se guarda."""
+    cuenta para el límite de frecuencia: no se guarda. Con una sesión de admin vigente
+    responde igual pero no guarda nada: el admin no infla sus métricas."""
     try:
-        await service.record(session, store, event)
+        await service.record(session, store, event, now=now, from_admin=from_admin)
     except service.InvalidEventError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 

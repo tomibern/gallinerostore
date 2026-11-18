@@ -200,6 +200,48 @@ export const esAR = {
   "admin.login.invalid": "Email o contraseña incorrectos.",
   "admin.login.tooMany": "Demasiados intentos. Esperá 15 minutos y probá de nuevo.",
   "admin.login.error": "No pudimos conectar. Revisá tu conexión y probá de nuevo.",
+
+  // Métricas del admin
+  "admin.metrics.period.label": "Período",
+  "admin.metrics.period.today": "Hoy",
+  "admin.metrics.period.7d": "Últimos 7 días",
+  "admin.metrics.period.30d": "Últimos 30 días",
+  // En el celular no entra el nombre largo.
+  "admin.metrics.period.today.short": "Hoy",
+  "admin.metrics.period.7d.short": "7 días",
+  "admin.metrics.period.30d.short": "30 días",
+  "admin.metrics.loading": "Cargando métricas…",
+  "admin.metrics.error": "No pudimos cargar las métricas. Revisá tu conexión y probá de nuevo.",
+  "admin.metrics.visits": "Visitas",
+  "admin.metrics.inquiries": "Consultas",
+  "admin.metrics.rate": "Tasa de consulta",
+  "admin.metrics.rate.hint": "consultas / visitas a productos",
+  "admin.metrics.rate.hintWithPrevious": "consultas / visitas a productos · antes: {rate}",
+  "admin.metrics.rate.none": "–",
+  "admin.metrics.change": "{change} vs. {previous}",
+  "admin.metrics.change.none": "sin datos de {previous}",
+  "admin.metrics.previous.today": "ayer a esta hora",
+  "admin.metrics.previous.other": "el período anterior",
+  "admin.metrics.channels": "Consultas por canal",
+  "admin.metrics.channels.short": "Por canal",
+  "admin.metrics.channels.empty": "Todavía no hay consultas.",
+  "admin.metrics.channels.item": "{channel} {share}",
+  "admin.metrics.channels.separator": " · ",
+  "admin.metrics.chart.title": "Visitas y consultas · {period}",
+  "admin.metrics.chart.hour": "{hour} h",
+  "admin.metrics.chart.dayHour": "{date}, {hour}:00",
+  "admin.metrics.chart.when": "Cuándo",
+  "admin.metrics.sources.title": "De dónde llegan",
+  "admin.metrics.sources.empty": "Todavía no hay visitas.",
+  "admin.metrics.sources.hint":
+    "Usá links etiquetados, por ejemplo ?utm_source=historia, para que se cuenten aparte.",
+  // Nombres de los orígenes conocidos (el utm_source de los links). Los que no están acá
+  // se muestran tal cual; cada tienda puede sumar los suyos en config/texts.json.
+  "admin.metrics.direct": "Directo / otros",
+  "admin.metrics.source.bio": "Link en la bio",
+  "admin.metrics.source.historia": "Historias",
+  "admin.metrics.source.compartido": "Links compartidos",
+  "admin.metrics.notice": "La web mide interés, no ventas: las ventas se cierran en el chat.",
 } as const satisfies Record<string, string>;
 
 export type TextKey = keyof typeof esAR;

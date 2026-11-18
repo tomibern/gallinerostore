@@ -14,7 +14,7 @@ Catálogo web de indumentaria de fútbol donde cada consulta termina en WhatsApp
 | `apps/api` | API en FastAPI (Python 3.13, uv). Toda la lógica de negocio. |
 | `apps/web` | Web en Next.js. Muestra datos y habla con la API a través de `/api`. |
 | `packages/api-client` | Cliente TypeScript de la API, generado desde su OpenAPI (`make gen-client`). No se edita a mano. |
-| `config/store.toml` | Datos de la tienda del cliente: nombre, moneda, prefijo de código, features. |
+| `config/store.toml` | Datos de la tienda del cliente: nombre, moneda, prefijo de código, zona horaria, features. |
 | `config/seed.toml` | Datos iniciales del cliente: talles, categorías, colecciones, versiones y productos de prueba. |
 | `brand/<marca>/` | Tokens de color y recursos de la marca. Pisa el tema neutro del núcleo. |
 | `docker-compose.yml` | Postgres y almacenamiento S3 (RustFS) para desarrollo. |
