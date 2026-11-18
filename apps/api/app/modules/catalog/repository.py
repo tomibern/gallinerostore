@@ -218,6 +218,28 @@ async def published_product_by_code(
     return product, Section(section_value), bool(sold_out)
 
 
+async def published_products_with_sizes(
+    session: AsyncSession, sold_out_goes_on_order: bool, *, limit: int
+) -> list[tuple[Product, Section, bool]]:
+    """Los primeros productos publicados (orden de «Destacados»), con su sección, si
+    están agotados, y con sus talles y su categoría ya cargados."""
+    query = ListingQuery(section=None, sold_out_goes_on_order=sold_out_goes_on_order)
+    section_column = _section_column(sold_out_goes_on_order).label("section")
+    stmt = (
+        select(Product, section_column, catalog_products.c.sold_out)
+        .join(catalog_products, catalog_products.c.id == Product.id)
+        .where(*_conditions(query))
+        .options(
+            selectinload(Product.sizes).joinedload(ProductSize.size),
+            joinedload(Product.category),
+        )
+        .order_by(*_order_by(ProductSort.MANUAL))
+        .limit(limit)
+    )
+    result = (await session.execute(stmt)).all()
+    return [(product, Section(section), bool(sold_out)) for product, section, sold_out in result]
+
+
 async def sizes_in_group(session: AsyncSession, group: str) -> Sequence[Size]:
     """Los talles de un grupo, en su orden."""
     stmt = select(Size).where(Size.size_group == group).order_by(Size.sort_order, Size.id)

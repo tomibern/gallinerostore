@@ -31,6 +31,20 @@ class MessageCase(StrEnum):
     GENERAL = "general"
 
 
+class MessageVariable(StrEnum):
+    """Una variable de las plantillas: se escribe entre llaves, por ejemplo ``{size}``."""
+
+    PRODUCT = "product"
+    CODE = "code"
+    SIZE = "size"
+    LINK = "link"
+
+
+def case_variables(case: MessageCase) -> list[MessageVariable]:
+    """Las variables de la plantilla de un caso. La consulta general no tiene producto."""
+    return [] if case is MessageCase.GENERAL else list(MessageVariable)
+
+
 class StoreSettings(Base):
     """La fila única con lo que el admin edita. Lo técnico va en config/store.toml."""
 

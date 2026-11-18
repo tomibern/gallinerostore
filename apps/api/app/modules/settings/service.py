@@ -4,6 +4,7 @@ mensajes prearmados de las consultas."""
 import logging
 import re
 from dataclasses import dataclass, field
+from typing import Any
 from urllib.parse import quote
 
 from pydantic import ValidationError
@@ -11,13 +12,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import StoreConfig, StoreFeatures
 from app.modules.settings import repository
-from app.modules.settings.models import Channel, MessageCase, StoreSettings
+from app.modules.settings.models import (
+    SETTINGS_ROW_ID,
+    Channel,
+    MessageCase,
+    MessageVariable,
+    StoreSettings,
+    case_variables,
+)
 from app.modules.settings.schemas import (
+    AdminSettings,
+    AdminSettingsIn,
     ContactChannels,
     FaqItem,
     HomeBlock,
     HomeSlideOut,
     Inquiry,
+    MessageTemplates,
     PublicStore,
 )
 
@@ -96,7 +107,7 @@ DEFAULT_MESSAGE_TEMPLATES: dict[MessageCase, str] = {
 }
 
 # Las variables que admite una plantilla. Cualquier otra cosa entre llaves queda tal cual.
-_VARIABLE = re.compile(r"\{(product|code|size|link)\}")
+_VARIABLE = re.compile(r"\{(" + "|".join(MessageVariable) + r")\}")
 
 
 def render_message(template: str, values: dict[str, str]) -> str:
@@ -141,9 +152,9 @@ class Contact:
         return result
 
 
-def _channels(raw: dict[str, object], features: StoreFeatures) -> ContactChannels:
-    """Los canales cargados que la tienda ofrece. Uno mal cargado se deja afuera (y se
-    avisa en el log) en lugar de romper el detalle."""
+def _stored_channels(raw: dict[str, object]) -> ContactChannels:
+    """Los canales cargados. Uno mal cargado se deja afuera (y se avisa en el log) en
+    lugar de romper el detalle o la pantalla del admin."""
     channels: dict[str, object] = {}
     for name, data in raw.items():
         try:
@@ -152,7 +163,12 @@ def _channels(raw: dict[str, object], features: StoreFeatures) -> ContactChannel
             logger.warning("Canal de contacto mal cargado, se ignora: %s", name)
             continue
         channels[name] = data
-    parsed = ContactChannels.model_validate(channels)
+    return ContactChannels.model_validate(channels)
+
+
+def _channels(raw: dict[str, object], features: StoreFeatures) -> ContactChannels:
+    """Los canales cargados que la tienda ofrece."""
+    parsed = _stored_channels(raw)
     if not features.instagram:
         parsed.instagram = None
     return parsed
@@ -172,6 +188,41 @@ async def contact(session: AsyncSession, features: StoreFeatures) -> Contact:
     """Canales, plantillas y aviso de encargue que edita el admin. Sin la fila de
     configuración no hay canales: no hay a quién escribirle."""
     return _contact(await repository.get_store_settings(session), features)
+
+
+def _admin_settings(store_settings: StoreSettings | None) -> AdminSettings:
+    row = store_settings or StoreSettings(contact_channels={}, message_templates={})
+    stored = row.message_templates or {}
+    templates: dict[str, Any] = {
+        case.value: stored.get(case) or DEFAULT_MESSAGE_TEMPLATES[case] for case in MessageCase
+    }
+    return AdminSettings(
+        contact_channels=_stored_channels(row.contact_channels or {}),
+        # Sin validar: una plantilla vieja con una variable rota igual se tiene que poder
+        # ver para corregirla.
+        message_templates=MessageTemplates.model_construct(**templates),
+        on_order_notice=row.on_order_notice or "",
+        message_variables={case: case_variables(case) for case in MessageCase},
+    )
+
+
+async def admin_settings(session: AsyncSession) -> AdminSettings:
+    """Contacto, plantillas (las neutras del núcleo donde la tienda no cargó la suya) y
+    aviso de encargue, para editarlos."""
+    return _admin_settings(await repository.get_store_settings(session))
+
+
+async def save_admin_settings(session: AsyncSession, data: AdminSettingsIn) -> AdminSettings:
+    """Guarda contacto, plantillas y aviso. La tienda los usa desde la próxima visita."""
+    store_settings = await repository.get_store_settings(session)
+    if store_settings is None:
+        store_settings = StoreSettings(id=SETTINGS_ROW_ID, how_to_buy_md="", faq_md="")
+        repository.add(session, store_settings)
+    store_settings.contact_channels = data.contact_channels.model_dump(exclude_none=True)
+    store_settings.message_templates = data.message_templates.model_dump()
+    store_settings.on_order_notice = data.on_order_notice
+    await repository.commit(session)
+    return _admin_settings(store_settings)
 
 
 # Un encabezado de dos numerales (no tres): «## Pregunta», con un cierre opcional «##».
