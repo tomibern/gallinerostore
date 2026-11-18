@@ -14,7 +14,7 @@ endif
 
 API := apps/api
 
-.PHONY: help hooks e2e install infra storage seed gen-client check-client test-db migrate migrate-test dev api web test lint reset docker-api
+.PHONY: help hooks e2e install infra storage seed admin gen-client check-client test-db migrate migrate-test dev api web test lint reset docker-api
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | awk -F':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -38,6 +38,10 @@ migrate: infra ## Aplica las migraciones a la base de desarrollo
 
 seed: migrate storage ## Carga los datos iniciales de config/seed.toml (se puede repetir)
 	cd $(API) && uv run python -m app.cli seed
+
+admin: migrate ## Crea la cuenta del admin y le manda la invitación: make admin EMAIL=…
+	@if [ -z "$(EMAIL)" ]; then echo "Uso: make admin EMAIL=dueño@ejemplo.com" >&2; exit 2; fi
+	cd $(API) && uv run python -m app.cli create-admin "$(EMAIL)"
 
 gen-client: ## Regenera el cliente TypeScript desde el OpenAPI de la API
 	cd $(API) && uv run python -m app.cli openapi > ../../packages/api-client/openapi.json

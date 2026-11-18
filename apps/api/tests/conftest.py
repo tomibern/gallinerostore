@@ -14,9 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.clock import get_now
 from app.core.config import REPO_ROOT, Settings, get_store_config
 from app.core.db import get_session
+from app.core.email import get_email_sender
 from app.core.storage import ObjectStorage, create_s3_client, ensure_bucket
 from app.main import create_app
 from app.modules.auth.login_attempts import login_attempts
+from app.modules.auth.reset_requests import reset_requests
 from app.modules.catalog.seed import apply_seed, load_seed
 from app.modules.events.rate_limit import limiter
 from app.modules.settings.seed import SettingsSeed, apply_settings_seed, load_settings_seed
@@ -26,7 +28,7 @@ from tests.isolation import (
     isolated_database_url,
     prepare_database,
 )
-from tests.support import Clock, http_client
+from tests.support import Clock, Inbox, http_client
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -84,6 +86,10 @@ async def app(settings: Settings) -> AsyncIterator[FastAPI]:
             yield session
 
         application.dependency_overrides[get_session] = _session
+        # Ningún test manda emails de verdad: van a la bandeja en memoria.
+        inbox = Inbox()
+        application.dependency_overrides[get_email_sender] = lambda: inbox
+        application.state.test_inbox = inbox
         application.state.test_session = session
         try:
             yield application
@@ -98,11 +104,14 @@ def rate_limit() -> Iterator[None]:
     el proceso: cada test arranca con el cupo entero y con los límites prendidos."""
     limiter.reset()
     login_attempts.reset()
+    reset_requests.reset()
     yield
     limiter.enabled = True
     limiter.reset()
     login_attempts.enabled = True
     login_attempts.reset()
+    reset_requests.enabled = True
+    reset_requests.reset()
 
 
 @pytest.fixture
@@ -119,6 +128,13 @@ def db_session(app: FastAPI) -> AsyncSession:
     """La misma sesión que usa la app en este test (dentro de la transacción que se deshace)."""
     session: AsyncSession = app.state.test_session
     return session
+
+
+@pytest.fixture
+def inbox(app: FastAPI) -> Inbox:
+    """Los emails que mandó la app en este test."""
+    test_inbox: Inbox = app.state.test_inbox
+    return test_inbox
 
 
 @pytest.fixture

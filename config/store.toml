@@ -16,6 +16,12 @@ collection_label = "Equipo"
 # Zona horaria: define los días y las horas de las métricas («Hoy» es el hoy de la tienda).
 timezone = "America/Argentina/Buenos_Aires"
 
+[email]
+# Remitente de los emails del panel (recuperar la contraseña, avisos). Sin
+# from_name se usa el nombre de la tienda.
+from_address = "no-responder@gallinerostore.com.ar"
+from_name = "Gallinero Store"
+
 [features]
 collections = true
 versions = true

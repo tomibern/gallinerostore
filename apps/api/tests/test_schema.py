@@ -32,6 +32,7 @@ DISCOVERY_TABLES = {
     "settings",
     "admins",
     "admin_sessions",
+    "password_tokens",
 }
 
 

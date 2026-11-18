@@ -9,12 +9,14 @@ Dos fuentes:
 import tomllib
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import Request
 from pydantic import AfterValidator, BaseModel, Field, StringConstraints
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.texts import Texts
 
 # Raíz del monorepo en desarrollo. En la imagen de Docker no existe esa
 # estructura: ahí STORE_CONFIG_PATH se define por variable de entorno.
@@ -72,8 +74,17 @@ class StoreHome(BaseModel):
     blocks: Annotated[list[BlockKey], AfterValidator(_unique)] = []
 
 
+class StoreEmail(BaseModel):
+    """Remitente de los emails de la tienda (recuperar la contraseña, avisos)."""
+
+    from_address: str
+    # Sin nombre, se usa el de la tienda.
+    from_name: str | None = None
+
+
 class StoreConfig(BaseModel):
     store: StoreInfo
+    email: StoreEmail
     features: StoreFeatures = StoreFeatures()
     home: StoreHome = StoreHome()
 
@@ -110,12 +121,25 @@ class Settings(BaseSettings):
     # se crea con su propio comando.
     seed_admin_email: str | None = None
     seed_admin_password: str | None = None
+    # Envío de emails por SMTP genérico (Mailpit en local). En producción, los datos del
+    # proveedor; `smtp_security` es `ssl` (puerto 465) o `starttls` (puerto 587).
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_security: Literal["none", "starttls", "ssl"] = "none"
     store_config_path: Path = REPO_ROOT / "config" / "store.toml"
     seed_path: Path = REPO_ROOT / "config" / "seed.toml"
 
     @cached_property
     def store_config(self) -> StoreConfig:
         return StoreConfig.from_toml(self.store_config_path)
+
+    @cached_property
+    def texts(self) -> Texts:
+        """Textos de la API: los del núcleo con los reemplazos del cliente
+        (``texts.json``, al lado de ``store.toml``) encima."""
+        return Texts.from_file(self.store_config_path.parent / "texts.json")
 
 
 def get_settings(request: Request) -> Settings:

@@ -45,3 +45,6 @@ export type MessageCase = Schemas["MessageCase"];
 export type MessageVariable = Schemas["MessageVariable"];
 export type MessagePreview = Schemas["MessagePreview"];
 export type ValidationError = Schemas["ValidationError"];
+export type PasswordResetIn = Schemas["PasswordResetIn"];
+export type PasswordResetConfirmIn = Schemas["PasswordResetConfirmIn"];
+export type PasswordChangeIn = Schemas["PasswordChangeIn"];
