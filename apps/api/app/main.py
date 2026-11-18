@@ -8,9 +8,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.config import Settings
 from app.core.db import create_engine
+from app.core.email import SmtpEmailSender
 from app.core.storage import create_s3_client
 from app.health.router import router as health_router
 from app.modules.auth.login_attempts import login_attempts
+from app.modules.auth.reset_requests import reset_requests
 from app.modules.auth.router import router as auth_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.events.rate_limit import limiter
@@ -31,6 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.engine = engine
         app.state.sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
         app.state.s3 = create_s3_client(settings)
+        app.state.email_sender = SmtpEmailSender(settings)
         yield
         await engine.dispose()
 
@@ -47,4 +50,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # El limiter es uno por proceso (slowapi lo aplica al importar el router).
     limiter.enabled = settings.rate_limit_enabled
     login_attempts.enabled = settings.rate_limit_enabled
+    reset_requests.enabled = settings.rate_limit_enabled
     return app

@@ -1,4 +1,5 @@
-"""Sesión del admin: entrar, ver quién está y salir. Sin lógica: delega en el service."""
+"""Sesión y contraseña del admin: entrar, ver quién está, salir, recuperar y cambiar la
+contraseña. Sin lógica: delega en el service."""
 
 from typing import Annotated
 
@@ -16,7 +17,14 @@ from app.modules.auth.dependencies import (
     clear_session_cookie,
     set_session_cookie,
 )
-from app.modules.auth.schemas import AdminOut, LoginIn
+from app.modules.auth.emails import Mail
+from app.modules.auth.schemas import (
+    AdminOut,
+    LoginIn,
+    PasswordChangeIn,
+    PasswordResetConfirmIn,
+    PasswordResetIn,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 
@@ -72,3 +80,67 @@ async def log_out(
     """Corta la sesión (si había) y borra la cookie."""
     await service.log_out(session, token)
     clear_session_cookie(request, response)
+
+
+@router.post("/password-reset", status_code=status.HTTP_202_ACCEPTED, dependencies=[CsrfChecked])
+async def request_password_reset(
+    body: PasswordResetIn,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Now,
+    mail: Mail,
+) -> None:
+    """«Olvidé mi contraseña». Siempre 202: no dice si el email es el del admin. Si lo es
+    (y no pasó los 3 pedidos por hora), le manda un link que vence en 30 minutos."""
+    await service.request_password_reset(session, body.email, now=now, mail=mail)
+
+
+@router.post(
+    "/password-reset/confirm",
+    dependencies=[CsrfChecked],
+    responses={400: {"description": "El link no existe, venció o ya se usó."}},
+)
+async def confirm_password_reset(
+    body: PasswordResetConfirmIn,
+    request: Request,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Now,
+    mail: Mail,
+) -> AdminOut:
+    """Elige la contraseña desde el link (recuperación o invitación). Corta todas las
+    sesiones, abre una en este dispositivo y pone la cookie."""
+    try:
+        open_session = await service.confirm_password_reset(
+            session, body.token, body.password, now=now, mail=mail
+        )
+    except service.InvalidPasswordTokenError as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="invalid_token") from error
+    set_session_cookie(request, response, open_session)
+    return AdminOut(email=open_session.email)
+
+
+@router.put(
+    "/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[CsrfChecked],
+    responses={
+        400: {"description": "La contraseña actual no es correcta."},
+        401: {"description": "Sin sesión vigente."},
+    },
+)
+async def change_password(
+    body: PasswordChangeIn,
+    admin: AdminAccess,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    now: Now,
+    mail: Mail,
+) -> None:
+    """Cambia la contraseña desde «Cuenta». Corta las demás sesiones; esta sigue."""
+    try:
+        await service.change_password(
+            session, admin, body.current_password, body.new_password, now=now, mail=mail
+        )
+    except service.SessionGoneError as error:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="not_authenticated") from error
+    except service.WrongPasswordError as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="wrong_current_password") from error

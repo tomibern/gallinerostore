@@ -15,6 +15,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Todo el panel salvo el login.
-  matcher: ["/admin", "/admin/((?!login).*)"],
+  // Todo el panel salvo las pantallas sin sesión: login, recuperar y elegir contraseña.
+  matcher: ["/admin", "/admin/((?!login|recuperar|elegir-contrasena).*)"],
 };

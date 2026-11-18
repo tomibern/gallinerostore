@@ -7,8 +7,14 @@ import pytest
 from app.core.config import Settings
 from app.main import create_app
 
-# Los únicos endpoints del admin que se usan sin sesión: entrar y salir.
-PUBLIC = {("POST", "/admin/session"), ("DELETE", "/admin/session")}
+# Los únicos endpoints del admin que se usan sin sesión: entrar, salir y recuperar la
+# contraseña.
+PUBLIC = {
+    ("POST", "/admin/session"),
+    ("DELETE", "/admin/session"),
+    ("POST", "/admin/password-reset"),
+    ("POST", "/admin/password-reset/confirm"),
+}
 
 
 def _admin_operations() -> list[tuple[str, str]]:

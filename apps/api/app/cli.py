@@ -3,20 +3,25 @@
 - ``ensure-bucket``: crea el bucket de imágenes si no existe y le da lectura pública.
 - ``seed``: carga los datos iniciales del cliente (idempotente) y, en desarrollo, el
   admin de prueba de ``SEED_ADMIN_EMAIL`` y ``SEED_ADMIN_PASSWORD``.
+- ``create-admin EMAIL``: crea la cuenta inicial del admin y le manda la invitación para
+  elegir su contraseña (si ya existe con ese email, la reenvía).
 - ``openapi``: imprime el OpenAPI de la API (lo usa ``make gen-client``).
 """
 
 import asyncio
 import json
 import sys
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.db import create_engine
+from app.core.email import SmtpEmailSender
 from app.core.storage import ObjectStorage, allow_public_read, create_s3_client, ensure_bucket
 from app.main import create_app
-from app.modules.auth.service import ensure_admin
+from app.modules.auth.emails import PasswordMail
+from app.modules.auth.service import OtherAdminExistsError, ensure_admin, invite_admin
 from app.modules.catalog.seed import apply_seed, load_seed
 from app.modules.settings.seed import (
     apply_home_slides_seed,
@@ -25,7 +30,7 @@ from app.modules.settings.seed import (
     load_settings_seed,
 )
 
-USAGE = "Uso: python -m app.cli [ensure-bucket | seed | openapi]"
+USAGE = "Uso: python -m app.cli [ensure-bucket | seed | create-admin EMAIL | openapi]"
 
 
 def _ensure_bucket(settings: Settings) -> None:
@@ -68,6 +73,35 @@ async def _seed(settings: Settings) -> None:
     print(f"Seed cargado desde {settings.seed_path}: {len(seed.products)} productos")
 
 
+async def create_admin_command(
+    session: AsyncSession, email: str, *, mail: PasswordMail, now: datetime
+) -> int:
+    """``create-admin EMAIL``: crea la cuenta inicial o reenvía la invitación. Devuelve el
+    código de salida del comando."""
+    try:
+        created = await invite_admin(session, email, now=now, mail=mail)
+    except OtherAdminExistsError as error:
+        print(
+            f"Ya existe el admin {error}: hay un solo usuario. No se creó {email}.",
+            file=sys.stderr,
+        )
+        return 1
+    state = "creado" if created else "ya existía"
+    print(f"Admin {email}: {state}. Le mandamos la invitación para elegir la contraseña.")
+    return 0
+
+
+async def _create_admin(settings: Settings, email: str) -> int:
+    """El email sale en el momento: si el SMTP falla, el comando falla."""
+    engine = create_engine(settings.database_url)
+    try:
+        async with AsyncSession(bind=engine, expire_on_commit=False) as session:
+            mail = PasswordMail(settings, SmtpEmailSender(settings))
+            return await create_admin_command(session, email, mail=mail, now=datetime.now(UTC))
+    finally:
+        await engine.dispose()
+
+
 def main(argv: list[str]) -> int:
     settings = Settings()
     match argv:
@@ -75,6 +109,8 @@ def main(argv: list[str]) -> int:
             _ensure_bucket(settings)
         case ["seed"]:
             asyncio.run(_seed(settings))
+        case ["create-admin", email]:
+            return asyncio.run(_create_admin(settings, email))
         case ["openapi"]:
             print(json.dumps(create_app(settings).openapi(), indent=2, ensure_ascii=False))
         case _:

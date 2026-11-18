@@ -1,6 +1,5 @@
-import { DiagonalBand } from "@/components/store/diagonal-band";
+import { AuthScreen } from "@/components/admin/auth-screen";
 import { LoginForm } from "@/components/admin/login-form";
-import { StoreLogo } from "@/components/store/store-logo";
 import { getStore } from "@/lib/api";
 import { t } from "@/lib/texts";
 
@@ -13,18 +12,11 @@ export default async function AdminLoginPage({
   const [{ next }, store] = await Promise.all([searchParams, getStore()]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-panel">
-      <DiagonalBand className="h-3 shrink-0" />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <StoreLogo className="size-28" />
-          <h1 className="font-display text-3xl font-bold text-primary uppercase">
-            {t("admin.login.title", { store: store?.name ?? "" })}
-          </h1>
-          <p className="text-sm text-muted">{t("admin.login.subtitle")}</p>
-        </div>
-        <LoginForm next={typeof next === "string" ? next : null} />
-      </main>
-    </div>
+    <AuthScreen
+      title={t("admin.login.title", { store: store?.name ?? "" })}
+      subtitle={t("admin.login.subtitle")}
+    >
+      <LoginForm next={typeof next === "string" ? next : null} />
+    </AuthScreen>
   );
 }

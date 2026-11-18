@@ -11,7 +11,24 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "escritorio", use: { ...devices["Desktop Chrome"] } },
-    { name: "celular", use: { ...devices["Pixel 7"] } },
+    // Recuperar la contraseña corta todas las sesiones del admin: corre sola y antes que
+    // los demás, que entran al panel.
+    {
+      name: "contraseña",
+      testMatch: /password-recovery\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "escritorio",
+      testIgnore: /password-recovery\.spec\.ts/,
+      dependencies: ["contraseña"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "celular",
+      testIgnore: /password-recovery\.spec\.ts/,
+      dependencies: ["contraseña"],
+      use: { ...devices["Pixel 7"] },
+    },
   ],
 });

@@ -132,6 +132,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Password Reset
+         * @description «Olvidé mi contraseña». Siempre 202: no dice si el email es el del admin. Si lo es
+         *     (y no pasó los 3 pedidos por hora), le manda un link que vence en 30 minutos.
+         */
+        post: operations["request_password_reset_admin_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Password Reset
+         * @description Elige la contraseña desde el link (recuperación o invitación). Corta todas las
+         *     sesiones, abre una en este dispositivo y pone la cookie.
+         */
+        post: operations["confirm_password_reset_admin_password_reset_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Password
+         * @description Cambia la contraseña desde «Cuenta». Corta las demás sesiones; esta sigue.
+         */
+        put: operations["change_password_admin_password_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/metrics/summary": {
         parameters: {
             query?: never;
@@ -606,6 +668,28 @@ export interface components {
              * @enum {string}
              */
             page: "home" | "stock" | "on_order" | "how_to_buy";
+        };
+        /** PasswordChangeIn */
+        PasswordChangeIn: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** PasswordResetConfirmIn */
+        PasswordResetConfirmIn: {
+            /**
+             * Token
+             * @description El token del link del email.
+             */
+            token: string;
+            /** Password */
+            password: string;
+        };
+        /** PasswordResetIn */
+        PasswordResetIn: {
+            /** Email */
+            email: string;
         };
         /**
          * Period
@@ -1234,6 +1318,132 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_password_reset_admin_password_reset_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_password_reset_admin_password_reset_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOut"];
+                };
+            };
+            /** @description El link no existe, venció o ya se usó. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_admin_password_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La contraseña actual no es correcta. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin sesión vigente. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

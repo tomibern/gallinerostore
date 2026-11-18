@@ -10,6 +10,9 @@ collection_label = "Marca"
 # Sin horario de verano (UTC-3 todo el año): los tests calculan las horas a mano.
 timezone = "America/Montevideo"
 
+[email]
+from_address = "no-responder@tienda.test"
+
 [features]
 collections = true
 versions = false
