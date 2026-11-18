@@ -48,3 +48,6 @@ export type ValidationError = Schemas["ValidationError"];
 export type PasswordResetIn = Schemas["PasswordResetIn"];
 export type PasswordResetConfirmIn = Schemas["PasswordResetConfirmIn"];
 export type PasswordChangeIn = Schemas["PasswordChangeIn"];
+export type AdminFilter = Schemas["AdminFilter"];
+export type AdminProductList = Schemas["AdminProductList"];
+export type AdminProductListItem = Schemas["AdminProductListItem"];

@@ -995,10 +995,134 @@
           }
         }
       }
+    },
+    "/admin/products": {
+      "get": {
+        "tags": [
+          "admin-catalog"
+        ],
+        "summary": "List Admin Products",
+        "description": "Todos los productos del admin (borradores, ocultos y archivados incluidos), con\nbúsqueda y filtro, del más nuevo al más viejo.",
+        "operationId": "list_admin_products_admin_products_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código.",
+              "title": "Q"
+            },
+            "description": "Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código."
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AdminFilter",
+              "description": "all: todos menos los archivados. stock, on_order: los de esa sección (con la misma regla del catálogo público). sold_out: los agotados. draft, hidden, archived: los de ese estado. Salvo archived, ninguno trae archivados.",
+              "default": "all"
+            },
+            "description": "all: todos menos los archivados. stock, on_order: los de esa sección (con la misma regla del catálogo público). sold_out: los agotados. draft, hidden, archived: los de ese estado. Salvo archived, ninguno trae archivados."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Cuántos productos traer como máximo.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Cuántos productos traer como máximo."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Cuántos productos saltear desde el inicio.",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Cuántos productos saltear desde el inicio."
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdminFilter": {
+        "type": "string",
+        "enum": [
+          "all",
+          "stock",
+          "on_order",
+          "sold_out",
+          "draft",
+          "hidden",
+          "archived"
+        ],
+        "title": "AdminFilter",
+        "description": "Filtro del listado del admin. Los de sección y «agotados» dejan afuera a los\narchivados, igual que «todos»; los de estado traen solo ese estado."
+      },
       "AdminOut": {
         "properties": {
           "email": {
@@ -1011,6 +1135,106 @@
           "email"
         ],
         "title": "AdminOut"
+      },
+      "AdminProductList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminProductListItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "La página pedida, del producto más nuevo al más viejo."
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "description": "Si hay más productos después de esta página."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Productos que cumplen el filtro, en todas las páginas."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "has_more",
+          "total"
+        ],
+        "title": "AdminProductList"
+      },
+      "AdminProductListItem": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Código permanente del producto: prefijo de la tienda y número (ABC-014)."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "price": {
+            "type": "integer",
+            "title": "Price",
+            "description": "Precio en la unidad menor de la moneda (centavos)."
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductStatus"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured",
+            "description": "Si está destacado en la home."
+          },
+          "section": {
+            "$ref": "#/components/schemas/Section",
+            "description": "Sección donde aparece (o aparecería, si no está publicado), con la misma regla del catálogo público."
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability",
+            "description": "Disponibilidad con la regla del catálogo público: dice si está agotado."
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/AdminSizeOut"
+            },
+            "type": "array",
+            "title": "Sizes",
+            "description": "En el orden del grupo de talles."
+          },
+          "cover": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La primera imagen del producto, si tiene."
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "price",
+          "currency",
+          "status",
+          "featured",
+          "section",
+          "availability",
+          "sizes",
+          "cover"
+        ],
+        "title": "AdminProductListItem"
       },
       "AdminSettings": {
         "properties": {
@@ -1078,6 +1302,24 @@
         ],
         "title": "AdminSettingsIn",
         "description": "Lo que guarda la sección Contacto: canales, plantillas y aviso de encargue."
+      },
+      "AdminSizeOut": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SizeStatus",
+            "description": "En un producto de stock, in_stock u out_of_stock (se muestra tachado), aunque esté agotado; en un encargue, on_order para todos los talles de su grupo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "status"
+        ],
+        "title": "AdminSizeOut"
       },
       "Availability": {
         "type": "string",
@@ -2256,6 +2498,17 @@
         ],
         "title": "ProductSort",
         "description": "Orden del listado. ``manual`` es el que el visitante ve como «Destacados»."
+      },
+      "ProductStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "hidden",
+          "archived"
+        ],
+        "title": "ProductStatus",
+        "description": "Estado: borrador → publicado ↔ oculto → archivado."
       },
       "ProductView": {
         "properties": {

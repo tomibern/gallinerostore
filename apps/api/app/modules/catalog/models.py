@@ -69,6 +69,19 @@ class ProductSort(StrEnum):
     PRICE_DESC = "price_desc"
 
 
+class AdminFilter(StrEnum):
+    """Filtro del listado del admin. Los de sección y «agotados» dejan afuera a los
+    archivados, igual que «todos»; los de estado traen solo ese estado."""
+
+    ALL = "all"
+    STOCK = "stock"
+    ON_ORDER = "on_order"
+    SOLD_OUT = "sold_out"
+    DRAFT = "draft"
+    HIDDEN = "hidden"
+    ARCHIVED = "archived"
+
+
 class ProductStatus(StrEnum):
     """Estado: borrador → publicado ↔ oculto → archivado."""
 

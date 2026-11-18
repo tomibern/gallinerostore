@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.core.models import Base
 from app.modules.catalog.models import (
     PRODUCT_CODE_SEQUENCE,
+    AdminFilter,
     Category,
     Collection,
     Product,
@@ -238,6 +239,72 @@ async def published_products_with_sizes(
     )
     result = (await session.execute(stmt)).all()
     return [(product, Section(section), bool(sold_out)) for product, section, sold_out in result]
+
+
+@dataclass(frozen=True)
+class AdminListingQuery:
+    """Qué productos lista el admin: cualquier estado, con el filtro y cada palabra de
+    la búsqueda (en el nombre o en el código)."""
+
+    filter: AdminFilter
+    sold_out_goes_on_order: bool
+    search: Sequence[str] = ()
+
+
+def _admin_conditions(query: AdminListingQuery) -> list[ColumnElement[bool]]:
+    """Las condiciones del listado del admin: el filtro y cada palabra de la búsqueda."""
+    conditions: list[ColumnElement[bool]] = [_search_condition(word) for word in query.search]
+    match query.filter:
+        case AdminFilter.DRAFT | AdminFilter.HIDDEN | AdminFilter.ARCHIVED:
+            conditions.append(Product.status == ProductStatus(query.filter.value))
+            return conditions
+        case AdminFilter.STOCK | AdminFilter.ON_ORDER:
+            section = _section_column(query.sold_out_goes_on_order)
+            conditions.append(section == Section(query.filter.value).value)
+        case AdminFilter.SOLD_OUT:
+            conditions.append(catalog_products.c.sold_out)
+        case AdminFilter.ALL:
+            pass
+    conditions.append(Product.status != ProductStatus.ARCHIVED)
+    return conditions
+
+
+async def admin_products(
+    session: AsyncSession, query: AdminListingQuery, *, limit: int, offset: int
+) -> tuple[list[tuple[Product, Section, bool]], bool]:
+    """Una página del listado del admin (cualquier estado), del más nuevo al más viejo,
+    con su sección, si está agotado y si hay más después. Trae fotos, talles y categoría."""
+    section_column = _section_column(query.sold_out_goes_on_order).label("section")
+    stmt = (
+        select(Product, section_column, catalog_products.c.sold_out)
+        .join(catalog_products, catalog_products.c.id == Product.id)
+        .where(*_admin_conditions(query))
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.sizes).joinedload(ProductSize.size),
+            joinedload(Product.category),
+        )
+        .order_by(Product.created_at.desc(), Product.id.desc())
+        .limit(limit + 1)
+        .offset(offset)
+    )
+    result = (await session.execute(stmt)).all()
+    rows = [
+        (product, Section(section_value), bool(sold_out))
+        for product, section_value, sold_out in result[:limit]
+    ]
+    return rows, len(result) > limit
+
+
+async def count_admin_products(session: AsyncSession, query: AdminListingQuery) -> int:
+    """Cuántos productos tiene el listado del admin con ese filtro y esa búsqueda."""
+    stmt = (
+        select(func.count())
+        .select_from(Product)
+        .join(catalog_products, catalog_products.c.id == Product.id)
+        .where(*_admin_conditions(query))
+    )
+    return int(await session.scalar(stmt) or 0)
 
 
 async def sizes_in_group(session: AsyncSession, group: str) -> Sequence[Size]:

@@ -260,14 +260,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Admin Products
+         * @description Todos los productos del admin (borradores, ocultos y archivados incluidos), con
+         *     búsqueda y filtro, del más nuevo al más viejo.
+         */
+        get: operations["list_admin_products_admin_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdminFilter
+         * @description Filtro del listado del admin. Los de sección y «agotados» dejan afuera a los
+         *     archivados, igual que «todos»; los de estado traen solo ese estado.
+         * @enum {string}
+         */
+        AdminFilter: "all" | "stock" | "on_order" | "sold_out" | "draft" | "hidden" | "archived";
         /** AdminOut */
         AdminOut: {
             /** Email */
             email: string;
+        };
+        /** AdminProductList */
+        AdminProductList: {
+            /**
+             * Items
+             * @description La página pedida, del producto más nuevo al más viejo.
+             */
+            items: components["schemas"]["AdminProductListItem"][];
+            /**
+             * Has More
+             * @description Si hay más productos después de esta página.
+             */
+            has_more: boolean;
+            /**
+             * Total
+             * @description Productos que cumplen el filtro, en todas las páginas.
+             */
+            total: number;
+        };
+        /** AdminProductListItem */
+        AdminProductListItem: {
+            /**
+             * Code
+             * @description Código permanente del producto: prefijo de la tienda y número (ABC-014).
+             */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Price
+             * @description Precio en la unidad menor de la moneda (centavos).
+             */
+            price: number;
+            /** Currency */
+            currency: string;
+            status: components["schemas"]["ProductStatus"];
+            /**
+             * Featured
+             * @description Si está destacado en la home.
+             */
+            featured: boolean;
+            /** @description Sección donde aparece (o aparecería, si no está publicado), con la misma regla del catálogo público. */
+            section: components["schemas"]["Section"];
+            /** @description Disponibilidad con la regla del catálogo público: dice si está agotado. */
+            availability: components["schemas"]["Availability"];
+            /**
+             * Sizes
+             * @description En el orden del grupo de talles.
+             */
+            sizes: components["schemas"]["AdminSizeOut"][];
+            /** @description La primera imagen del producto, si tiene. */
+            cover: components["schemas"]["ImageOut"] | null;
         };
         /**
          * AdminSettings
@@ -303,6 +383,13 @@ export interface components {
              * @description El aviso general de demora y seña de los encargues. Vacío: no se muestra.
              */
             on_order_notice: string;
+        };
+        /** AdminSizeOut */
+        AdminSizeOut: {
+            /** Label */
+            label: string;
+            /** @description En un producto de stock, in_stock u out_of_stock (se muestra tachado), aunque esté agotado; en un encargue, on_order para todos los talles de su grupo. */
+            status: components["schemas"]["SizeStatus"];
         };
         /**
          * Availability
@@ -850,6 +937,12 @@ export interface components {
          * @enum {string}
          */
         ProductSort: "manual" | "newest" | "price_asc" | "price_desc";
+        /**
+         * ProductStatus
+         * @description Estado: borrador → publicado ↔ oculto → archivado.
+         * @enum {string}
+         */
+        ProductStatus: "draft" | "published" | "hidden" | "archived";
         /**
          * ProductView
          * @description Visita al detalle de un producto.
@@ -1619,6 +1712,53 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_admin_products_admin_products_get: {
+        parameters: {
+            query?: {
+                /** @description Búsqueda por nombre o código, sin distinguir mayúsculas ni acentos. Cada palabra tiene que aparecer en el nombre o en el código. */
+                q?: string | null;
+                /** @description all: todos menos los archivados. stock, on_order: los de esa sección (con la misma regla del catálogo público). sold_out: los agotados. draft, hidden, archived: los de ese estado. Salvo archived, ninguno trae archivados. */
+                filter?: components["schemas"]["AdminFilter"];
+                /** @description Cuántos productos traer como máximo. */
+                limit?: number;
+                /** @description Cuántos productos saltear desde el inicio. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProductList"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

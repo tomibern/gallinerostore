@@ -4,7 +4,10 @@
 
 import {
   createApiClient,
+  type AdminFilter,
   type AdminOut,
+  type AdminProductList,
+  type AdminProductListItem,
   type AdminSettings,
   type AdminSettingsIn,
   type LoginIn,
@@ -20,7 +23,10 @@ import {
 import { fieldErrors, type FieldErrors } from "./admin-settings";
 
 export type {
+  AdminFilter,
   AdminOut,
+  AdminProductList,
+  AdminProductListItem,
   AdminSettings,
   AdminSettingsIn,
   MessageCase,
@@ -155,4 +161,20 @@ export async function changePassword(body: PasswordChangeIn): Promise<ChangePass
   } catch {
     return "error";
   }
+}
+
+/** Una página del listado del admin, o null si la sesión ya no vale (401). */
+export async function getAdminProducts(query: {
+  q: string;
+  filter: AdminFilter;
+  offset: number;
+  limit: number;
+}): Promise<AdminProductList | null> {
+  const { data, response } = await api.GET("/admin/products", {
+    params: { query: { ...query, q: query.q || undefined } },
+    cache: "no-store",
+  });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/products respondió ${response.status}`);
 }

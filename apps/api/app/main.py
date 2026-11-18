@@ -14,6 +14,7 @@ from app.health.router import router as health_router
 from app.modules.auth.login_attempts import login_attempts
 from app.modules.auth.reset_requests import reset_requests
 from app.modules.auth.router import router as auth_router
+from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.events.rate_limit import limiter
 from app.modules.events.router import e2e_router
@@ -47,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(metrics_router)
     app.include_router(admin_settings_router)
+    app.include_router(admin_catalog_router)
     # El limiter es uno por proceso (slowapi lo aplica al importar el router).
     limiter.enabled = settings.rate_limit_enabled
     login_attempts.enabled = settings.rate_limit_enabled
