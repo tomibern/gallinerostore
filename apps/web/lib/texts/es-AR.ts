@@ -188,6 +188,12 @@ export const esAR = {
   "admin.notice.title": "Aviso de encargue",
   "admin.notice.label": "Demora y seña",
   "admin.notice.hint": "Se muestra en los productos por encargue. Si queda vacío, no se muestra.",
+  "admin.account.passwordTitle": "Cambiar la contraseña",
+  "admin.account.currentPassword": "Contraseña actual",
+  "admin.account.submit": "Cambiar la contraseña",
+  "admin.account.submitting": "Cambiando…",
+  "admin.account.done": "Listo: cambiaste la contraseña y cerramos las demás sesiones.",
+  "admin.account.wrongCurrent": "La contraseña actual no es correcta.",
 
   // Login del admin
   "admin.login.title": "Panel de {store}",
@@ -242,6 +248,31 @@ export const esAR = {
   "admin.metrics.source.historia": "Historias",
   "admin.metrics.source.compartido": "Links compartidos",
   "admin.metrics.notice": "La web mide interés, no ventas: las ventas se cierran en el chat.",
+  "admin.login.forgot": "Olvidé mi contraseña",
+
+  // Contraseña nueva (desde el link o desde Cuenta)
+  "admin.password.new": "Contraseña nueva",
+  "admin.password.repeat": "Repetí la contraseña nueva",
+  "admin.password.hint": "Al menos {min} caracteres.",
+  "admin.password.tooShort": "La contraseña tiene que tener al menos {min} caracteres.",
+  "admin.password.mismatch": "Las contraseñas no coinciden.",
+
+  // Olvidé mi contraseña
+  "admin.forgot.title": "Recuperar la contraseña",
+  "admin.forgot.subtitle": "Escribí tu email y te mandamos un link para elegir una nueva.",
+  "admin.forgot.submit": "Mandar el link",
+  "admin.forgot.submitting": "Mandando…",
+  "admin.forgot.sent":
+    "Si el email es el del admin, te mandamos un link. Vence en 30 minutos y sirve una sola vez.",
+  "admin.forgot.backToLogin": "Volver al login",
+
+  // Elegir contraseña (desde el link del email)
+  "admin.choose.title": "Elegir contraseña",
+  "admin.choose.subtitle": "Al guardarla se cierran las demás sesiones y entrás al panel.",
+  "admin.choose.submit": "Guardar y entrar",
+  "admin.choose.submitting": "Guardando…",
+  "admin.choose.invalid": "El link venció o ya se usó. Pedí uno nuevo.",
+  "admin.choose.requestNew": "Pedir un link nuevo",
 } as const satisfies Record<string, string>;
 
 export type TextKey = keyof typeof esAR;

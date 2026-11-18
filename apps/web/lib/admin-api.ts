@@ -13,6 +13,8 @@ import {
   type MetricsPeriod,
   type MetricsSummary,
   type ValidationError,
+  type PasswordChangeIn,
+  type PasswordResetConfirmIn,
 } from "@catalog/api-client";
 
 import { fieldErrors, type FieldErrors } from "./admin-settings";
@@ -110,4 +112,47 @@ export function previewMessage(
   return withFieldErrors(
     api.POST("/admin/settings/message-preview", { body: { case: messageCase, template } }),
   );
+}
+
+/** «Olvidé mi contraseña». La API siempre acepta: no dice si el email existe. */
+export async function requestPasswordReset(email: string): Promise<"ok" | "error"> {
+  try {
+    const { response } = await api.POST("/admin/password-reset", { body: { email } });
+    return response.ok ? "ok" : "error";
+  } catch {
+    return "error";
+  }
+}
+
+export type ChoosePasswordResult = "ok" | "invalid" | "too_short" | "error";
+
+/** Elige la contraseña desde el link del email. Si sale bien, ya hay sesión. */
+export async function confirmPasswordReset(
+  body: PasswordResetConfirmIn,
+): Promise<ChoosePasswordResult> {
+  try {
+    const { response } = await api.POST("/admin/password-reset/confirm", { body });
+    if (response.ok) return "ok";
+    if (response.status === 400) return "invalid";
+    if (response.status === 422) return "too_short";
+    return "error";
+  } catch {
+    return "error";
+  }
+}
+
+export type ChangePasswordResult = "ok" | "wrong_current" | "too_short" | "unauthorized" | "error";
+
+/** Cambia la contraseña desde Cuenta, con la actual. */
+export async function changePassword(body: PasswordChangeIn): Promise<ChangePasswordResult> {
+  try {
+    const { response } = await api.PUT("/admin/password", { body });
+    if (response.ok) return "ok";
+    if (response.status === 400) return "wrong_current";
+    if (response.status === 422) return "too_short";
+    if (response.status === 401) return "unauthorized";
+    return "error";
+  } catch {
+    return "error";
+  }
 }

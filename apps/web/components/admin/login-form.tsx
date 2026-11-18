@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AUTH_CARD } from "@/components/admin/auth-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAdminSession, logIn, type LoginResult } from "@/lib/admin-api";
-import { afterLoginPath } from "@/lib/admin-paths";
+import { ADMIN_FORGOT_PASSWORD, afterLoginPath } from "@/lib/admin-paths";
 import { t } from "@/lib/texts";
 
 const ERRORS: Record<Exclude<LoginResult, "ok">, string> = {
@@ -50,10 +52,7 @@ export function LoginForm({ next }: { next: string | null }) {
   }
 
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-col gap-4 bg-surface px-5 py-6 shadow-[0_8px_24px_color-mix(in_srgb,var(--color-accent)_12%,transparent)]"
-    >
+    <form onSubmit={(event) => void handleSubmit(event)} className={AUTH_CARD}>
       <Label>
         {t("admin.login.email")}
         <Input type="email" name="email" autoComplete="username" required />
@@ -79,6 +78,9 @@ export function LoginForm({ next }: { next: string | null }) {
       <Button type="submit" size="lg" disabled={busy}>
         {busy ? t("admin.login.submitting") : t("admin.login.submit")}
       </Button>
+      <Link href={ADMIN_FORGOT_PASSWORD} className="self-center text-sm font-semibold underline">
+        {t("admin.login.forgot")}
+      </Link>
     </form>
   );
 }

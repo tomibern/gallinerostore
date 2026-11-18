@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { afterLoginPath } from "./admin-paths";
+import { afterLoginPath, newPasswordProblem } from "./admin-paths";
 
 describe("afterLoginPath", () => {
   it("vuelve a la página del panel que se pidió", () => {
@@ -19,7 +19,24 @@ describe("afterLoginPath", () => {
     expect(afterLoginPath("/administrador")).toBe("/admin/productos");
   });
 
-  it("nunca vuelve al login", () => {
+  it("nunca vuelve a una pantalla sin sesión", () => {
     expect(afterLoginPath("/admin/login")).toBe("/admin/productos");
+    expect(afterLoginPath("/admin/recuperar")).toBe("/admin/productos");
+    expect(afterLoginPath("/admin/elegir-contrasena")).toBe("/admin/productos");
+  });
+});
+
+describe("newPasswordProblem", () => {
+  it("acepta 10 caracteres o más que coinciden, sin reglas de composición", () => {
+    expect(newPasswordProblem("diez-chars", "diez-chars")).toBeNull();
+    expect(newPasswordProblem("aaaaaaaaaaaa", "aaaaaaaaaaaa")).toBeNull();
+  });
+
+  it("avisa si es corta antes que si no coincide", () => {
+    expect(newPasswordProblem("nueve-chr", "otra")).toBe("short");
+  });
+
+  it("avisa si la repetición no coincide", () => {
+    expect(newPasswordProblem("una-clave-larga", "una-clave-larg")).toBe("mismatch");
   });
 });
