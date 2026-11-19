@@ -15,6 +15,8 @@ import {
   type MessagePreview,
   type MetricsPeriod,
   type MetricsSummary,
+  type ProductRanking,
+  type RankingSort,
   type ValidationError,
   type PasswordChangeIn,
   type PasswordResetConfirmIn,
@@ -33,6 +35,8 @@ export type {
   MessagePreview,
   MetricsPeriod,
   MetricsSummary,
+  ProductRanking,
+  RankingSort,
 };
 
 export const CSRF_HEADERS = { "X-Requested-With": "fetch" };
@@ -76,6 +80,20 @@ export async function getMetricsSummary(period: MetricsPeriod): Promise<MetricsS
   if (data) return data;
   if (response.status === 401) return null;
   throw new Error(`GET /admin/metrics/summary respondió ${response.status}`);
+}
+
+/** El ranking de productos del período en ese orden, o null si la sesión ya no está vigente. */
+export async function getProductRanking(
+  period: MetricsPeriod,
+  sort: RankingSort,
+): Promise<ProductRanking | null> {
+  const { data, response } = await api.GET("/admin/metrics/products", {
+    params: { query: { period, sort } },
+    cache: "no-store",
+  });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/metrics/products respondió ${response.status}`);
 }
 
 /** Contacto, mensajes prearmados y aviso de encargue. Sin sesión, null. */

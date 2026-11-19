@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { AdminPage } from "@/components/admin/admin-page";
+import { ProductRankingCard } from "@/components/admin/product-ranking";
 import { Button } from "@/components/ui/button";
 import { getMetricsSummary, type MetricsPeriod, type MetricsSummary } from "@/lib/admin-api";
 import { ADMIN_LOGIN } from "@/lib/admin-paths";
@@ -197,6 +198,8 @@ function Summary({ summary, locale }: { summary: MetricsSummary; locale: string 
         <Chart summary={summary} locale={locale} />
         <Sources sources={summary.sources} locale={locale} />
       </div>
+
+      <ProductRankingCard period={summary.period} locale={locale} />
 
       <p className="border border-dashed border-primary/60 px-3 py-3 text-xs leading-normal md:px-4 md:text-sm">
         {t("admin.metrics.notice")}

@@ -18,6 +18,7 @@ import {
   sizeSummary,
 } from "@/lib/admin-products";
 import { DEFAULT_PAGE_SIZE as PAGE_SIZE, MAX_SEARCH_LENGTH } from "@/lib/listing";
+import { formatCount } from "@/lib/metrics-format";
 import { formatPrice } from "@/lib/money";
 import { t } from "@/lib/texts";
 import { cn } from "@/lib/utils";
@@ -150,7 +151,15 @@ function Cover({ product, size }: { product: AdminProductListItem; size: string 
   );
 }
 
-function ProductTable({ items, price }: { items: AdminProductListItem[]; price: Price }) {
+function ProductTable({
+  items,
+  price,
+  locale,
+}: {
+  items: AdminProductListItem[];
+  price: Price;
+  locale: string;
+}) {
   const th = "px-2 py-2.5 text-left text-xs font-bold tracking-wider whitespace-nowrap uppercase";
   const td = "border-b border-border px-2 py-2.5 align-middle text-sm";
   return (
@@ -162,6 +171,12 @@ function ProductTable({ items, price }: { items: AdminProductListItem[]; price: 
             <th className={th}>{t("admin.products.column.section")}</th>
             <th className={th}>{t("admin.products.column.sizes")}</th>
             <th className={th}>{t("admin.products.column.price")}</th>
+            <th className={th} title={t("admin.products.column.last7DaysHint")}>
+              {t("admin.products.column.visits")}
+            </th>
+            <th className={th} title={t("admin.products.column.last7DaysHint")}>
+              {t("admin.products.column.inquiries")}
+            </th>
             <th className={th}>{t("admin.products.column.status")}</th>
             <th className={th} title={t("admin.products.column.featuredHint")}>
               {t("admin.products.column.featured")}
@@ -196,6 +211,15 @@ function ProductTable({ items, price }: { items: AdminProductListItem[]; price: 
                 <Sizes product={product} />
               </td>
               <td className={cn(td, "font-bold whitespace-nowrap")}>{price(product)}</td>
+              <td className={td} data-column="visits_7d">
+                {formatCount(product.visits_7d, locale)}
+              </td>
+              <td
+                className={cn(td, product.inquiries_7d > 0 && "font-bold text-primary")}
+                data-column="inquiries_7d"
+              >
+                {formatCount(product.inquiries_7d, locale)}
+              </td>
               <td className={td}>
                 <StatusBadges product={product} />
               </td>
@@ -428,7 +452,7 @@ export function ProductList({ priceFormat }: { priceFormat: PriceFormat }) {
               ? t("admin.products.totalOne")
               : t("admin.products.total", { count: loaded.total })}
           </p>
-          <ProductTable items={loaded.items} price={price} />
+          <ProductTable items={loaded.items} price={price} locale={priceFormat.locale} />
           <ProductCards items={loaded.items} price={price} />
           {loaded.hasMore && (
             <Button
