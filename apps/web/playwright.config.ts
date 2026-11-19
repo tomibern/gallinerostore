@@ -11,22 +11,22 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    // Recuperar la contraseña corta todas las sesiones del admin: corre sola y antes que
+    // Cambiar o recuperar la contraseña corta las sesiones del admin: corre sola y antes que
     // los demás, que entran al panel.
     {
       name: "contraseña",
-      testMatch: /password-recovery\.spec\.ts/,
+      testMatch: /password\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "escritorio",
-      testIgnore: /password-recovery\.spec\.ts/,
+      testIgnore: /password\.spec\.ts/,
       dependencies: ["contraseña"],
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "celular",
-      testIgnore: /password-recovery\.spec\.ts/,
+      testIgnore: /password\.spec\.ts/,
       dependencies: ["contraseña"],
       use: { ...devices["Pixel 7"] },
     },
