@@ -1,7 +1,8 @@
 """Reglas de las métricas: qué rango cubre cada período, contra qué se compara y cómo
-se arman la tasa, el gráfico, los canales y los orígenes (glosario: **Visita**, **Tasa
-de consulta**, **Origen**)."""
+se arman la tasa, el gráfico, los canales, los orígenes y el ranking de productos
+(glosario: **Visita**, **Tasa de consulta**, **Origen**)."""
 
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -18,6 +19,10 @@ from app.modules.metrics.schemas import (
     Count,
     MetricsSummary,
     Period,
+    ProductActivity,
+    ProductRanking,
+    RankedProduct,
+    RankingSort,
     Rate,
     SourceCount,
 )
@@ -106,18 +111,22 @@ async def _chart(session: AsyncSession, period: Period, periods: Windows) -> lis
     return points
 
 
-async def _channels(
-    session: AsyncSession, store: StoreConfig, window: Window
-) -> list[ChannelCount]:
+def _shown_channels(store: StoreConfig, counts: dict[Channel, int]) -> list[Channel]:
     """Todos los canales, también los que no tuvieron consultas. Instagram apagado no
     aparece, salvo que haya consultas de antes de apagarlo."""
-    counts = await repository.inquiries_by_channel(session, window)
-    total = sum(counts.values())
-    channels = [
+    return [
         channel
         for channel in Channel
         if channel is not Channel.INSTAGRAM or store.features.instagram or counts.get(channel)
     ]
+
+
+async def _channels(
+    session: AsyncSession, store: StoreConfig, window: Window
+) -> list[ChannelCount]:
+    counts = await repository.inquiries_by_channel(session, window)
+    total = sum(counts.values())
+    channels = _shown_channels(store, counts)
     return [
         ChannelCount(
             channel=channel,
@@ -153,3 +162,72 @@ async def summary(
         channels=await _channels(session, store, periods.current),
         sources=await _sources(session, periods.current),
     )
+
+
+def _ranked(product: repository.ProductRef, counts: repository.ProductCounts) -> RankedProduct:
+    inquiries = sum(counts.inquiries.values())
+    return RankedProduct(
+        code=product.code,
+        name=product.name,
+        status=product.status,
+        visits=counts.visits,
+        inquiries=inquiries,
+        rate=_rate(inquiries, counts.visits),
+        whatsapp=counts.inquiries.get(Channel.WHATSAPP, 0),
+        instagram=counts.inquiries.get(Channel.INSTAGRAM, 0),
+    )
+
+
+_SORT_VALUE: dict[RankingSort, Callable[[RankedProduct], float | None]] = {
+    RankingSort.VISITS: lambda item: item.visits,
+    RankingSort.INQUIRIES: lambda item: item.inquiries,
+    RankingSort.RATE: lambda item: item.rate,
+    RankingSort.WHATSAPP: lambda item: item.whatsapp,
+    RankingSort.INSTAGRAM: lambda item: item.instagram,
+}
+
+
+def _sort_key(sort: RankingSort, item: RankedProduct) -> tuple[float, int, int, str, str]:
+    """De mayor a menor por la columna; sin tasa va al final. Empates: más consultas, más
+    visitas y por nombre (y código, para que el orden sea siempre el mismo)."""
+    value = _SORT_VALUE[sort](item)
+    first = -1.0 if value is None else float(value)
+    return (-first, -item.inquiries, -item.visits, item.name.casefold(), item.code)
+
+
+async def product_ranking(
+    session: AsyncSession, store: StoreConfig, period: Period, sort: RankingSort, now: datetime
+) -> ProductRanking:
+    """Los productos con visitas o consultas en el período, archivados incluidos, con su
+    tasa y sus consultas por canal. Las mismas reglas de visita y consulta del resumen."""
+    window = windows(period, now, store.store.zone).current
+    counts = await repository.counts_by_product(session, window)
+    products = await repository.products_by_id(session, counts.keys())
+    items = sorted(
+        (_ranked(products[product_id], counts[product_id]) for product_id in products),
+        key=lambda item: _sort_key(sort, item),
+    )
+    by_channel = {
+        Channel.WHATSAPP: sum(item.whatsapp for item in items),
+        Channel.INSTAGRAM: sum(item.instagram for item in items),
+    }
+    return ProductRanking(
+        period=period, sort=sort, channels=_shown_channels(store, by_channel), items=items
+    )
+
+
+async def activity_last_7_days(
+    session: AsyncSession, store: StoreConfig, now: datetime, product_ids: Collection[int]
+) -> dict[int, ProductActivity]:
+    """Visitas al detalle y consultas de esos productos en los últimos 7 días (el mismo
+    período «7d» del ranking). Todos los pedidos tienen su entrada, aunque sea en cero."""
+    window = windows(Period.LAST_7_DAYS, now, store.store.zone).current
+    counts = await repository.counts_by_product(session, window, product_ids)
+    empty = repository.ProductCounts()
+    return {
+        product_id: ProductActivity(
+            visits=counts.get(product_id, empty).visits,
+            inquiries=sum(counts.get(product_id, empty).inquiries.values()),
+        )
+        for product_id in product_ids
+    }

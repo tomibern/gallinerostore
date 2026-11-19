@@ -6,7 +6,7 @@ tests son las de la tienda, y «ahora» es el martes 17/11/2026 a las 15:30.
 """
 
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC
 from typing import Any
 
 import httpx
@@ -15,27 +15,17 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.service import create_admin
 from app.modules.catalog.models import Product
 from app.modules.events.models import Event, EventType
-from tests.support import Clock, http_client
-
-STORE_ZONE = timezone(timedelta(hours=-3))
-EMAIL = "admin@tienda.test"
-PASSWORD = "una-clave-larga"
-ADMIN_HEADERS = {"X-Requested-With": "fetch"}
-
-
-def local(day: int, hour: int = 12, minute: int = 0, month: int = 11) -> datetime:
-    """Una hora de la tienda, en noviembre de 2026 salvo que se diga otro mes."""
-    return datetime(2026, month, day, hour, minute, tzinfo=STORE_ZONE)
-
-
-NOW = local(17, 15, 30)
-
-
-def session_id(n: int) -> str:
-    return f"{n:032x}"
+from tests.metrics_support import (
+    NOW,
+    admin_browser,
+    ask,
+    local,
+    view_product,
+    visit,
+)
+from tests.support import Clock
 
 
 @pytest.fixture
@@ -43,14 +33,7 @@ async def admin(
     app: FastAPI, db_session: AsyncSession, clock: Clock
 ) -> AsyncIterator[httpx.AsyncClient]:
     """Un navegador aparte con la sesión del admin iniciada."""
-    await create_admin(db_session, EMAIL, PASSWORD)
-    async with http_client(app) as client:
-        response = await client.post(
-            "/admin/session",
-            json={"email": EMAIL, "password": PASSWORD, "remember": False},
-            headers=ADMIN_HEADERS,
-        )
-        assert response.status_code == 200
+    async with admin_browser(app, db_session) as client:
         yield client
 
 
@@ -60,54 +43,6 @@ async def code(db_session: AsyncSession, seeded: None) -> str:
     found = await db_session.scalar(select(Product.code).where(Product.slug == "remera-basica"))
     assert found is not None
     return found
-
-
-async def visit(
-    client: httpx.AsyncClient,
-    clock: Clock,
-    when: datetime,
-    session: int,
-    page: str = "home",
-    source: str = "directo",
-) -> None:
-    await _post(clock, client, when, session, source, type="page_view", page=page)
-
-
-async def view_product(
-    client: httpx.AsyncClient, clock: Clock, when: datetime, session: int, code: str
-) -> None:
-    await _post(clock, client, when, session, "directo", type="product_view", product_code=code)
-
-
-async def ask(
-    client: httpx.AsyncClient,
-    clock: Clock,
-    when: datetime,
-    session: int,
-    code: str | None = None,
-    channel: str = "whatsapp",
-) -> None:
-    """Una consulta: por un producto si hay código; si no, general."""
-    fields: dict[str, Any] = (
-        {"type": "contact_click", "product_code": code, "size": "S"}
-        if code
-        else {"type": "general_contact_click", "page": "home"}
-    )
-    await _post(clock, client, when, session, "directo", channel=channel, **fields)
-
-
-async def _post(
-    clock: Clock,
-    client: httpx.AsyncClient,
-    when: datetime,
-    session: int,
-    source: str,
-    **fields: Any,
-) -> None:
-    clock.now = when.astimezone(UTC)
-    body = {"session_id": session_id(session), "source": source, "device": "mobile", **fields}
-    response = await client.post("/events", json=body)
-    assert response.status_code == 204, response.text
 
 
 async def summary(admin: httpx.AsyncClient, clock: Clock, period: str) -> dict[str, Any]:

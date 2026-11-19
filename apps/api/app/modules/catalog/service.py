@@ -2,6 +2,7 @@
 
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,6 +39,7 @@ from app.modules.catalog.schemas import (
     ProductSizeOut,
     StoryItemOut,
 )
+from app.modules.metrics import service as metrics
 from app.modules.settings import service as settings_service
 from app.modules.settings.models import MessageCase
 from app.modules.settings.schemas import MessagePreview, PreviewProduct
@@ -417,10 +419,15 @@ async def _admin_sizes(
 
 
 async def list_for_admin(
-    session: AsyncSession, store: StoreConfig, media_base_url: str, query: AdminProductQuery
+    session: AsyncSession,
+    store: StoreConfig,
+    media_base_url: str,
+    query: AdminProductQuery,
+    now: datetime,
 ) -> AdminProductList:
     """Una página del listado del admin: cualquier estado, con la sección y la
-    disponibilidad calculadas con la misma regla del catálogo público."""
+    disponibilidad calculadas con la misma regla del catálogo público, y las visitas y
+    consultas de los últimos 7 días (las calcula metrics)."""
     listing = AdminListingQuery(
         filter=query.filter,
         sold_out_goes_on_order=store.features.on_order,
@@ -430,6 +437,9 @@ async def list_for_admin(
         session, listing, limit=query.limit, offset=query.offset
     )
     groups: dict[str, Sequence[Size]] = {}
+    activity = await metrics.activity_last_7_days(
+        session, store, now, [product.id for product, *_ in rows]
+    )
     items = [
         AdminProductListItem(
             code=product.code,
@@ -442,6 +452,8 @@ async def list_for_admin(
             availability=availability(product_section, sold_out),
             sizes=await _admin_sizes(session, product, groups),
             cover=_image_out(product.images[0], media_base_url) if product.images else None,
+            visits_7d=activity[product.id].visits,
+            inquiries_7d=activity[product.id].inquiries,
         )
         for product, product_section, sold_out in rows
     ]

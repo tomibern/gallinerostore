@@ -216,6 +216,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/metrics/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Product Ranking
+         * @description Ranking de productos del período: visitas al detalle, consultas, tasa de consulta y
+         *     consultas por canal de cada producto con actividad, archivados incluidos.
+         */
+        get: operations["product_ranking_admin_metrics_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/settings": {
         parameters: {
             query?: never;
@@ -270,7 +291,8 @@ export interface paths {
         /**
          * List Admin Products
          * @description Todos los productos del admin (borradores, ocultos y archivados incluidos), con
-         *     búsqueda y filtro, del más nuevo al más viejo.
+         *     búsqueda y filtro, del más nuevo al más viejo, con sus visitas y consultas de los
+         *     últimos 7 días.
          */
         get: operations["list_admin_products_admin_products_get"];
         put?: never;
@@ -348,6 +370,16 @@ export interface components {
             sizes: components["schemas"]["AdminSizeOut"][];
             /** @description La primera imagen del producto, si tiene. */
             cover: components["schemas"]["ImageOut"] | null;
+            /**
+             * Visits 7D
+             * @description Visitas al detalle en los últimos 7 días, como en el ranking de métricas.
+             */
+            visits_7d: number;
+            /**
+             * Inquiries 7D
+             * @description Consultas por el producto en los últimos 7 días, como en el ranking.
+             */
+            inquiries_7d: number;
         };
         /**
          * AdminSettings
@@ -919,6 +951,21 @@ export interface components {
             /** @description La primera imagen del producto, si tiene. */
             cover: components["schemas"]["ImageOut"] | null;
         };
+        /** ProductRanking */
+        ProductRanking: {
+            period: components["schemas"]["Period"];
+            sort: components["schemas"]["RankingSort"];
+            /**
+             * Channels
+             * @description Canales que se muestran: los mismos del resumen (Instagram apagado no aparece, salvo que haya consultas por ese canal en el período).
+             */
+            channels: components["schemas"]["Channel"][];
+            /**
+             * Items
+             * @description Los productos con alguna visita o consulta en el período, de mayor a menor según `sort` (sin tasa, al final). Empates: más consultas, más visitas, y por nombre.
+             */
+            items: components["schemas"]["RankedProduct"][];
+        };
         /** ProductSizeOut */
         ProductSizeOut: {
             /** Label */
@@ -1013,6 +1060,48 @@ export interface components {
              */
             faq: components["schemas"]["FaqItem"][];
         };
+        /**
+         * RankedProduct
+         * @description Un producto con actividad en el período, en cualquier estado.
+         */
+        RankedProduct: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            status: components["schemas"]["ProductStatus"];
+            /**
+             * Visits
+             * @description Visitas al detalle del producto.
+             */
+            visits: number;
+            /**
+             * Inquiries
+             * @description Consultas por el producto, por cualquier canal.
+             */
+            inquiries: number;
+            /**
+             * Rate
+             * @description Tasa de consulta: consultas dividido visitas al detalle. Sin valor si no tuvo visitas.
+             */
+            rate: number | null;
+            /**
+             * Whatsapp
+             * @description Consultas por WhatsApp.
+             */
+            whatsapp: number;
+            /**
+             * Instagram
+             * @description Consultas por Instagram.
+             */
+            instagram: number;
+        };
+        /**
+         * RankingSort
+         * @description Columna por la que se ordena el ranking, siempre de mayor a menor.
+         * @enum {string}
+         */
+        RankingSort: "visits" | "inquiries" | "rate" | "whatsapp" | "instagram";
         /**
          * Rate
          * @description Tasa de consulta global: consultas de productos dividido visitas a detalles.
@@ -1573,6 +1662,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetricsSummary"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    product_ranking_admin_metrics_products_get: {
+        parameters: {
+            query?: {
+                period?: components["schemas"]["Period"];
+                sort?: components["schemas"]["RankingSort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductRanking"];
                 };
             };
             /** @description Sin sesión vigente. */

@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import Now
 from app.core.config import Settings, StoreConfig, get_settings, get_store_config
 from app.core.db import get_session
 from app.modules.auth.dependencies import AdminAccess
@@ -59,7 +60,9 @@ async def list_admin_products(
     store: Annotated[StoreConfig, Depends(get_store_config)],
     settings: Annotated[Settings, Depends(get_settings)],
     query: Annotated[AdminProductQuery, Query()],
+    now: Now,
 ) -> AdminProductList:
     """Todos los productos del admin (borradores, ocultos y archivados incluidos), con
-    búsqueda y filtro, del más nuevo al más viejo."""
-    return await service.list_for_admin(session, store, settings.media_base_url, query)
+    búsqueda y filtro, del más nuevo al más viejo, con sus visitas y consultas de los
+    últimos 7 días."""
+    return await service.list_for_admin(session, store, settings.media_base_url, query, now)
