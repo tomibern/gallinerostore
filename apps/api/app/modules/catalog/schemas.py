@@ -1,12 +1,22 @@
 """Modelos Pydantic de entrada y salida del catálogo."""
 
-from pydantic import BaseModel, Field
+from typing import Annotated, Any
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+)
+from pydantic_core import PydanticCustomError
 
 from app.modules.catalog.models import (
     AdminFilter,
     Availability,
     ProductSort,
     ProductStatus,
+    SaleMode,
     Section,
     SizeStatus,
     StoryItemKind,
@@ -265,3 +275,150 @@ class AdminProductList(BaseModel):
     )
     has_more: bool = Field(description="Si hay más productos después de esta página.")
     total: int = Field(description="Productos que cumplen el filtro, en todas las páginas.")
+
+
+# --- Admin: editor de producto --------------------------------------------------------
+
+# Topes de los textos del editor: los mismos largos que las columnas.
+MAX_NAME_LENGTH = 200
+MAX_SEASON_LENGTH = 40
+MAX_DESCRIPTION_LENGTH = 5000
+# Tope de seguridad del precio en la unidad menor (entra de sobra en un BIGINT).
+MAX_PRICE = 10**12
+
+# Texto sin espacios de más; vacío cuenta como «sin cargar» en los opcionales.
+_Trimmed = StringConstraints(strip_whitespace=True)
+# Una opción elegida por su slug: vacío es no haber elegido.
+Slug = Annotated[str, StringConstraints(min_length=1, max_length=100)]
+
+
+class CategoryOption(BaseModel):
+    slug: str
+    name: str
+    parent: str | None = Field(description="Slug de la categoría madre; null en las de nivel 1.")
+    size_group: str = Field(description="El grupo de talles de la categoría (clave de ``sizes``).")
+
+
+class CatalogFeatures(BaseModel):
+    """Las funciones de la tienda que cambian el editor."""
+
+    collections: bool
+    versions: bool
+    on_order: bool
+
+
+class CatalogOptions(BaseModel):
+    """Lo que el editor ofrece para elegir. Sale del seed: el panel no lo edita."""
+
+    categories: list[CategoryOption] = Field(
+        description="En orden de árbol: cada categoría de nivel 1 seguida de sus hijas."
+    )
+    collections: list[NamedRef] = Field(
+        description=(
+            "Todas, en orden. El editor muestra el campo solo si la función está activa y "
+            "hay más de una cargada; si no, el producto queda en la de por defecto."
+        )
+    )
+    default_collection: str | None = Field(
+        description="Slug de la colección por defecto, la que toma un producto sin elegir."
+    )
+    versions: list[NamedRef]
+    tags: list[NamedRef]
+    sizes: dict[str, list[str]] = Field(
+        description="Las etiquetas de los talles de cada grupo, en su orden."
+    )
+    features: CatalogFeatures
+
+
+class SizeAvailabilityIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(description="Un talle del grupo de la categoría del producto.")
+    in_stock: bool = Field(description="false: sin stock (se muestra tachado).")
+
+
+def _blank_to_none(value: str | None) -> str | None:
+    return value or None
+
+
+class AdminProductPatch(BaseModel):
+    """Los datos del editor. En un PATCH, lo que no viene no cambia; ``null`` borra los
+    opcionales (versión, temporada, descripción).
+
+    Talles: un encargue no tiene (mandarlos da error). Al pasar a stock, o al cambiar
+    de categoría a otro grupo de talles siendo de stock, el producto queda con todos los
+    del grupo, disponibles; ``sizes`` se aplica después y marca cada uno disponible o
+    sin stock."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: (
+        Annotated[str, _Trimmed, StringConstraints(min_length=1, max_length=MAX_NAME_LENGTH)] | None
+    ) = None
+    category: Slug | None = Field(default=None, description="Slug de la categoría.")
+    collection: str | None = Field(default=None, description="Slug de la colección.")
+    version: str | None = Field(default=None, description="Slug de la versión; null: sin versión.")
+    season: Annotated[str, _Trimmed, StringConstraints(max_length=MAX_SEASON_LENGTH)] | None = None
+    tags: list[str] | None = Field(default=None, description="Slugs de las etiquetas.")
+    description: (
+        Annotated[str, _Trimmed, StringConstraints(max_length=MAX_DESCRIPTION_LENGTH)] | None
+    ) = None
+    price: int | None = Field(
+        default=None, ge=0, le=MAX_PRICE, description="En la unidad menor de la moneda."
+    )
+    sale_mode: SaleMode | None = None
+    sizes: list[SizeAvailabilityIn] | None = Field(
+        default=None, description="Disponibilidad por talle. Solo en productos de stock."
+    )
+
+    _blank_optional = field_validator("season", "description")(_blank_to_none)
+
+    @field_validator("name", "category", "collection", "sale_mode", "price", mode="before")
+    @classmethod
+    def _not_null(cls, value: Any) -> Any:
+        """Los obligatorios se pueden omitir en un PATCH, pero no borrar."""
+        if value is None:
+            raise PydanticCustomError("missing", "Este campo es obligatorio.")
+        return value
+
+    @field_validator("tags")
+    @classmethod
+    def _unique_tags(cls, value: list[str] | None) -> list[str] | None:
+        return list(dict.fromkeys(value)) if value is not None else None
+
+
+class AdminProductCreate(AdminProductPatch):
+    """Un producto nuevo: nace como borrador, con el código ya asignado. Alcanza con
+    nombre y categoría (así el panel lo puede guardar solo antes de la primera foto);
+    sin precio queda en 0, sin modo de venta es de stock y sin colección va a la de
+    por defecto."""
+
+    name: Annotated[str, _Trimmed, StringConstraints(min_length=1, max_length=MAX_NAME_LENGTH)]
+    category: Slug = Field(description="Slug de la categoría.")
+
+
+class AdminSizeAvailability(BaseModel):
+    label: str
+    in_stock: bool
+
+
+class AdminProduct(BaseModel):
+    """Un producto como lo edita el admin."""
+
+    code: str = Field(description="Código permanente: lo asigna la API al crear y no cambia.")
+    name: str
+    status: ProductStatus
+    category: str = Field(description="Slug de la categoría.")
+    collection: str = Field(description="Slug de la colección.")
+    version: str | None = Field(description="Slug de la versión, si tiene.")
+    season: str | None
+    tags: list[str] = Field(description="Slugs de las etiquetas, en el orden de las opciones.")
+    description: str | None
+    price: int = Field(description="Precio en la unidad menor de la moneda.")
+    currency: str
+    sale_mode: SaleMode
+    sizes: list[AdminSizeAvailability] = Field(
+        description=(
+            "Los talles de un producto de stock, en el orden del grupo. Vacía en un encargue."
+        )
+    )
