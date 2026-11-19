@@ -41,6 +41,7 @@ export type MetricsSummary = Schemas["MetricsSummary"];
 export type MetricsPeriod = Schemas["Period"];
 export type AdminSettings = Schemas["AdminSettings"];
 export type AdminSettingsIn = Schemas["AdminSettingsIn"];
+export type HowToBuyContent = Schemas["HowToBuyContent"];
 export type MessageCase = Schemas["MessageCase"];
 export type MessageVariable = Schemas["MessageVariable"];
 export type MessagePreview = Schemas["MessagePreview"];
