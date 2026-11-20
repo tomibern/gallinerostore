@@ -299,11 +299,62 @@ export interface paths {
          */
         get: operations["list_admin_products_admin_products_get"];
         put?: never;
+        /**
+         * Create Admin Product
+         * @description Crea un borrador. El código lo asigna la API y no cambia nunca.
+         */
+        post: operations["create_admin_product_admin_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/catalog-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Catalog Options
+         * @description Lo que el editor ofrece para elegir: categorías con su grupo de talles,
+         *     colecciones, versiones, etiquetas, talles por grupo y funciones activas.
+         */
+        get: operations["get_catalog_options_admin_catalog_options_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/products/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Admin Product
+         * @description Un producto en cualquier estado, para editarlo. El código no distingue mayúsculas.
+         */
+        get: operations["get_admin_product_admin_products__code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Admin Product
+         * @description Edita los campos que vienen; los demás no cambian. Pasar a encargue borra los
+         *     talles; pasar a stock, o cambiar a una categoría de otro grupo siendo de stock, deja
+         *     todos los del grupo disponibles.
+         */
+        patch: operations["patch_admin_product_admin_products__code__patch"];
         trace?: never;
     };
 }
@@ -321,6 +372,103 @@ export interface components {
         AdminOut: {
             /** Email */
             email: string;
+        };
+        /**
+         * AdminProduct
+         * @description Un producto como lo edita el admin.
+         */
+        AdminProduct: {
+            /**
+             * Code
+             * @description Código permanente: lo asigna la API al crear y no cambia.
+             */
+            code: string;
+            /** Name */
+            name: string;
+            status: components["schemas"]["ProductStatus"];
+            /**
+             * Category
+             * @description Slug de la categoría.
+             */
+            category: string;
+            /**
+             * Collection
+             * @description Slug de la colección.
+             */
+            collection: string;
+            /**
+             * Version
+             * @description Slug de la versión, si tiene.
+             */
+            version: string | null;
+            /** Season */
+            season: string | null;
+            /**
+             * Tags
+             * @description Slugs de las etiquetas, en el orden de las opciones.
+             */
+            tags: string[];
+            /** Description */
+            description: string | null;
+            /**
+             * Price
+             * @description Precio en la unidad menor de la moneda.
+             */
+            price: number;
+            /** Currency */
+            currency: string;
+            sale_mode: components["schemas"]["SaleMode"];
+            /**
+             * Sizes
+             * @description Los talles de un producto de stock, en el orden del grupo. Vacía en un encargue.
+             */
+            sizes: components["schemas"]["AdminSizeAvailability"][];
+        };
+        /**
+         * AdminProductCreate
+         * @description Un producto nuevo: nace como borrador, con el código ya asignado. Alcanza con
+         *     nombre y categoría (así el panel lo puede guardar solo antes de la primera foto);
+         *     sin precio queda en 0, sin modo de venta es de stock y sin colección va a la de
+         *     por defecto.
+         */
+        AdminProductCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @description Slug de la categoría.
+             */
+            category: string;
+            /**
+             * Collection
+             * @description Slug de la colección.
+             */
+            collection?: string | null;
+            /**
+             * Version
+             * @description Slug de la versión; null: sin versión.
+             */
+            version?: string | null;
+            /** Season */
+            season?: string | null;
+            /**
+             * Tags
+             * @description Slugs de las etiquetas.
+             */
+            tags?: string[] | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Price
+             * @description En la unidad menor de la moneda.
+             */
+            price?: number | null;
+            sale_mode?: components["schemas"]["SaleMode"] | null;
+            /**
+             * Sizes
+             * @description Disponibilidad por talle. Solo en productos de stock.
+             */
+            sizes?: components["schemas"]["SizeAvailabilityIn"][] | null;
         };
         /** AdminProductList */
         AdminProductList: {
@@ -375,6 +523,55 @@ export interface components {
             cover: components["schemas"]["ImageOut"] | null;
         };
         /**
+         * AdminProductPatch
+         * @description Los datos del editor. En un PATCH, lo que no viene no cambia; ``null`` borra los
+         *     opcionales (versión, temporada, descripción).
+         *
+         *     Talles: un encargue no tiene (mandarlos da error). Al pasar a stock, o al cambiar
+         *     de categoría a otro grupo de talles siendo de stock, el producto queda con todos los
+         *     del grupo, disponibles; ``sizes`` se aplica después y marca cada uno disponible o
+         *     sin stock.
+         */
+        AdminProductPatch: {
+            /** Name */
+            name?: string | null;
+            /**
+             * Category
+             * @description Slug de la categoría.
+             */
+            category?: string | null;
+            /**
+             * Collection
+             * @description Slug de la colección.
+             */
+            collection?: string | null;
+            /**
+             * Version
+             * @description Slug de la versión; null: sin versión.
+             */
+            version?: string | null;
+            /** Season */
+            season?: string | null;
+            /**
+             * Tags
+             * @description Slugs de las etiquetas.
+             */
+            tags?: string[] | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Price
+             * @description En la unidad menor de la moneda.
+             */
+            price?: number | null;
+            sale_mode?: components["schemas"]["SaleMode"] | null;
+            /**
+             * Sizes
+             * @description Disponibilidad por talle. Solo en productos de stock.
+             */
+            sizes?: components["schemas"]["SizeAvailabilityIn"][] | null;
+        };
+        /**
          * AdminSettings
          * @description Lo que edita el admin en Contacto, con las variables que admite cada plantilla.
          */
@@ -409,6 +606,13 @@ export interface components {
              */
             on_order_notice: string;
         };
+        /** AdminSizeAvailability */
+        AdminSizeAvailability: {
+            /** Label */
+            label: string;
+            /** In Stock */
+            in_stock: boolean;
+        };
         /** AdminSizeOut */
         AdminSizeOut: {
             /** Label */
@@ -422,6 +626,51 @@ export interface components {
          * @enum {string}
          */
         Availability: "in_stock" | "on_order" | "sold_out_on_order" | "sold_out";
+        /**
+         * CatalogFeatures
+         * @description Las funciones de la tienda que cambian el editor.
+         */
+        CatalogFeatures: {
+            /** Collections */
+            collections: boolean;
+            /** Versions */
+            versions: boolean;
+            /** On Order */
+            on_order: boolean;
+        };
+        /**
+         * CatalogOptions
+         * @description Lo que el editor ofrece para elegir. Sale del seed: el panel no lo edita.
+         */
+        CatalogOptions: {
+            /**
+             * Categories
+             * @description En orden de árbol: cada categoría de nivel 1 seguida de sus hijas.
+             */
+            categories: components["schemas"]["CategoryOption"][];
+            /**
+             * Collections
+             * @description Todas, en orden. El editor muestra el campo solo si la función está activa y hay más de una cargada; si no, el producto queda en la de por defecto.
+             */
+            collections: components["schemas"]["NamedRef"][];
+            /**
+             * Default Collection
+             * @description Slug de la colección por defecto, la que toma un producto sin elegir.
+             */
+            default_collection: string | null;
+            /** Versions */
+            versions: components["schemas"]["NamedRef"][];
+            /** Tags */
+            tags: components["schemas"]["NamedRef"][];
+            /**
+             * Sizes
+             * @description Las etiquetas de los talles de cada grupo, en su orden.
+             */
+            sizes: {
+                [key: string]: string[];
+            };
+            features: components["schemas"]["CatalogFeatures"];
+        };
         /** CategoryFacetValue */
         CategoryFacetValue: {
             /**
@@ -441,6 +690,23 @@ export interface components {
              * @description Slug de la categoría madre; null en las de nivel 1.
              */
             parent: string | null;
+        };
+        /** CategoryOption */
+        CategoryOption: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Parent
+             * @description Slug de la categoría madre; null en las de nivel 1.
+             */
+            parent: string | null;
+            /**
+             * Size Group
+             * @description El grupo de talles de la categoría (clave de ``sizes``).
+             */
+            size_group: string;
         };
         /**
          * Channel
@@ -1096,12 +1362,31 @@ export interface components {
             previous: number | null;
         };
         /**
+         * SaleMode
+         * @description Modo de venta: define en qué sección aparece el producto.
+         * @enum {string}
+         */
+        SaleMode: "stock" | "on_order";
+        /**
          * Section
          * @description Sección del catálogo público. Se calcula, no se guarda: un producto de stock
          *     agotado aparece en Por encargue.
          * @enum {string}
          */
         Section: "stock" | "on_order";
+        /** SizeAvailabilityIn */
+        SizeAvailabilityIn: {
+            /**
+             * Label
+             * @description Un talle del grupo de la categoría del producto.
+             */
+            label: string;
+            /**
+             * In Stock
+             * @description false: sin stock (se muestra tachado).
+             */
+            in_stock: boolean;
+        };
         /**
          * SizeStatus
          * @description Estado de un talle en el detalle, ya calculado. Todos son elegibles.
@@ -1908,6 +2193,184 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    create_admin_product_admin_products_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProduct"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Un campo inválido: el error dice cuál (``loc``). Una categoría, colección, versión, etiqueta o talle que no existe tiene ``type`` ``unknown`` o ``unknown_size``; talles en un encargue, ``on_order_with_sizes``. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_catalog_options_admin_catalog_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogOptions"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_product_admin_products__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProduct"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No hay un producto con ese código. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_admin_product_admin_products__code__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path: {
+                code: string;
+            };
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminProductPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProduct"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No hay un producto con ese código. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Un campo inválido: el error dice cuál (``loc``). Una categoría, colección, versión, etiqueta o talle que no existe tiene ``type`` ``unknown`` o ``unknown_size``; talles en un encargue, ``on_order_with_sizes``. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -1227,6 +1227,276 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "admin-catalog"
+        ],
+        "summary": "Create Admin Product",
+        "description": "Crea un borrador. El código lo asigna la API y no cambia nunca.",
+        "operationId": "create_admin_product_admin_products_post",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminProductCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProduct"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Un campo inválido: el error dice cuál (``loc``). Una categoría, colección, versión, etiqueta o talle que no existe tiene ``type`` ``unknown`` o ``unknown_size``; talles en un encargue, ``on_order_with_sizes``."
+          }
+        }
+      }
+    },
+    "/admin/catalog-options": {
+      "get": {
+        "tags": [
+          "admin-catalog"
+        ],
+        "summary": "Get Catalog Options",
+        "description": "Lo que el editor ofrece para elegir: categorías con su grupo de talles,\ncolecciones, versiones, etiquetas, talles por grupo y funciones activas.",
+        "operationId": "get_catalog_options_admin_catalog_options_get",
+        "parameters": [
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogOptions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/products/{code}": {
+      "get": {
+        "tags": [
+          "admin-catalog"
+        ],
+        "summary": "Get Admin Product",
+        "description": "Un producto en cualquier estado, para editarlo. El código no distingue mayúsculas.",
+        "operationId": "get_admin_product_admin_products__code__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProduct"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "404": {
+            "description": "No hay un producto con ese código."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "admin-catalog"
+        ],
+        "summary": "Patch Admin Product",
+        "description": "Edita los campos que vienen; los demás no cambian. Pasar a encargue borra los\ntalles; pasar a stock, o cambiar a una categoría de otro grupo siendo de stock, deja\ntodos los del grupo disponibles.",
+        "operationId": "patch_admin_product_admin_products__code__patch",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminProductPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProduct"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "404": {
+            "description": "No hay un producto con ese código."
+          },
+          "422": {
+            "description": "Un campo inválido: el error dice cuál (``loc``). Una categoría, colección, versión, etiqueta o talle que no existe tiene ``type`` ``unknown`` o ``unknown_size``; talles en un encargue, ``on_order_with_sizes``."
+          }
+        }
       }
     }
   },
@@ -1258,6 +1528,239 @@
           "email"
         ],
         "title": "AdminOut"
+      },
+      "AdminProduct": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Código permanente: lo asigna la API al crear y no cambia."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductStatus"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Slug de la categoría."
+          },
+          "collection": {
+            "type": "string",
+            "title": "Collection",
+            "description": "Slug de la colección."
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version",
+            "description": "Slug de la versión, si tiene."
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "Slugs de las etiquetas, en el orden de las opciones."
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "price": {
+            "type": "integer",
+            "title": "Price",
+            "description": "Precio en la unidad menor de la moneda."
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "sale_mode": {
+            "$ref": "#/components/schemas/SaleMode"
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/AdminSizeAvailability"
+            },
+            "type": "array",
+            "title": "Sizes",
+            "description": "Los talles de un producto de stock, en el orden del grupo. Vacía en un encargue."
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "status",
+          "category",
+          "collection",
+          "version",
+          "season",
+          "tags",
+          "description",
+          "price",
+          "currency",
+          "sale_mode",
+          "sizes"
+        ],
+        "title": "AdminProduct",
+        "description": "Un producto como lo edita el admin."
+      },
+      "AdminProductCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category",
+            "description": "Slug de la categoría."
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection",
+            "description": "Slug de la colección."
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version",
+            "description": "Slug de la versión; null: sin versión."
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags",
+            "description": "Slugs de las etiquetas."
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price",
+            "description": "En la unidad menor de la moneda."
+          },
+          "sale_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SaleMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sizes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SizeAvailabilityIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sizes",
+            "description": "Disponibilidad por talle. Solo en productos de stock."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "title": "AdminProductCreate",
+        "description": "Un producto nuevo: nace como borrador, con el código ya asignado. Alcanza con\nnombre y categoría (así el panel lo puede guardar solo antes de la primera foto);\nsin precio queda en 0, sin modo de venta es de stock y sin colección va a la de\npor defecto."
       },
       "AdminProductList": {
         "properties": {
@@ -1359,6 +1862,143 @@
         ],
         "title": "AdminProductListItem"
       },
+      "AdminProductPatch": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "description": "Slug de la categoría."
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection",
+            "description": "Slug de la colección."
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version",
+            "description": "Slug de la versión; null: sin versión."
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags",
+            "description": "Slugs de las etiquetas."
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price",
+            "description": "En la unidad menor de la moneda."
+          },
+          "sale_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SaleMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sizes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SizeAvailabilityIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sizes",
+            "description": "Disponibilidad por talle. Solo en productos de stock."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdminProductPatch",
+        "description": "Los datos del editor. En un PATCH, lo que no viene no cambia; ``null`` borra los\nopcionales (versión, temporada, descripción).\n\nTalles: un encargue no tiene (mandarlos da error). Al pasar a stock, o al cambiar\nde categoría a otro grupo de talles siendo de stock, el producto queda con todos los\ndel grupo, disponibles; ``sizes`` se aplica después y marca cada uno disponible o\nsin stock."
+      },
       "AdminSettings": {
         "properties": {
           "contact_channels": {
@@ -1426,6 +2066,24 @@
         "title": "AdminSettingsIn",
         "description": "Lo que guarda la sección Contacto: canales, plantillas y aviso de encargue."
       },
+      "AdminSizeAvailability": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "in_stock"
+        ],
+        "title": "AdminSizeAvailability"
+      },
       "AdminSizeOut": {
         "properties": {
           "label": {
@@ -1454,6 +2112,102 @@
         ],
         "title": "Availability",
         "description": "Disponibilidad del producto de cara al cliente, ya calculada."
+      },
+      "CatalogFeatures": {
+        "properties": {
+          "collections": {
+            "type": "boolean",
+            "title": "Collections"
+          },
+          "versions": {
+            "type": "boolean",
+            "title": "Versions"
+          },
+          "on_order": {
+            "type": "boolean",
+            "title": "On Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "collections",
+          "versions",
+          "on_order"
+        ],
+        "title": "CatalogFeatures",
+        "description": "Las funciones de la tienda que cambian el editor."
+      },
+      "CatalogOptions": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryOption"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "En orden de árbol: cada categoría de nivel 1 seguida de sus hijas."
+          },
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/NamedRef"
+            },
+            "type": "array",
+            "title": "Collections",
+            "description": "Todas, en orden. El editor muestra el campo solo si la función está activa y hay más de una cargada; si no, el producto queda en la de por defecto."
+          },
+          "default_collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Collection",
+            "description": "Slug de la colección por defecto, la que toma un producto sin elegir."
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/NamedRef"
+            },
+            "type": "array",
+            "title": "Versions"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/NamedRef"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "sizes": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Sizes",
+            "description": "Las etiquetas de los talles de cada grupo, en su orden."
+          },
+          "features": {
+            "$ref": "#/components/schemas/CatalogFeatures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories",
+          "collections",
+          "default_collection",
+          "versions",
+          "tags",
+          "sizes",
+          "features"
+        ],
+        "title": "CatalogOptions",
+        "description": "Lo que el editor ofrece para elegir. Sale del seed: el panel no lo edita."
       },
       "CategoryFacetValue": {
         "properties": {
@@ -1492,6 +2246,43 @@
           "parent"
         ],
         "title": "CategoryFacetValue"
+      },
+      "CategoryOption": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent",
+            "description": "Slug de la categoría madre; null en las de nivel 1."
+          },
+          "size_group": {
+            "type": "string",
+            "title": "Size Group",
+            "description": "El grupo de talles de la categoría (clave de ``sizes``)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "parent",
+          "size_group"
+        ],
+        "title": "CategoryOption"
       },
       "Channel": {
         "type": "string",
@@ -2882,6 +3673,15 @@
         "title": "Rate",
         "description": "Tasa de consulta global: consultas de productos dividido visitas a detalles."
       },
+      "SaleMode": {
+        "type": "string",
+        "enum": [
+          "stock",
+          "on_order"
+        ],
+        "title": "SaleMode",
+        "description": "Modo de venta: define en qué sección aparece el producto."
+      },
       "Section": {
         "type": "string",
         "enum": [
@@ -2890,6 +3690,27 @@
         ],
         "title": "Section",
         "description": "Sección del catálogo público. Se calcula, no se guarda: un producto de stock\nagotado aparece en Por encargue."
+      },
+      "SizeAvailabilityIn": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Un talle del grupo de la categoría del producto."
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock",
+            "description": "false: sin stock (se muestra tachado)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "in_stock"
+        ],
+        "title": "SizeAvailabilityIn"
       },
       "SizeStatus": {
         "type": "string",

@@ -1,6 +1,7 @@
 // Rutas del panel. Son del núcleo: no nombran nada del cliente.
 
 export const ADMIN_HOME = "/admin/productos";
+export const ADMIN_NEW_PRODUCT = "/admin/productos/nuevo";
 export const ADMIN_LOGIN = "/admin/login";
 // Las pantallas de contraseña sin sesión. La API arma los links de los emails con estas
 // mismas rutas.
