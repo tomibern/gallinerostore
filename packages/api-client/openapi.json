@@ -924,6 +924,129 @@
         }
       }
     },
+    "/admin/settings/how-to-buy": {
+      "get": {
+        "tags": [
+          "admin-settings"
+        ],
+        "summary": "Get How To Buy",
+        "description": "«Cómo comprar» y las preguntas frecuentes, partidas en listas para editarlas.",
+        "operationId": "get_how_to_buy_admin_settings_how_to_buy_get",
+        "parameters": [
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HowToBuyContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin-settings"
+        ],
+        "summary": "Put How To Buy",
+        "description": "Guarda las secciones de «Cómo comprar» y las preguntas, en el orden en que llegan.\nLo que no viene en la lista se borra.",
+        "operationId": "put_how_to_buy_admin_settings_how_to_buy_put",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HowToBuyContent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HowToBuyContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``."
+          }
+        }
+      }
+    },
     "/admin/settings/message-preview": {
       "post": {
         "tags": [
@@ -2383,6 +2506,30 @@
         ],
         "title": "FacetValue"
       },
+      "FaqEntry": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Question",
+            "description": "La pregunta, en una línea. No puede quedar vacía."
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Answer",
+            "description": "La respuesta, en Markdown. Puede quedar vacía."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "FaqEntry",
+        "description": "Una pregunta frecuente para editar: pregunta y respuesta."
+      },
       "FaqItem": {
         "properties": {
           "question": {
@@ -2547,6 +2694,58 @@
           "alt"
         ],
         "title": "HomeSlideOut"
+      },
+      "HowToBuyContent": {
+        "properties": {
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/HowToBuyTopic"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Topics"
+          },
+          "faq": {
+            "items": {
+              "$ref": "#/components/schemas/FaqEntry"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Faq"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "topics",
+          "faq"
+        ],
+        "title": "HowToBuyContent",
+        "description": "«Cómo comprar» y las preguntas frecuentes como listas, en su orden. Lo que se\nguarda reemplaza todo: agregar, ordenar y borrar es mandar la lista nueva."
+      },
+      "HowToBuyTopic": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "description": "El título, en una línea. No puede quedar vacío."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Text",
+            "description": "El texto, en Markdown. Puede quedar vacío."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "text"
+        ],
+        "title": "HowToBuyTopic",
+        "description": "Un tema de «Cómo comprar» (pagos, envíos…): título y texto. Se guarda como un\n``##`` cada uno."
       },
       "ImageOut": {
         "properties": {

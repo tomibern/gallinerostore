@@ -10,11 +10,13 @@ export type FieldErrors = Record<string, string>;
 
 /**
  * La clave del campo según el `loc` del error: `whatsapp`, `instagram`,
- * `message_templates.<caso>`, `on_order_notice` o `template` (vista previa).
+ * `message_templates.<caso>`, `on_order_notice`, `template` (vista previa) o, en las
+ * listas de «Cómo comprar», `topics.<i>.<campo>` y `faq.<i>.<campo>`.
  */
 export function fieldKey(loc: ValidationError["loc"]): string {
   const path = loc.filter((part) => part !== "body").map(String);
   if (path[0] === "contact_channels" && path[1]) return path[1];
+  if (path[0] === "topics" || path[0] === "faq") return path.slice(0, 3).join(".");
   return path.slice(0, 2).join(".");
 }
 
@@ -31,6 +33,12 @@ function message(field: string, error: ValidationError): string {
     case "string_too_short":
     case "missing":
       return t("admin.contact.error.required");
+    case "section_heading":
+      return t("admin.howToBuy.error.sectionHeading");
+    case "unclosed_fence":
+      return t("admin.howToBuy.error.unclosedFence");
+    case "multiline":
+      return t("admin.howToBuy.error.multiline");
     case "string_too_long":
       return t("admin.contact.error.tooLong", { max: String(ctx.max_length ?? "") });
     default:

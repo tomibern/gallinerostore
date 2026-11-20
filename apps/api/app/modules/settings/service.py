@@ -21,12 +21,17 @@ from app.modules.settings.models import (
     case_variables,
 )
 from app.modules.settings.schemas import (
+    FENCE_LINE,
+    HEADING_LINE,
     AdminSettings,
     AdminSettingsIn,
     ContactChannels,
+    FaqEntry,
     FaqItem,
     HomeBlock,
     HomeSlideOut,
+    HowToBuyContent,
+    HowToBuyTopic,
     Inquiry,
     MessageTemplates,
     PublicStore,
@@ -212,12 +217,18 @@ async def admin_settings(session: AsyncSession) -> AdminSettings:
     return _admin_settings(await repository.get_store_settings(session))
 
 
-async def save_admin_settings(session: AsyncSession, data: AdminSettingsIn) -> AdminSettings:
-    """Guarda contacto, plantillas y aviso. La tienda los usa desde la próxima visita."""
+async def _settings_row(session: AsyncSession) -> StoreSettings:
+    """La fila de configuración, o una nueva y vacía si la tienda no tiene seed."""
     store_settings = await repository.get_store_settings(session)
     if store_settings is None:
         store_settings = StoreSettings(id=SETTINGS_ROW_ID, how_to_buy_md="", faq_md="")
         repository.add(session, store_settings)
+    return store_settings
+
+
+async def save_admin_settings(session: AsyncSession, data: AdminSettingsIn) -> AdminSettings:
+    """Guarda contacto, plantillas y aviso. La tienda los usa desde la próxima visita."""
+    store_settings = await _settings_row(session)
     store_settings.contact_channels = data.contact_channels.model_dump(exclude_none=True)
     store_settings.message_templates = data.message_templates.model_dump()
     store_settings.on_order_notice = data.on_order_notice
@@ -225,36 +236,78 @@ async def save_admin_settings(session: AsyncSession, data: AdminSettingsIn) -> A
     return _admin_settings(store_settings)
 
 
-# Un encabezado de dos numerales (no tres): «## Pregunta», con un cierre opcional «##».
-_QUESTION = re.compile(r"^##(?:[ \t]+(.*))?$")
+# El cierre opcional de un encabezado: «## Pregunta ##».
 _CLOSING = re.compile(r"(?:^|[ \t]+)#+[ \t]*$")
-_FENCE = re.compile(r"^(?:```|~~~)")
+
+
+def split_headings(markdown: str) -> tuple[str, list[tuple[str, str]]]:
+    """Parte un texto por sus encabezados: cada línea que empieza con ``## `` abre una
+    parte y lo que sigue, hasta la próxima, es su texto. Devuelve el texto anterior al
+    primer encabezado y las partes (título, texto) en orden.
+
+    Es una regla de líneas, no un parser de Markdown: los encabezados subrayados o con
+    sangría no parten. Una parte sin título se descarta con su texto, y un ``## ``
+    dentro de un bloque de código cercado no cuenta."""
+    intro: list[str] = []
+    parts: list[tuple[str, list[str]]] = []
+    in_fence = False
+    for line in markdown.splitlines():
+        if FENCE_LINE.match(line):
+            in_fence = not in_fence
+        heading = None if in_fence else HEADING_LINE.match(line)
+        if heading:
+            parts.append((_CLOSING.sub("", heading.group(1) or "").strip(), []))
+        elif parts:
+            parts[-1][1].append(line)
+        else:
+            intro.append(line)
+    return "\n".join(intro).strip(), [
+        (title, "\n".join(text).strip()) for title, text in parts if title
+    ]
+
+
+def join_headings(intro: str, parts: list[tuple[str, str]]) -> str:
+    """La inversa de ``split_headings``: un ``## `` por parte, separadas por una línea
+    en blanco. Un título que termina en «#» lleva un cierre ``##`` para no perderlo."""
+    blocks = [intro] if intro else []
+    for title, text in parts:
+        heading = f"## {title} ##" if title.endswith("#") else f"## {title}"
+        blocks.append(f"{heading}\n\n{text}" if text else heading)
+    return "\n\n".join(blocks) + "\n" if blocks else ""
 
 
 def split_faq(faq_md: str) -> tuple[str, list[FaqItem]]:
-    """Parte las preguntas frecuentes: cada línea que empieza con ``## `` abre una
-    pregunta y lo que sigue, hasta la próxima, es su respuesta. Devuelve el texto
-    anterior a la primera pregunta y las preguntas en orden.
+    """Parte las preguntas frecuentes (ver ``split_headings``): el texto anterior a la
+    primera pregunta y las preguntas en orden."""
+    intro, parts = split_headings(faq_md)
+    return intro, [FaqItem(question=q, answer_md=a) for q, a in parts]
 
-    Es una regla de líneas, no un parser de Markdown: los encabezados subrayados o con
-    sangría no parten. Una pregunta sin texto se descarta con su respuesta, y un ``## ``
-    dentro de un bloque de código cercado no cuenta."""
-    intro: list[str] = []
-    sections: list[tuple[str, list[str]]] = []
-    in_fence = False
-    for line in faq_md.splitlines():
-        if _FENCE.match(line):
-            in_fence = not in_fence
-        heading = None if in_fence else _QUESTION.match(line)
-        if heading:
-            sections.append((_CLOSING.sub("", heading.group(1) or "").strip(), []))
-        elif sections:
-            sections[-1][1].append(line)
-        else:
-            intro.append(line)
-    faq = [
-        FaqItem(question=question, answer_md="\n".join(answer).strip())
-        for question, answer in sections
-        if question
-    ]
-    return "\n".join(intro).strip(), faq
+
+def _how_to_buy(store_settings: StoreSettings | None) -> HowToBuyContent:
+    _, topics = split_headings(store_settings.how_to_buy_md if store_settings else "")
+    _, faq = split_headings(store_settings.faq_md if store_settings else "")
+    return HowToBuyContent(
+        topics=[HowToBuyTopic(title=title, text=text) for title, text in topics],
+        faq=[FaqEntry(question=question, answer=answer) for question, answer in faq],
+    )
+
+
+async def how_to_buy(session: AsyncSession) -> HowToBuyContent:
+    """«Cómo comprar» y las preguntas frecuentes partidas en listas, para editarlas."""
+    return _how_to_buy(await repository.get_store_settings(session))
+
+
+async def save_how_to_buy(session: AsyncSession, data: HowToBuyContent) -> HowToBuyContent:
+    """Guarda las dos listas como Markdown, un ``##`` por tema o pregunta. El texto
+    anterior al primer encabezado (que el admin no edita) se conserva."""
+    store_settings = await _settings_row(session)
+    how_to_buy_intro, _ = split_headings(store_settings.how_to_buy_md or "")
+    faq_intro, _ = split_headings(store_settings.faq_md or "")
+    store_settings.how_to_buy_md = join_headings(
+        how_to_buy_intro, [(topic.title, topic.text) for topic in data.topics]
+    )
+    store_settings.faq_md = join_headings(
+        faq_intro, [(entry.question, entry.answer) for entry in data.faq]
+    )
+    await repository.commit(session)
+    return _how_to_buy(store_settings)

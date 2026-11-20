@@ -65,7 +65,7 @@ test("cambiar la plantilla de talle disponible cambia el link de WhatsApp del de
     await template.fill(`Consulta ${marker}: `);
     await page.getByRole("button", { name: "Insertar Talle en «Talle disponible»" }).click();
     await expect(template).toHaveValue(`Consulta ${marker}: {size}`);
-    await page.getByRole("button", { name: "Guardar" }).click();
+    await page.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Guardado" })).toBeVisible();
 
     await page.goto(`/p/${sample!.code.toLowerCase()}`);
@@ -93,7 +93,7 @@ test("un WhatsApp inválido muestra el error en su campo y no se guarda", async 
   const before = await contact();
 
   await page.getByLabel("WhatsApp", { exact: true }).fill("123");
-  await page.getByRole("button", { name: "Guardar" }).click();
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
 
   await expect(
     page.getByText("Tiene que ser un número con el código del país: entre 8 y 15 dígitos."),

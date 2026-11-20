@@ -217,3 +217,80 @@ class MessagePreview(BaseModel):
             "(o si todavía no hay productos publicados)."
         )
     )
+
+
+# --- Admin: «Cómo comprar» y preguntas frecuentes -------------------------------------
+
+# La regla que parte «Cómo comprar» y las preguntas en partes (``service.split_headings``):
+# un encabezado de dos numerales (no tres), «## Título», con un cierre opcional «##»,
+# salvo dentro de un bloque de código cercado.
+HEADING_LINE = re.compile(r"^##(?:[ \t]+(.*))?$")
+FENCE_LINE = re.compile(r"^(?:```|~~~)")
+
+MAX_ITEMS = 30
+
+
+def check_heading(value: str) -> str:
+    """Un título o una pregunta: una sola línea y no vacía."""
+    value = value.strip()
+    if not value:
+        raise PydanticCustomError("blank", "No puede quedar vacío.")
+    if "\n" in value or "\r" in value:
+        raise PydanticCustomError("multiline", "Va en una sola línea.")
+    return value
+
+
+def check_body(value: str) -> str:
+    """El texto de un tema o la respuesta de una pregunta: Markdown que no abre otra
+    parte ni deja un bloque de código sin cerrar (que se tragaría las siguientes)."""
+    value = value.strip()
+    in_fence = False
+    for line in value.splitlines():
+        if FENCE_LINE.match(line):
+            in_fence = not in_fence
+        elif not in_fence and HEADING_LINE.match(line):
+            raise PydanticCustomError(
+                "section_heading", "Una línea no puede empezar con dos numerales."
+            )
+    if in_fence:
+        raise PydanticCustomError("unclosed_fence", "Hay un bloque de código sin cerrar.")
+    return value
+
+
+HeadingText = Annotated[str, StringConstraints(max_length=200)]
+SectionText = Annotated[str, StringConstraints(max_length=5000)]
+
+
+class HowToBuyTopic(BaseModel):
+    """Un tema de «Cómo comprar» (pagos, envíos…): título y texto. Se guarda como un
+    ``##`` cada uno."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: HeadingText = Field(description="El título, en una línea. No puede quedar vacío.")
+    text: SectionText = Field(description="El texto, en Markdown. Puede quedar vacío.")
+
+    check_title = field_validator("title")(check_heading)
+    check_text = field_validator("text")(check_body)
+
+
+class FaqEntry(BaseModel):
+    """Una pregunta frecuente para editar: pregunta y respuesta."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: HeadingText = Field(description="La pregunta, en una línea. No puede quedar vacía.")
+    answer: SectionText = Field(description="La respuesta, en Markdown. Puede quedar vacía.")
+
+    check_question = field_validator("question")(check_heading)
+    check_answer = field_validator("answer")(check_body)
+
+
+class HowToBuyContent(BaseModel):
+    """«Cómo comprar» y las preguntas frecuentes como listas, en su orden. Lo que se
+    guarda reemplaza todo: agregar, ordenar y borrar es mandar la lista nueva."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    topics: list[HowToBuyTopic] = Field(max_length=MAX_ITEMS)
+    faq: list[FaqEntry] = Field(max_length=MAX_ITEMS)

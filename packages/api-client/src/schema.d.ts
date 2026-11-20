@@ -240,6 +240,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/settings/how-to-buy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get How To Buy
+         * @description «Cómo comprar» y las preguntas frecuentes, partidas en listas para editarlas.
+         */
+        get: operations["get_how_to_buy_admin_settings_how_to_buy_get"];
+        /**
+         * Put How To Buy
+         * @description Guarda las secciones de «Cómo comprar» y las preguntas, en el orden en que llegan.
+         *     Lo que no viene en la lista se borra.
+         */
+        put: operations["put_how_to_buy_admin_settings_how_to_buy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/settings/message-preview": {
         parameters: {
             query?: never;
@@ -786,6 +811,22 @@ export interface components {
             count: number;
         };
         /**
+         * FaqEntry
+         * @description Una pregunta frecuente para editar: pregunta y respuesta.
+         */
+        FaqEntry: {
+            /**
+             * Question
+             * @description La pregunta, en una línea. No puede quedar vacía.
+             */
+            question: string;
+            /**
+             * Answer
+             * @description La respuesta, en Markdown. Puede quedar vacía.
+             */
+            answer: string;
+        };
+        /**
          * FaqItem
          * @description Una pregunta frecuente: cada encabezado ``##`` de las preguntas abre una.
          */
@@ -872,6 +913,34 @@ export interface components {
             full: string;
             /** Alt */
             alt: string;
+        };
+        /**
+         * HowToBuyContent
+         * @description «Cómo comprar» y las preguntas frecuentes como listas, en su orden. Lo que se
+         *     guarda reemplaza todo: agregar, ordenar y borrar es mandar la lista nueva.
+         */
+        HowToBuyContent: {
+            /** Topics */
+            topics: components["schemas"]["HowToBuyTopic"][];
+            /** Faq */
+            faq: components["schemas"]["FaqEntry"][];
+        };
+        /**
+         * HowToBuyTopic
+         * @description Un tema de «Cómo comprar» (pagos, envíos…): título y texto. Se guarda como un
+         *     ``##`` cada uno.
+         */
+        HowToBuyTopic: {
+            /**
+             * Title
+             * @description El título, en una línea. No puede quedar vacío.
+             */
+            title: string;
+            /**
+             * Text
+             * @description El texto, en Markdown. Puede quedar vacío.
+             */
+            text: string;
         };
         /** ImageOut */
         ImageOut: {
@@ -1940,6 +2009,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminSettings"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Un campo inválido: el error dice cuál (``loc``). Una variable que no existe en una plantilla tiene ``type`` ``unknown_variable``. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_how_to_buy_admin_settings_how_to_buy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HowToBuyContent"];
+                };
+            };
+            /** @description Sin sesión vigente. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_how_to_buy_admin_settings_how_to_buy_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Requested-With"?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                admin_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HowToBuyContent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HowToBuyContent"];
                 };
             };
             /** @description Sin sesión vigente. */

@@ -14,6 +14,7 @@ import {
   type AdminSettings,
   type AdminSettingsIn,
   type CatalogOptions,
+  type HowToBuyContent,
   type LoginIn,
   type MessageCase,
   type MessagePreview,
@@ -39,6 +40,7 @@ export type {
   AdminSettings,
   AdminSettingsIn,
   CatalogOptions,
+  HowToBuyContent,
   MessageCase,
   MessagePreview,
   MetricsPeriod,
@@ -124,6 +126,19 @@ async function withFieldErrors<T>(
 /** Guarda contacto, plantillas y aviso. Si algo no vale, los errores por campo. */
 export function saveAdminSettings(body: AdminSettingsIn): Promise<ApiResult<AdminSettings>> {
   return withFieldErrors(api.PUT("/admin/settings", { body }));
+}
+
+/** «Cómo comprar» y las preguntas frecuentes, como listas. Sin sesión, null. */
+export async function getHowToBuy(): Promise<HowToBuyContent | null> {
+  const { data, response } = await api.GET("/admin/settings/how-to-buy", { cache: "no-store" });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/settings/how-to-buy respondió ${response.status}`);
+}
+
+/** Guarda las secciones y las preguntas en su orden. Si algo no vale, los errores por campo. */
+export function saveHowToBuy(body: HowToBuyContent): Promise<ApiResult<HowToBuyContent>> {
+  return withFieldErrors(api.PUT("/admin/settings/how-to-buy", { body }));
 }
 
 /** El mensaje que armaría la API con esa plantilla, con un producto publicado real. */
