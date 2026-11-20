@@ -3,6 +3,7 @@ import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MIN_PASSWORD_LENGTH, newPasswordProblem } from "@/lib/admin-paths";
+import { TOO_SHORT } from "@/lib/password-change";
 import { t } from "@/lib/texts";
 
 /** Contraseña nueva y su repetición, con el gestor de contraseñas habilitado. */
@@ -40,7 +41,7 @@ export function NewPasswordFields() {
   );
 }
 
-export const TOO_SHORT = t("admin.password.tooShort", { min: MIN_PASSWORD_LENGTH });
+export { TOO_SHORT };
 
 /** La contraseña nueva del formulario, o el error a mostrar si no sirve. */
 export function readNewPassword(form: FormData): { password: string } | { error: string } {
