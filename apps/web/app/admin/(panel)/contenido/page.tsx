@@ -1,6 +1,7 @@
 import { AccountSection } from "@/components/admin/account-section";
 import { AdminPage } from "@/components/admin/admin-page";
 import { ContactSection } from "@/components/admin/contact-section";
+import { HowToBuySection } from "@/components/admin/how-to-buy-section";
 import { getStore } from "@/lib/api";
 import { t } from "@/lib/texts";
 
@@ -12,6 +13,7 @@ export default async function AdminContentPage() {
         instagram={features?.instagram ?? true}
         onOrder={features?.on_order ?? true}
       />
+      <HowToBuySection />
       <AccountSection />
     </AdminPage>
   );

@@ -11,6 +11,7 @@ from app.modules.settings import service
 from app.modules.settings.schemas import (
     AdminSettings,
     AdminSettingsIn,
+    HowToBuyContent,
     MessagePreview,
     MessagePreviewIn,
     PublicStore,
@@ -57,6 +58,25 @@ async def put_admin_settings(
 ) -> AdminSettings:
     """Guarda contacto, mensajes prearmados y aviso de encargue."""
     return await service.save_admin_settings(session, body)
+
+
+@admin_router.get("/how-to-buy", responses=_NO_SESSION)
+async def get_how_to_buy(
+    _: AdminAccess, session: Annotated[AsyncSession, Depends(get_session)]
+) -> HowToBuyContent:
+    """«Cómo comprar» y las preguntas frecuentes, partidas en listas para editarlas."""
+    return await service.how_to_buy(session)
+
+
+@admin_router.put("/how-to-buy", dependencies=[CsrfChecked], responses=_NO_SESSION | _INVALID)
+async def put_how_to_buy(
+    body: HowToBuyContent,
+    _: AdminAccess,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> HowToBuyContent:
+    """Guarda las secciones de «Cómo comprar» y las preguntas, en el orden en que llegan.
+    Lo que no viene en la lista se borra."""
+    return await service.save_how_to_buy(session, body)
 
 
 @admin_router.post("/message-preview", dependencies=[CsrfChecked], responses=_NO_SESSION | _INVALID)
