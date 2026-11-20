@@ -17,10 +17,26 @@ describe("fieldKey", () => {
     expect(fieldKey(["body", "message_templates", "on_order"])).toBe("message_templates.on_order");
     expect(fieldKey(["body", "on_order_notice"])).toBe("on_order_notice");
     expect(fieldKey(["body", "template"])).toBe("template");
+    expect(fieldKey(["body", "topics", "2", "title"])).toBe("topics.2.title");
+    expect(fieldKey(["body", "faq", "0", "answer"])).toBe("faq.0.answer");
   });
 });
 
 describe("fieldErrors", () => {
+  it("explica por qué un texto de «Cómo comprar» no se puede guardar", () => {
+    const errors = fieldErrors([
+      apiError(["body", "topics", "0", "title"], "blank"),
+      apiError(["body", "topics", "0", "text"], "section_heading"),
+      apiError(["body", "faq", "1", "answer"], "unclosed_fence"),
+    ]);
+
+    expect(errors).toEqual({
+      "topics.0.title": t("admin.contact.error.required"),
+      "topics.0.text": t("admin.howToBuy.error.sectionHeading"),
+      "faq.1.answer": t("admin.howToBuy.error.unclosedFence"),
+    });
+  });
+
   it("elige el texto del diccionario según el tipo de error", () => {
     const errors = fieldErrors([
       apiError(["body", "contact_channels", "whatsapp", "number"], "string_pattern_mismatch"),

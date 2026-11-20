@@ -431,3 +431,53 @@ def add(session: AsyncSession, instance: Base) -> None:
 
 async def flush(session: AsyncSession) -> None:
     await session.flush()
+
+
+# --- Admin: editor de producto --------------------------------------------------------
+
+
+async def admin_product_by_code(session: AsyncSession, code: str) -> Product | None:
+    """El producto con ese código (sin distinguir mayúsculas), en cualquier estado, con
+    categoría, colección, versión, etiquetas y talles ya cargados."""
+    stmt = (
+        select(Product)
+        .where(func.lower(Product.code) == code.lower())
+        .options(
+            selectinload(Product.sizes).joinedload(ProductSize.size),
+            selectinload(Product.tags),
+            joinedload(Product.category),
+            joinedload(Product.collection),
+            joinedload(Product.version),
+        )
+    )
+    return await session.scalar(stmt)
+
+
+async def all_ordered[T: (Collection, Tag, Version)](
+    session: AsyncSession, model: type[T]
+) -> Sequence[T]:
+    """Todas las filas de una tabla de opciones, en su orden."""
+    return (await session.scalars(select(model).order_by(model.sort_order, model.id))).all()
+
+
+async def sizes_by_group(session: AsyncSession) -> dict[str, list[Size]]:
+    """Los talles de cada grupo, en su orden."""
+    sizes = await session.scalars(select(Size).order_by(Size.sort_order, Size.id))
+    groups: dict[str, list[Size]] = {}
+    for size in sizes:
+        groups.setdefault(size.size_group, []).append(size)
+    return groups
+
+
+async def default_collection(session: AsyncSession) -> Collection | None:
+    return await session.scalar(select(Collection).where(Collection.is_default))
+
+
+async def tags_by_slug(session: AsyncSession, slugs: Sequence[str]) -> dict[str, Tag]:
+    """Las etiquetas pedidas que existen, por slug."""
+    tags = await session.scalars(select(Tag).where(Tag.slug.in_(slugs)))
+    return {tag.slug: tag for tag in tags}
+
+
+async def commit(session: AsyncSession) -> None:
+    await session.commit()

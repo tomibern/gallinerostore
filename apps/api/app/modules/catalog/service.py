@@ -1,5 +1,7 @@
 """Reglas de negocio del catálogo (sección, disponibilidad, encargues, categorías y código)."""
 
+import re
+import unicodedata
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -13,21 +15,31 @@ from app.modules.catalog.models import (
     Category,
     Product,
     ProductImage,
+    ProductSize,
+    ProductStatus,
     ProductStoryItem,
     SaleMode,
     Section,
     Size,
     SizeStatus,
     StoryItemKind,
+    Tag,
     Version,
 )
 from app.modules.catalog.repository import AdminListingQuery, Filter, ListingQuery
 from app.modules.catalog.schemas import (
+    AdminProduct,
+    AdminProductCreate,
     AdminProductList,
     AdminProductListItem,
+    AdminProductPatch,
     AdminProductQuery,
+    AdminSizeAvailability,
     AdminSizeOut,
+    CatalogFeatures,
+    CatalogOptions,
     CategoryFacetValue,
+    CategoryOption,
     FacetValue,
     ImageOut,
     NamedRef,
@@ -236,7 +248,7 @@ async def list_published(
     )
 
 
-def _named(item: Category | models.Collection | Version) -> NamedRef:
+def _named(item: Category | models.Collection | Version | Tag) -> NamedRef:
     return NamedRef(slug=item.slug, name=item.name)
 
 
@@ -462,3 +474,288 @@ async def list_for_admin(
         has_more=has_more,
         total=await repository.count_admin_products(session, listing),
     )
+
+
+# --- Admin: editor de producto --------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class FieldProblem:
+    """Un campo del editor que no vale. ``loc`` es el camino dentro del cuerpo del pedido
+    («category», («sizes», 0, «label»)…), igual que en los errores de Pydantic."""
+
+    loc: tuple[str | int, ...]
+    type: str
+    message: str
+
+
+class InvalidProductError(ValueError):
+    """Uno o más campos del editor no valen contra lo cargado (categoría que no existe,
+    talle de otro grupo, encargue con talles…). El router lo devuelve como un 422 por campo."""
+
+    def __init__(self, problems: Sequence[FieldProblem]) -> None:
+        super().__init__("; ".join(problem.message for problem in problems))
+        self.problems = list(problems)
+
+
+def slugify(text: str) -> str:
+    """El slug de un nombre, para la URL: sin acentos, en minúsculas y con guiones."""
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", plain.lower()).strip("-") or "producto"
+
+
+async def _default_collection(session: AsyncSession) -> models.Collection | None:
+    """La colección de un producto que no elige ninguna: la marcada por defecto o, si
+    hay una sola cargada, esa."""
+    default = await repository.default_collection(session)
+    if default is not None:
+        return default
+    collections = await repository.all_ordered(session, models.Collection)
+    return collections[0] if len(collections) == 1 else None
+
+
+def _tree_order(categories: Sequence[Category]) -> list[Category]:
+    """Cada categoría de nivel 1 seguida de sus hijas, en su orden."""
+    children: dict[int, list[Category]] = {}
+    for category in categories:
+        if category.parent_id is not None:
+            children.setdefault(category.parent_id, []).append(category)
+    ordered: list[Category] = []
+    for root in (c for c in categories if c.parent_id is None):
+        ordered.append(root)
+        ordered.extend(children.get(root.id, []))
+    return ordered
+
+
+async def catalog_options(session: AsyncSession, store: StoreConfig) -> CatalogOptions:
+    """Lo que el editor ofrece para elegir: categorías con su grupo de talles,
+    colecciones, versiones, etiquetas, talles por grupo y las funciones activas."""
+    categories = await repository.all_categories(session)
+    slugs = {category.id: category.slug for category in categories}
+    default = await _default_collection(session)
+    groups = await repository.sizes_by_group(session)
+    return CatalogOptions(
+        categories=[
+            CategoryOption(
+                slug=category.slug,
+                name=category.name,
+                parent=slugs.get(category.parent_id) if category.parent_id else None,
+                size_group=category.size_group,
+            )
+            for category in _tree_order(categories)
+        ],
+        collections=[
+            _named(item) for item in await repository.all_ordered(session, models.Collection)
+        ],
+        default_collection=default.slug if default else None,
+        versions=[_named(item) for item in await repository.all_ordered(session, Version)],
+        tags=[_named(item) for item in await repository.all_ordered(session, Tag)],
+        sizes={group: [size.label for size in sizes] for group, sizes in groups.items()},
+        features=CatalogFeatures(
+            collections=store.features.collections,
+            versions=store.features.versions,
+            on_order=store.features.on_order,
+        ),
+    )
+
+
+def _admin_product_out(product: Product, store: StoreConfig) -> AdminProduct:
+    tags = sorted(product.tags, key=lambda tag: (tag.sort_order, tag.id))
+    return AdminProduct(
+        code=product.code,
+        name=product.name,
+        status=product.status,
+        category=product.category.slug,
+        collection=product.collection.slug,
+        version=product.version.slug if product.version else None,
+        season=product.season,
+        tags=[tag.slug for tag in tags],
+        description=product.description,
+        price=product.price,
+        currency=store.store.currency,
+        sale_mode=product.sale_mode,
+        sizes=[
+            AdminSizeAvailability(label=size.label, in_stock=status is SizeStatus.IN_STOCK)
+            for size, status in _own_sizes(product)
+        ],
+    )
+
+
+async def admin_product(
+    session: AsyncSession, store: StoreConfig, code: str
+) -> AdminProduct | None:
+    """Un producto en cualquier estado, como lo edita el admin; None si no existe."""
+    product = await repository.admin_product_by_code(session, code)
+    return _admin_product_out(product, store) if product else None
+
+
+@dataclass
+class _Resolved:
+    """Lo que el pedido nombra por slug, ya buscado. Solo lo que vino en el pedido."""
+
+    category: Category | None = None
+    collection: models.Collection | None = None
+    version: Version | None = None
+    tags: list[Tag] | None = None
+
+
+async def _resolve(
+    session: AsyncSession, body: AdminProductPatch, problems: list[FieldProblem]
+) -> _Resolved:
+    """Busca categoría, colección, versión y etiquetas, y anota las que no existen."""
+    fields = body.model_fields_set
+    resolved = _Resolved()
+    if body.category is not None:
+        resolved.category = await repository.find_by_slug(session, Category, body.category)
+        if resolved.category is None:
+            problems.append(FieldProblem(("category",), "unknown", "La categoría no existe."))
+    if body.collection is not None:
+        resolved.collection = await repository.find_by_slug(
+            session, models.Collection, body.collection
+        )
+        if resolved.collection is None:
+            problems.append(FieldProblem(("collection",), "unknown", "La colección no existe."))
+    if "version" in fields and body.version is not None:
+        resolved.version = await repository.find_by_slug(session, Version, body.version)
+        if resolved.version is None:
+            problems.append(FieldProblem(("version",), "unknown", "La versión no existe."))
+    if body.tags is not None:
+        found = await repository.tags_by_slug(session, body.tags)
+        problems.extend(
+            FieldProblem(("tags", position), "unknown", f"La etiqueta «{slug}» no existe.")
+            for position, slug in enumerate(body.tags)
+            if slug not in found
+        )
+        resolved.tags = [found[slug] for slug in body.tags if slug in found]
+    return resolved
+
+
+def _size_problems(
+    body: AdminProductPatch, sale_mode: SaleMode, group: Sequence[Size]
+) -> list[FieldProblem]:
+    """Un encargue no lleva talles; en stock, cada talle tiene que ser del grupo."""
+    if not body.sizes:
+        return []
+    if sale_mode is SaleMode.ON_ORDER:
+        return [
+            FieldProblem(
+                ("sizes",),
+                "on_order_with_sizes",
+                "Un encargue no tiene talles: se pide en cualquier talle del grupo.",
+            )
+        ]
+    labels = {size.label for size in group}
+    return [
+        FieldProblem(
+            ("sizes", position, "label"),
+            "unknown_size",
+            f"El talle «{item.label}» no es del grupo de la categoría.",
+        )
+        for position, item in enumerate(body.sizes)
+        if item.label not in labels
+    ]
+
+
+async def _save(
+    session: AsyncSession,
+    store: StoreConfig,
+    product: Product,
+    body: AdminProductPatch,
+    *,
+    creating: bool,
+) -> AdminProduct:
+    """Valida el pedido contra lo cargado y, si todo vale, lo aplica y lo guarda.
+
+    Reglas de talles: un encargue no tiene filas propias. Al pasar a stock (o al crear
+    uno de stock), y al cambiar de categoría a otro grupo siendo de stock, quedan todos
+    los talles del grupo, disponibles. Después se aplica ``sizes``."""
+    problems: list[FieldProblem] = []
+    resolved = await _resolve(session, body, problems)
+    fields = body.model_fields_set
+
+    category = resolved.category or (None if creating else product.category)
+    collection = resolved.collection
+    if creating and collection is None and body.collection is None:
+        collection = await _default_collection(session)
+        if collection is None:
+            problems.append(FieldProblem(("collection",), "missing", "Elegí una colección."))
+    sale_mode = body.sale_mode or (SaleMode.STOCK if creating else product.sale_mode)
+    groups = await repository.sizes_by_group(session)
+    group = groups.get(category.size_group, []) if category else []
+    problems += _size_problems(body, sale_mode, group)
+    if problems:
+        raise InvalidProductError(problems)
+    assert category is not None  # sin categoría habría un problema anotado
+    if creating:
+        # Recién ahora, para no gastar números de la secuencia en pedidos inválidos.
+        product.code = await new_product_code(session, store.store.code_prefix)
+
+    rebuild_sizes = sale_mode is SaleMode.STOCK and (
+        creating
+        or product.sale_mode is SaleMode.ON_ORDER
+        or product.category.size_group != category.size_group
+    )
+    if body.name is not None:
+        product.name = body.name
+        product.slug = slugify(body.name)
+    product.category = category
+    if collection is not None:
+        product.collection = collection
+    if "version" in fields:
+        product.version = resolved.version
+    if "season" in fields:
+        product.season = body.season
+    if "description" in fields:
+        product.description = body.description
+    if resolved.tags is not None:
+        product.tags = resolved.tags
+    if body.price is not None:
+        product.price = body.price
+    product.sale_mode = sale_mode
+
+    if sale_mode is SaleMode.ON_ORDER:
+        product.sizes = []
+    elif rebuild_sizes:
+        product.sizes = [ProductSize(size=size, in_stock=True) for size in group]
+    if body.sizes:
+        own = {row.size.label: row for row in product.sizes}
+        by_label = {size.label: size for size in group}
+        for item in body.sizes:
+            if item.label in own:
+                own[item.label].in_stock = item.in_stock
+            else:
+                product.sizes.append(ProductSize(size=by_label[item.label], in_stock=item.in_stock))
+
+    if creating:
+        repository.add(session, product)
+    await repository.commit(session)
+    return _admin_product_out(product, store)
+
+
+async def create_product(
+    session: AsyncSession, store: StoreConfig, body: AdminProductCreate
+) -> AdminProduct:
+    """Un producto nuevo: un borrador con el código ya asignado (no cambia nunca)."""
+    product = Product(
+        name="",
+        slug="",
+        price=0,
+        status=ProductStatus.DRAFT,
+        featured=False,
+        sort_order=0,
+        version=None,
+        tags=[],
+        sizes=[],
+    )
+    return await _save(session, store, product, body, creating=True)
+
+
+async def update_product(
+    session: AsyncSession, store: StoreConfig, code: str, body: AdminProductPatch
+) -> AdminProduct | None:
+    """Edita los datos, el modo de venta y los talles de un producto; None si no existe.
+    El código no se edita."""
+    product = await repository.admin_product_by_code(session, code)
+    if product is None:
+        return None
+    return await _save(session, store, product, body, creating=False)

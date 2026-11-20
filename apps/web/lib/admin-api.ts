@@ -6,10 +6,15 @@ import {
   createApiClient,
   type AdminFilter,
   type AdminOut,
+  type AdminProduct,
+  type AdminProductCreate,
+  type AdminProductPatch,
   type AdminProductList,
   type AdminProductListItem,
   type AdminSettings,
   type AdminSettingsIn,
+  type CatalogOptions,
+  type HowToBuyContent,
   type LoginIn,
   type MessageCase,
   type MessagePreview,
@@ -20,23 +25,31 @@ import {
   type ValidationError,
   type PasswordChangeIn,
   type PasswordResetConfirmIn,
+  type SaleMode,
 } from "@catalog/api-client";
 
+import { productFieldErrors } from "./admin-product";
 import { fieldErrors, type FieldErrors } from "./admin-settings";
 
 export type {
   AdminFilter,
   AdminOut,
+  AdminProduct,
+  AdminProductCreate,
+  AdminProductPatch,
   AdminProductList,
   AdminProductListItem,
   AdminSettings,
   AdminSettingsIn,
+  CatalogOptions,
+  HowToBuyContent,
   MessageCase,
   MessagePreview,
   MetricsPeriod,
   MetricsSummary,
   ProductRanking,
   RankingSort,
+  SaleMode,
 };
 
 export const CSRF_HEADERS = { "X-Requested-With": "fetch" };
@@ -105,18 +118,23 @@ export async function getAdminSettings(): Promise<AdminSettings | null> {
 }
 
 export type ApiResult<T> =
-  { status: "ok"; data: T } | { status: "invalid"; errors: FieldErrors } | { status: "error" };
+  | { status: "ok"; data: T }
+  | { status: "invalid"; errors: FieldErrors }
+  | { status: "unauthorized" }
+  | { status: "error" };
 
 async function withFieldErrors<T>(
   request: Promise<{ data?: T; error?: unknown; response: Response }>,
+  toFieldErrors: (detail: ValidationError[]) => FieldErrors = fieldErrors,
 ): Promise<ApiResult<T>> {
   try {
     const { data, error, response } = await request;
     if (data) return { status: "ok", data };
     if (response.status === 422) {
       const detail = (error as { detail?: ValidationError[] } | undefined)?.detail ?? [];
-      return { status: "invalid", errors: fieldErrors(detail) };
+      return { status: "invalid", errors: toFieldErrors(detail) };
     }
+    if (response.status === 401) return { status: "unauthorized" };
     return { status: "error" };
   } catch {
     return { status: "error" };
@@ -126,6 +144,19 @@ async function withFieldErrors<T>(
 /** Guarda contacto, plantillas y aviso. Si algo no vale, los errores por campo. */
 export function saveAdminSettings(body: AdminSettingsIn): Promise<ApiResult<AdminSettings>> {
   return withFieldErrors(api.PUT("/admin/settings", { body }));
+}
+
+/** «Cómo comprar» y las preguntas frecuentes, como listas. Sin sesión, null. */
+export async function getHowToBuy(): Promise<HowToBuyContent | null> {
+  const { data, response } = await api.GET("/admin/settings/how-to-buy", { cache: "no-store" });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/settings/how-to-buy respondió ${response.status}`);
+}
+
+/** Guarda las secciones y las preguntas en su orden. Si algo no vale, los errores por campo. */
+export function saveHowToBuy(body: HowToBuyContent): Promise<ApiResult<HowToBuyContent>> {
+  return withFieldErrors(api.PUT("/admin/settings/how-to-buy", { body }));
 }
 
 /** El mensaje que armaría la API con esa plantilla, con un producto publicado real. */
@@ -195,4 +226,40 @@ export async function getAdminProducts(query: {
   if (data) return data;
   if (response.status === 401) return null;
   throw new Error(`GET /admin/products respondió ${response.status}`);
+}
+
+/** Lo que el editor ofrece para elegir, o null si la sesión ya no vale (401). */
+export async function getCatalogOptions(): Promise<CatalogOptions | null> {
+  const { data, response } = await api.GET("/admin/catalog-options", { cache: "no-store" });
+  if (data) return data;
+  if (response.status === 401) return null;
+  throw new Error(`GET /admin/catalog-options respondió ${response.status}`);
+}
+
+/** Un producto para editarlo: "not_found" si no existe, null si la sesión ya no vale. */
+export async function getAdminProduct(code: string): Promise<AdminProduct | "not_found" | null> {
+  const { data, response } = await api.GET("/admin/products/{code}", {
+    params: { path: { code } },
+    cache: "no-store",
+  });
+  if (data) return data;
+  if (response.status === 401) return null;
+  if (response.status === 404) return "not_found";
+  throw new Error(`GET /admin/products/${code} respondió ${response.status}`);
+}
+
+/** Crea un borrador; la API le asigna el código. Si algo no vale, los errores por campo. */
+export function createAdminProduct(body: AdminProductCreate): Promise<ApiResult<AdminProduct>> {
+  return withFieldErrors(api.POST("/admin/products", { body }), productFieldErrors);
+}
+
+/** Guarda los cambios de un producto. Si algo no vale, los errores por campo. */
+export function updateAdminProduct(
+  code: string,
+  body: AdminProductPatch,
+): Promise<ApiResult<AdminProduct>> {
+  return withFieldErrors(
+    api.PATCH("/admin/products/{code}", { params: { path: { code } }, body }),
+    productFieldErrors,
+  );
 }
