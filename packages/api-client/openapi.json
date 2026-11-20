@@ -801,6 +801,77 @@
         }
       }
     },
+    "/admin/metrics/products": {
+      "get": {
+        "tags": [
+          "admin-metrics"
+        ],
+        "summary": "Product Ranking",
+        "description": "Ranking de productos del período: visitas al detalle, consultas, tasa de consulta y\nconsultas por canal de cada producto con actividad, archivados incluidos.",
+        "operationId": "product_ranking_admin_metrics_products_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Period",
+              "default": "7d"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RankingSort",
+              "default": "inquiries"
+            }
+          },
+          {
+            "name": "admin_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admin Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductRanking"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión vigente."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/settings": {
       "get": {
         "tags": [
@@ -1125,7 +1196,7 @@
           "admin-catalog"
         ],
         "summary": "List Admin Products",
-        "description": "Todos los productos del admin (borradores, ocultos y archivados incluidos), con\nbúsqueda y filtro, del más nuevo al más viejo.",
+        "description": "Todos los productos del admin (borradores, ocultos y archivados incluidos), con\nbúsqueda y filtro, del más nuevo al más viejo, con sus visitas y consultas de los\núltimos 7 días.",
         "operationId": "list_admin_products_admin_products_get",
         "parameters": [
           {
@@ -1845,6 +1916,16 @@
               }
             ],
             "description": "La primera imagen del producto, si tiene."
+          },
+          "visits_7d": {
+            "type": "integer",
+            "title": "Visits 7D",
+            "description": "Visitas al detalle en los últimos 7 días, como en el ranking de métricas."
+          },
+          "inquiries_7d": {
+            "type": "integer",
+            "title": "Inquiries 7D",
+            "description": "Consultas por el producto en los últimos 7 días, como en el ranking."
           }
         },
         "type": "object",
@@ -1858,7 +1939,9 @@
           "section",
           "availability",
           "sizes",
-          "cover"
+          "cover",
+          "visits_7d",
+          "inquiries_7d"
         ],
         "title": "AdminProductListItem"
       },
@@ -3451,6 +3534,40 @@
         ],
         "title": "ProductListItem"
       },
+      "ProductRanking": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/RankingSort"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            },
+            "type": "array",
+            "title": "Channels",
+            "description": "Canales que se muestran: los mismos del resumen (Instagram apagado no aparece, salvo que haya consultas por ese canal en el período)."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RankedProduct"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Los productos con alguna visita o consulta en el período, de mayor a menor según `sort` (sin tasa, al final). Empates: más consultas, más visitas, y por nombre."
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "sort",
+          "channels",
+          "items"
+        ],
+        "title": "ProductRanking"
+      },
       "ProductSizeOut": {
         "properties": {
           "label": {
@@ -3638,6 +3755,78 @@
         ],
         "title": "PublicStore",
         "description": "Lo que la web necesita saber de la tienda. Nada secreto."
+      },
+      "RankedProduct": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductStatus"
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits",
+            "description": "Visitas al detalle del producto."
+          },
+          "inquiries": {
+            "type": "integer",
+            "title": "Inquiries",
+            "description": "Consultas por el producto, por cualquier canal."
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate",
+            "description": "Tasa de consulta: consultas dividido visitas al detalle. Sin valor si no tuvo visitas."
+          },
+          "whatsapp": {
+            "type": "integer",
+            "title": "Whatsapp",
+            "description": "Consultas por WhatsApp."
+          },
+          "instagram": {
+            "type": "integer",
+            "title": "Instagram",
+            "description": "Consultas por Instagram."
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "status",
+          "visits",
+          "inquiries",
+          "rate",
+          "whatsapp",
+          "instagram"
+        ],
+        "title": "RankedProduct",
+        "description": "Un producto con actividad en el período, en cualquier estado."
+      },
+      "RankingSort": {
+        "type": "string",
+        "enum": [
+          "visits",
+          "inquiries",
+          "rate",
+          "whatsapp",
+          "instagram"
+        ],
+        "title": "RankingSort",
+        "description": "Columna por la que se ordena el ranking, siempre de mayor a menor."
       },
       "Rate": {
         "properties": {

@@ -267,6 +267,12 @@ class AdminProductListItem(BaseModel):
     )
     sizes: list[AdminSizeOut] = Field(description="En el orden del grupo de talles.")
     cover: ImageOut | None = Field(description="La primera imagen del producto, si tiene.")
+    visits_7d: int = Field(
+        description="Visitas al detalle en los últimos 7 días, como en el ranking de métricas."
+    )
+    inquiries_7d: int = Field(
+        description="Consultas por el producto en los últimos 7 días, como en el ranking."
+    )
 
 
 class AdminProductList(BaseModel):

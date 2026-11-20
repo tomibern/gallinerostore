@@ -1,10 +1,12 @@
-"""Salida de `GET /admin/metrics/summary`: todo lo que muestra la pantalla de Métricas."""
+"""Salidas de las métricas del admin: el resumen y el ranking de productos de la
+pantalla de Métricas, y las cifras de 7 días del listado de productos."""
 
 from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from app.modules.catalog.models import ProductStatus
 from app.modules.settings.models import Channel
 
 
@@ -65,3 +67,50 @@ class MetricsSummary(BaseModel):
     chart: list[ChartPoint]
     channels: list[ChannelCount]
     sources: list[SourceCount] = Field(description="Ordenados por visitas, de más a menos.")
+
+
+class RankingSort(StrEnum):
+    """Columna por la que se ordena el ranking, siempre de mayor a menor."""
+
+    VISITS = "visits"
+    INQUIRIES = "inquiries"
+    RATE = "rate"
+    WHATSAPP = "whatsapp"
+    INSTAGRAM = "instagram"
+
+
+class RankedProduct(BaseModel):
+    """Un producto con actividad en el período, en cualquier estado."""
+
+    code: str
+    name: str
+    status: ProductStatus
+    visits: int = Field(description="Visitas al detalle del producto.")
+    inquiries: int = Field(description="Consultas por el producto, por cualquier canal.")
+    rate: float | None = Field(
+        description="Tasa de consulta: consultas dividido visitas al detalle. Sin valor si "
+        "no tuvo visitas."
+    )
+    whatsapp: int = Field(description="Consultas por WhatsApp.")
+    instagram: int = Field(description="Consultas por Instagram.")
+
+
+class ProductRanking(BaseModel):
+    period: Period
+    sort: RankingSort
+    channels: list[Channel] = Field(
+        description="Canales que se muestran: los mismos del resumen (Instagram apagado no "
+        "aparece, salvo que haya consultas por ese canal en el período)."
+    )
+    items: list[RankedProduct] = Field(
+        description="Los productos con alguna visita o consulta en el período, de mayor a "
+        "menor según `sort` (sin tasa, al final). Empates: más consultas, más visitas, "
+        "y por nombre."
+    )
+
+
+class ProductActivity(BaseModel):
+    """Visitas al detalle y consultas de un producto en los últimos 7 días."""
+
+    visits: int
+    inquiries: int
